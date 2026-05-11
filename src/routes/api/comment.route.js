@@ -18,7 +18,7 @@ const {
   updateCommentSchema,
   commentIdParamSchema,
   getAllCommentsSchema,
-} = require("../../validations/comment.validation");
+} = require("../../validations/api/comment.validation");
 const { cacheMiddleware } = require("../../middlewares/cache.middleware");
 const { invalidateCache } = require("../../middlewares/invalidate.middleware");
 
