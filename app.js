@@ -13,6 +13,15 @@ const activityLogger = require("./src/middlewares/activityLogger.middleware");
 
 const app = express();
 
+// view engine setup
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "src/views"));
+
+// simple landing route (temporary)
+app.get("/", (req, res) => {
+  res.render("landing");
+});
+
 connectDB();
 connectMongo();
 

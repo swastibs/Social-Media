@@ -1,0 +1,23 @@
+<div class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+    <div class="position-sticky pt-3">
+        <div class="text-center mb-4">
+            <a href="/profile/<%= user.id %>">
+                <img src="<%= user.profilePictureUrl || 'https://via.placeholder.com/100' %>" class="rounded-circle img-fluid" style="width: 100px; height: 100px; object-fit: cover;">
+            </a>
+            <h5 class="mt-2"><a href="/profile/<%= user.id %>" class="text-decoration-none"><%= user.name %></a></h5>
+            <p class="text-muted small"><%= user.bio || "No bio yet" %></p>
+            <div class="d-flex justify-content-around">
+                <div><strong><%= user.postsCount %></strong><br>Posts</div>
+                <div><strong><%= user.followersCount %></strong><br>Followers</div>
+                <div><strong><%= user.followingCount %></strong><br>Following</div>
+            </div>
+        </div>
+        <hr>
+        <ul class="nav flex-column">
+            <li class="nav-item"><a class="nav-link" href="/feed"><i class="fas fa-home"></i> Feed</a></li>
+            <li class="nav-item"><a class="nav-link" href="/post/create"><i class="fas fa-plus-circle"></i> Create Post</a></li>
+            <li class="nav-item"><a class="nav-link" href="/search"><i class="fas fa-search"></i> Search</a></li>
+            <li class="nav-item"><a class="nav-link" href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </div>
+</div>
