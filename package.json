@@ -1,0 +1,33 @@
+{
+  "name": "postloop",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "swagger": "node ./src/config/swagger.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cloudinary": "^2.10.0",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "express-validation": "^4.1.1",
+    "ioredis": "^5.10.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.4.1",
+    "multer": "^2.1.1",
+    "mysql2": "^3.21.1",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "sequelize": "^6.37.8",
+    "streamifier": "^0.1.1",
+    "swagger-autogen": "^2.23.7",
+    "swagger-ui-express": "^5.0.1"
+  }
+}
