@@ -5,7 +5,7 @@ require("dotenv").config();
 const swaggerUi = require("swagger-ui-express");
 
 require("./src/config/passport");
-const indexRoute = require("./src/routes/index.route");
+const indexRoute = require("./src/routes/api/index.route");
 const { globalErrorHandler } = require("./src/middlewares/globalErrorHandeler");
 const { connectDB } = require("./src/config/db");
 const connectMongo = require("./src/config/mongo");

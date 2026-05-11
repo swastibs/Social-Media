@@ -1,14 +1,14 @@
 const jwt = require("jsonwebtoken");
 const { hash, compare } = require("bcrypt");
 
-const { User } = require("../models");
-const { ROLES } = require("../constant/role");
-const { sanitizedUser } = require("../utils/sanitizedUser");
-const ApiError = require("../utils/ApiError");
-const { successResponse } = require("../utils/ApiResponse");
-const { storeToken, deleteToken } = require("../utils/authCache");
-const cloudinary = require("../config/cloudinary");
-const { uploadToCloudinary } = require("../utils/cloudinaryUpload");
+const { User } = require("../../models");
+const { ROLES } = require("../../constant/role");
+const { sanitizedUser } = require("../../utils/sanitizedUser");
+const ApiError = require("../../utils/ApiError");
+const { successResponse } = require("../../utils/ApiResponse");
+const { storeToken, deleteToken } = require("../../utils/authCache");
+const cloudinary = require("../../config/cloudinary");
+const { uploadToCloudinary } = require("../../utils/cloudinaryUpload");
 
 // SIGN UP
 exports.signUp = async (req, res, next) => {

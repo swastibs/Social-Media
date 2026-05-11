@@ -1,6 +1,6 @@
-const Activity = require("../models/activity.model");
-const { successResponse } = require("../utils/ApiResponse");
-const { setCache } = require("../utils/cache");
+const Activity = require("../../models/activity.model");
+const { successResponse } = require("../../utils/ApiResponse");
+const { setCache } = require("../../utils/cache");
 
 exports.getActivities = async (req, res, next) => {
   try {

@@ -1,9 +1,9 @@
 const commentRouter = require("express").Router();
 const { validate } = require("express-validation");
 
-const { authenticate } = require("../middlewares/auth.middleware");
-const { authorize } = require("../middlewares/authorize.middleware");
-const { ROLES } = require("../constant/role");
+const { authenticate } = require("../../middlewares/auth.middleware");
+const { authorize } = require("../../middlewares/authorize.middleware");
+const { ROLES } = require("../../constant/role");
 
 const {
   createComment,
@@ -11,16 +11,16 @@ const {
   getComment,
   updateComment,
   deleteComment,
-} = require("../controllers/comment.controller");
+} = require("../../controllers/api/comment.controller");
 
 const {
   createCommentSchema,
   updateCommentSchema,
   commentIdParamSchema,
   getAllCommentsSchema,
-} = require("../validations/comment.validation");
-const { cacheMiddleware } = require("../middlewares/cache.middleware");
-const { invalidateCache } = require("../middlewares/invalidate.middleware");
+} = require("../../validations/comment.validation");
+const { cacheMiddleware } = require("../../middlewares/cache.middleware");
+const { invalidateCache } = require("../../middlewares/invalidate.middleware");
 
 commentRouter.use(authenticate);
 
