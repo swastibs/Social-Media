@@ -1,53 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Welcome to PostLoop</title>
-    <!-- Bootstrap 5 CSS (CDN) -->
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <style>
-      body {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      .landing-card {
-        background: white;
-        border-radius: 20px;
-        padding: 2rem;
-        text-align: center;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-      }
-      .btn-custom {
-        margin: 0.5rem;
-        padding: 0.5rem 2rem;
-        font-size: 1.2rem;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <div class="row justify-content-center">
-        <div class="col-md-6">
-          <div class="landing-card">
-            <h1 class="mb-3">📱 PostLoop</h1>
-            <p class="lead">Share your thoughts, connect with people.</p>
-            <hr />
-            <div class="mt-4">
-              <a href="/login" class="btn btn-primary btn-custom">Login</a>
-              <a href="/signup" class="btn btn-outline-secondary btn-custom"
-                >Sign Up</a
-              >
-            </div>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to PostLoop</title>
+  <!-- Bootstrap 5 CSS (CDN) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .landing-card {
+      background: white;
+      border-radius: 20px;
+      padding: 2rem;
+      text-align: center;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-custom {
+      margin: 0.5rem;
+      padding: 0.5rem 2rem;
+      font-size: 1.2rem;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <div class="landing-card">
+          <h1 class="mb-3">📱 PostLoop</h1>
+          <p class="lead">Share your thoughts, connect with people.</p>
+          <hr />
+          <div class="mt-4">
+            <a href="/login" class="btn btn-primary btn-custom">Login</a>
+            <a href="/signup" class="btn btn-outline-secondary btn-custom">Sign Up</a>
           </div>
         </div>
       </div>
     </div>
-  </body>
+  </div>
+  <script>
+    if (document.cookie.split('; ').find(row => row.startsWith('token='))) window.location.href = '/feed';
+  </script>
+</body>
+
 </html>

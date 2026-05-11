@@ -1,25 +1,25 @@
 const express = require("express");
 const router = express.Router();
 const { validate } = require("express-validation");
-const { authenticate } = require("../../middlewares/auth.middleware");
+const { redirectIfLoggedIn, isAuthenticated } = require("../../middlewares/auth.middleware");
 const upload = require("../../middlewares/multer");
-const authWeb = require("../../controllers/web/auth.web");
+const { landing, loginForm, login, signupForm, signup, logout } = require("../../controllers/web/auth.web");
 const { webSignUpSchema, webLoginSchema } = require("../../validations/web/auth.validation");
 
-// Public routes with validation
-router.get("/", authWeb.landing);
+// Public routes – redirect to feed if already logged in
+router.get("/", redirectIfLoggedIn, landing);
 
-router.get("/login", authWeb.loginForm);
-router.post("/login", validate(webLoginSchema), authWeb.login);
+router.get("/login", redirectIfLoggedIn, loginForm);
+router.post("/login", validate(webLoginSchema), login);
 
-router.get("/signup", authWeb.signupForm);
-router.post("/signup", upload.single("profilePicture"), validate(webSignUpSchema), authWeb.signup);
+router.get("/signup", redirectIfLoggedIn, signupForm);
+router.post("/signup", upload.single("profilePicture"), validate(webSignUpSchema), signup);
 
-router.get("/logout", authWeb.logout);
+router.get("/logout", logout);
 
-// Protected routes
-router.get("/feed", authenticate, (req, res) => {
-  res.send("Feed page – coming soon");
+// Protected routes – use ensureAuthenticated instead of authenticate
+router.get("/feed", isAuthenticated, (req, res) => {
+  res.send("Feed page - coming soon");
 });
 
 module.exports = router;
