@@ -1,9 +1,9 @@
 const userRouter = require("express").Router();
 
-const { authenticate } = require("../middlewares/auth.middleware");
-const { authorize } = require("../middlewares/authorize.middleware");
-const { ROLES } = require("../constant/role");
-const upload = require("../middlewares/multer");
+const { authenticate } = require("../../middlewares/auth.middleware");
+const { authorize } = require("../../middlewares/authorize.middleware");
+const { ROLES } = require("../../constant/role");
+const upload = require("../../middlewares/multer");
 const {
   userIdParamSchema,
   getAllUsersSchema,
@@ -16,7 +16,7 @@ const {
   getFollowersSchema,
   getFollowingSchema,
   updateProfileSchema,
-} = require("../validations/user.validation");
+} = require("../../validations/user.validation");
 
 const {
   getAllUsers,
@@ -31,10 +31,10 @@ const {
   getFollowers,
   getFollowing,
   updateProfile,
-} = require("../controllers/user.controller");
+} = require("../../controllers/api/user.controller");
 const { validate } = require("express-validation");
-const { cacheMiddleware } = require("../middlewares/cache.middleware");
-const { invalidateCache } = require("../middlewares/invalidate.middleware");
+const { cacheMiddleware } = require("../../middlewares/cache.middleware");
+const { invalidateCache } = require("../../middlewares/invalidate.middleware");
 
 userRouter.use(authenticate);
 

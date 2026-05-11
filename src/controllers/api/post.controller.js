@@ -1,12 +1,12 @@
-const ApiError = require("../utils/ApiError");
-const { successResponse } = require("../utils/ApiResponse");
-const { paginate } = require("../utils/pagination");
-const { ROLES } = require("../constant/role");
+const ApiError = require("../../utils/ApiError");
+const { successResponse } = require("../../utils/ApiResponse");
+const { paginate } = require("../../utils/pagination");
+const { ROLES } = require("../../constant/role");
 
-const { Post, Comment, User, sequelize, PostLike } = require("../models");
-const { getUser, getPost, getSafeUserInclude } = require("../utils/dbHelper");
-const { setCache } = require("../utils/cache");
-const { uploadToCloudinary } = require("../utils/cloudinaryUpload");
+const { Post, Comment, User, sequelize, PostLike } = require("../../models");
+const { getUser, getPost, getSafeUserInclude } = require("../../utils/dbHelper");
+const { setCache } = require("../../utils/cache");
+const { uploadToCloudinary } = require("../../utils/cloudinaryUpload");
 
 // CREATE POST
 exports.createPost = async (req, res, next) => {

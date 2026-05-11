@@ -1,15 +1,15 @@
-const ApiError = require("../utils/ApiError");
-const { successResponse } = require("../utils/ApiResponse");
-const { paginate } = require("../utils/pagination");
-const { ROLES } = require("../constant/role");
+const ApiError = require("../../utils/ApiError");
+const { successResponse } = require("../../utils/ApiResponse");
+const { paginate } = require("../../utils/pagination");
+const { ROLES } = require("../../constant/role");
 
-const { Post, Comment, User, sequelize } = require("../models");
+const { Post, Comment, User, sequelize } = require("../../models");
 const {
   getPost,
   getComment,
   getSafeUserInclude,
-} = require("../utils/dbHelper");
-const { setCache } = require("../utils/cache");
+} = require("../../utils/dbHelper");
+const { setCache } = require("../../utils/cache");
 
 // CREATE COMMENT
 exports.createComment = async (req, res, next) => {
