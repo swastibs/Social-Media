@@ -1,15 +1,15 @@
-const ApiError = require("../utils/ApiError");
-const { ROLES } = require("../constant/role");
-const { sanitizedUser } = require("../utils/sanitizedUser");
-const { successResponse } = require("../utils/ApiResponse");
-const { paginate } = require("../utils/pagination");
+const ApiError = require("../../utils/ApiError");
+const { ROLES } = require("../../constant/role");
+const { sanitizedUser } = require("../../utils/sanitizedUser");
+const { successResponse } = require("../../utils/ApiResponse");
+const { paginate } = require("../../utils/pagination");
 
-const { User, Post, Comment, UserFollow, sequelize } = require("../models");
-const { getUser, getSafeUserInclude } = require("../utils/dbHelper");
-const { setCache } = require("../utils/cache");
+const { User, Post, Comment, UserFollow, sequelize } = require("../../models");
+const { getUser, getSafeUserInclude } = require("../../utils/dbHelper");
+const { setCache } = require("../../utils/cache");
 const { Op } = require("sequelize");
-const cloudinary = require("../config/cloudinary");
-const { uploadToCloudinary } = require("../utils/cloudinaryUpload");
+const cloudinary = require("../../config/cloudinary");
+const { uploadToCloudinary } = require("../../utils/cloudinaryUpload");
 
 // GET ALL USERS
 exports.getAllUsers = async (req, res, next) => {

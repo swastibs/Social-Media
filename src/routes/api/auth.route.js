@@ -1,11 +1,11 @@
 const { validate } = require("express-validation");
 const authRouter = require("express").Router();
 
-const { signUp, logIn, logOut } = require("../controllers/auth.controller");
-const { signUpSchema, logInSchema } = require("../validations/auth.validation");
-const { invalidateCache } = require("../middlewares/invalidate.middleware");
-const { authenticate } = require("../middlewares/auth.middleware");
-const upload = require("../middlewares/multer");
+const { signUp, logIn, logOut } = require("../../controllers/api/auth.controller");
+const { signUpSchema, logInSchema } = require("../../validations/auth.validation");
+const { invalidateCache } = require("../../middlewares/invalidate.middleware");
+const { authenticate } = require("../../middlewares/auth.middleware");
+const upload = require("../../middlewares/multer");
 
 authRouter.post(
   "/signup",
