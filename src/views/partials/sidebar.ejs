@@ -1,23 +1,62 @@
-<div class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
-    <div class="position-sticky pt-3">
-        <div class="text-center mb-4">
-            <a href="/profile/<%= user.id %>">
-                <img src="<%= user.profilePictureUrl || 'https://via.placeholder.com/100' %>" class="rounded-circle img-fluid" style="width: 100px; height: 100px; object-fit: cover;">
-            </a>
-            <h5 class="mt-2"><a href="/profile/<%= user.id %>" class="text-decoration-none"><%= user.name %></a></h5>
-            <p class="text-muted small"><%= user.bio || "No bio yet" %></p>
-            <div class="d-flex justify-content-around">
-                <div><strong><%= user.postsCount %></strong><br>Posts</div>
-                <div><strong><%= user.followersCount %></strong><br>Followers</div>
-                <div><strong><%= user.followingCount %></strong><br>Following</div>
-            </div>
+<aside class="modern-sidebar">
+  <div class="sidebar-header">
+    <a href="/feed" class="brand"><i class="fa-brands fa-instagram"></i><span>PostLoop</span></a>
+  </div>
+
+  <div class="sidebar-profile">
+    <a href="/profile/<%= user.id %>" class="profile-link">
+      <div class="profile-avatar">
+        <% if (user.profilePictureUrl) { %>
+          <img src="<%= user.profilePictureUrl.replace('/upload/', '/upload/w_48,h_48,c_fill,q_auto,f_auto/') %>"
+            alt="<%= user.name %>">
+          <% } else { %>
+            <!-- Optimised picsum placeholder: 48x48, WebP, random seed, optional grayscale -->
+            <img src="https://picsum.photos/seed/<%= user.id %>/48/48.webp?grayscale&random=<%= user.id %>"
+              alt="<%= user.name %>" class="avatar-init-placeholder">
+            <% } %>
+      </div>
+      <div class="profile-info">
+        <div class="profile-name">
+          <%= user.name %>
         </div>
-        <hr>
-        <ul class="nav flex-column">
-            <li class="nav-item"><a class="nav-link" href="/feed"><i class="fas fa-home"></i> Feed</a></li>
-            <li class="nav-item"><a class="nav-link" href="/post/create"><i class="fas fa-plus-circle"></i> Create Post</a></li>
-            <li class="nav-item"><a class="nav-link" href="/search"><i class="fas fa-search"></i> Search</a></li>
-            <li class="nav-item"><a class="nav-link" href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-        </ul>
+        <div class="profile-bio">
+          <%= user.bio ? user.bio.substring(0,45) : 'No bio yet' %>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <div class="sidebar-stats">
+    <div class="stat-item" data-href="/profile/<%= user.id %>?tab=posts">
+      <div class="stat-number">
+        <%= user.postsCount || 0 %>
+      </div>
+      <div class="stat-label">posts</div>
     </div>
-</div>
+    <div class="stat-item" data-modal="followers" data-user-id="<%= user.id %>">
+      <div class="stat-number">
+        <%= user.followersCount || 0 %>
+      </div>
+      <div class="stat-label">followers</div>
+    </div>
+    <div class="stat-item" data-modal="following" data-user-id="<%= user.id %>">
+      <div class="stat-number">
+        <%= user.followingCount || 0 %>
+      </div>
+      <div class="stat-label">following</div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a href="/feed" class="nav-link"><i class="fa-solid fa-house"></i><span>Feed</span></a>
+    <a href="/search" class="nav-link"><i class="fa-solid fa-magnifying-glass"></i><span>Search</span></a>
+    <a href="/post/create" class="nav-link"><i class="fa-solid fa-square-plus"></i><span>Create</span></a>
+    <a href="/profile/<%= user.id %>" class="nav-link"><i class="fa-solid fa-user"></i><span>Profile</span></a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <button id="themeToggle" class="theme-toggle-btn"><i id="themeIcon" class="fa-solid fa-moon"></i><span
+        id="themeText">Dark Mode</span></button>
+    <a href="/logout" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></a>
+  </div>
+</aside>

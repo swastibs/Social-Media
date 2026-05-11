@@ -6,12 +6,19 @@ const { uploadToCloudinary } = require("../../utils/cloudinaryUpload");
 
 exports.landing = (req, res) => {
   if (req.user) return res.redirect("/feed");
-  res.render("landing");
+  res.render("landing", {
+    mode: "login",
+    oldInput: {}
+  });
 };
 
 exports.loginForm = (req, res) => {
   if (req.user) return res.redirect("/feed");
-  res.render("auth/login", { oldInput: req.flash("oldInput")[0] || {} });
+
+  res.render("landing", {
+    mode: "login",
+    oldInput: req.flash("oldInput")[0] || {}
+  });
 };
 
 exports.login = async (req, res, next) => {
@@ -38,7 +45,11 @@ exports.login = async (req, res, next) => {
 
 exports.signupForm = (req, res) => {
   if (req.user) return res.redirect("/feed");
-  res.render("auth/signup", { oldInput: req.flash("oldInput")[0] || {} });
+
+  res.render("landing", {
+    mode: "signup",
+    oldInput: req.flash("oldInput")[0] || {}
+  });
 };
 
 exports.signup = async (req, res, next) => {

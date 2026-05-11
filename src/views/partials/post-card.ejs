@@ -1,0 +1,61 @@
+<div class="post-card <%= post.imageUrl ? 'has-image' : 'no-image' %>" data-post-id="<%= post.id %>"
+    data-post-url="/post/<%= post.id %>" style="cursor: pointer;">
+    <div class="post-header">
+        <div class="post-author-info">
+            <div class="post-author-avatar">
+                <% if (post.User && post.User.profilePictureUrl) { %>
+                    <img src="<%= post.User.profilePictureUrl.replace('/upload/', '/upload/w_40,h_40,c_fill,q_auto,f_auto/') %>"
+                        alt="<%= post.User.name %>" loading="lazy">
+                    <% } else { %>
+                        <img src="https://picsum.photos/seed/<%= post.User ? post.User.id : 'guest' %>/40/40.webp?grayscale&random=<%= post.User ? post.User.id : Math.random() %>"
+                            alt="<%= post.User ? post.User.name : 'User' %>" loading="lazy">
+                        <% } %>
+            </div>
+            <div class="post-author-details">
+                <a href="/profile/<%= post.User.id %>" class="post-author-name">
+                    <%= post.User ? post.User.name : 'Unknown User' %>
+                </a>
+                <span class="post-time">
+                    <%= new Date(post.createdAt).toLocaleDateString('en-GB') %>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <% if (post.imageUrl) { %>
+        <div class="post-image">
+            <img src="<%= post.imageUrl.replace('/upload/', '/upload/w_400,c_limit,q_auto,f_auto/') %>" alt="Post image"
+                loading="lazy">
+        </div>
+        <% } else { %>
+            <!-- Optional: a small placeholder to maintain card aspect ratio (commented out) -->
+            <!-- <div class="post-placeholder" style="height: 120px; background: var(--bg-muted);"></div> -->
+            <% } %>
+
+                <div class="post-body">
+                    <p class="post-text">
+                        <%= post.content ? post.content.substring(0, 120) : '' %>
+                            <%= (post.content && post.content.length> 120) ? '...' : '' %>
+                    </p>
+                </div>
+
+                <div class="post-buttons">
+                    <button class="post-action like-action <%= post.liked ? 'liked' : '' %>"
+                        data-post-id="<%= post.id %>">
+                        <i class="fa-regular fa-heart"></i>
+                        <span class="like-count-display">
+                            <%= post.likeCount || 0 %>
+                        </span>
+                        <span>
+                            <%= post.liked ? 'Unlike' : 'Like' %>
+                        </span>
+                    </button>
+                    <button class="post-action comment-action" data-post-url="/post/<%= post.id %>">
+                        <i class="fa-regular fa-comment"></i>
+                        <span class="comment-count-display">
+                            <%= post.commentCount || 0 %>
+                        </span>
+                        <span>Comments</span>
+                    </button>
+                </div>
+</div>

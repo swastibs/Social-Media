@@ -25,6 +25,8 @@ app.set("views", path.join(__dirname, "src/views"));
 connectDB();
 connectMongo();
 
+app.use(express.static(path.join(__dirname, "src/public")));
+
 app.use(
   "/api-docs",
   swaggerUi.serve,

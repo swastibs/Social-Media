@@ -21,6 +21,7 @@ const Post = sequelize.define(
       { fields: ["isDeleted"] },
       { fields: ["createdAt"] },
       { fields: ["userId", "isDeleted"] },
+      { fields: ["isDeleted", "createdAt", "userId"] }
     ],
   },
 );
