@@ -1,0 +1,104 @@
+<div class="profile-list-container">
+    <div class="list-header">
+        <h2>
+            <%= profileUser.name %>'s Followers
+        </h2>
+        <a href="/profile/<%= profileUser.id %>" class="back-link">← Back to Profile</a>
+    </div>
+
+    <div class="users-grid">
+        <% if (users.length===0) { %>
+            <div class="empty-state">No followers yet.</div>
+            <% } else { %>
+                <% users.forEach(user=> { %>
+                    <div class="user-card" data-href="/profile/<%= user.id %>">
+                        <div class="user-card-avatar">
+                            <% if (user.profilePictureUrl) { %>
+                                <img src="<%= user.profilePictureUrl.replace('/upload/', '/upload/w_64,h_64,c_fill,q_auto,f_auto/') %>"
+                                    alt="<%= user.name %>">
+                                <% } else { %>
+                                    <div class="avatar-initials large">
+                                        <%= user.name.substring(0,2).toUpperCase() %>
+                                    </div>
+                                    <% } %>
+                        </div>
+                        <div class="user-card-info">
+                            <h3 class="user-card-name">
+                                <%= user.name %>
+                            </h3>
+                            <p class="user-card-bio">
+                                <%= user.bio ? user.bio.substring(0,80) : 'No bio yet' %>
+                            </p>
+                            <div class="user-card-stats">
+                                <span><i class="fa-regular fa-newspaper"></i>
+                                    <%= user.postsCount || 0 %> posts
+                                </span>
+                                <span><i class="fa-regular fa-user"></i>
+                                    <%= user.followersCount || 0 %> followers
+                                </span>
+                            </div>
+                        </div>
+                        <% if (currentUser && currentUser.id !==user.id) { %>
+                            <button class="list-follow-btn <%= followStatusMap[user.id] ? 'following' : '' %>"
+                                data-user-id="<%= user.id %>">
+                                <%= followStatusMap[user.id] ? 'Unfollow' : 'Follow' %>
+                            </button>
+                            <% } %>
+                    </div>
+                    <% }) %>
+                        <% } %>
+    </div>
+
+    <!-- Pagination -->
+    <% if (pagination.totalPages> 1) { %>
+        <div class="pagination-container">
+            <ul class="pagination">
+                <% if (pagination.hasPrev) { %>
+                    <li class="page-item"><a class="page-link" href="?page=<%= pagination.currentPage - 1 %>">&laquo;
+                            Previous</a></li>
+                    <% } %>
+                        <% for (let i=1; i <=pagination.totalPages; i++) { %>
+                            <li class="page-item <%= i === pagination.currentPage ? 'active' : '' %>">
+                                <a class="page-link" href="?page=<%= i %>">
+                                    <%= i %>
+                                </a>
+                            </li>
+                            <% } %>
+                                <% if (pagination.hasNext) { %>
+                                    <li class="page-item"><a class="page-link"
+                                            href="?page=<%= pagination.currentPage + 1 %>">Next &raquo;</a></li>
+                                    <% } %>
+            </ul>
+            <div class="pagination-info">Page <%= pagination.currentPage %> of <%= pagination.totalPages %>
+            </div>
+        </div>
+        <% } %>
+</div>
+
+<script>
+    document.querySelectorAll('.list-follow-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const userId = btn.dataset.userId;
+            try {
+                const res = await axios.post(`/follow/${userId}`);
+                if (res.data.following) {
+                    btn.textContent = 'Unfollow';
+                    btn.classList.add('following');
+                } else {
+                    btn.textContent = 'Follow';
+                    btn.classList.remove('following');
+                }
+                // Optionally update follower counts on the card (simple refresh not needed)
+            } catch (err) { console.error(err); }
+        });
+    });
+
+    document.querySelectorAll('.user-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            if (e.target.tagName !== 'BUTTON') {
+                window.location.href = card.dataset.href;
+            }
+        });
+    });
+</script>

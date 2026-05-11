@@ -5,7 +5,7 @@
 
   <div class="sidebar-profile">
     <a href="/profile/<%= user.id %>" class="profile-link">
-      <div class="profile-avatar">
+      <div class="profile-avatar-side-bar">
         <% if (user.profilePictureUrl) { %>
           <img src="<%= user.profilePictureUrl.replace('/upload/', '/upload/w_48,h_48,c_fill,q_auto,f_auto/') %>"
             alt="<%= user.name %>">

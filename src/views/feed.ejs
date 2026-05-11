@@ -26,6 +26,18 @@
             </div>
         </div>
 
+        <script>
+            // Add click redirection for each suggestion card (except on the follow button)
+            document.querySelectorAll('.suggestion-horizontal-item').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    // If the click target is the follow button (or inside it), do nothing – let the button's own handler work.
+                    if (e.target.closest('.suggestion-horizontal-follow-btn')) return;
+                    const href = card.getAttribute('data-href');
+                    if (href) window.location.href = href;
+                });
+            });
+        </script>
+
         <!-- Posts grid -->
         <% if (posts.length===0) { %>
             <div class="empty-feed">
@@ -65,7 +77,8 @@
                                                                     class="page-item <%= i === pagination.currentPage ? 'active' : '' %>">
                                                                     <a class="page-link" href="?page=<%= i %>">
                                                                         <%= i %>
-                                                                    </a></li>
+                                                                    </a>
+                                                                </li>
                                                                 <% } %>
                                                                     <% if (endPage < pagination.totalPages) { %>
                                                                         <% if (endPage < pagination.totalPages - 1) { %>
@@ -144,4 +157,13 @@
             });
         });
     })();
+
+    document.querySelectorAll('.suggestion-horizontal-item').forEach(card => {
+        card.addEventListener('click', (e) => {
+            // If the click target is the follow button (or inside it), do nothing – let the button's own handler work.
+            if (e.target.closest('.suggestion-horizontal-follow-btn')) return;
+            const href = card.getAttribute('data-href');
+            if (href) window.location.href = href;
+        });
+    });
 </script>
