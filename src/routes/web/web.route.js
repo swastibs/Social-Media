@@ -12,12 +12,14 @@ const { toggleFollow } = require("../../controllers/web/user.web");
 const { renderProfile, renderFollowers, renderFollowing, renderEditProfile, updateProfile } = require("../../controllers/web/profile.web");
 const { createPostForm, createPost, postDetail, editPostForm, updatePost, deletePost, toggleLike } = require("../../controllers/web/post.web");
 const { createPostSchema, updatePostSchema, postIdParamSchema } = require("../../validations/web/post.validation");
+const { createComment, updateComment, deleteComment, } = require("../../controllers/web/comment.web");
+const { createCommentSchema, updateCommentSchema, commentIdParamSchema, } = require("../../validations/web/comment.validation");
 
 // ========== PUBLIC ROUTES ==========
 router.get("/", redirectIfLoggedIn, landing);
 router.get("/login", redirectIfLoggedIn, loginForm);
 router.get("/signup", redirectIfLoggedIn, signupForm);
-router.get("/logout", logout);
+router.post("/logout", isAuthenticated, logout);
 
 // ========== PROTECTED ROUTES (require login) ==========
 // Static routes (must come before dynamic ones)
@@ -47,4 +49,10 @@ router.post("/post/edit/:postId", isAuthenticated, upload.single("image"), valid
 router.post("/post/delete/:postId", isAuthenticated, validate(postIdParamSchema), deletePost);
 router.post("/post/:postId/like", isAuthenticated, validate(postIdParamSchema), toggleLike);
 
+// Comment routes (AJAX)
+router.post("/comment/create", isAuthenticated, validate(createCommentSchema), createComment);
+router.put("/comment/:commentId", isAuthenticated, validate(updateCommentSchema), updateComment);
+router.delete("/comment/:commentId", isAuthenticated, validate(commentIdParamSchema), deleteComment);
+
 module.exports = router;
+

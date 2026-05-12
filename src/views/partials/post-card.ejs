@@ -1,5 +1,7 @@
-<div class="post-card <%= post.imageUrl ? 'has-image' : 'no-image' %>" data-post-id="<%= post.id %>"
-    data-post-url="/post/<%= post.id %>" style="cursor: pointer;">
+<div class="post-card <%= post.imageUrl ? 'has-image' : 'no-image' %>" data-post-id="<%= post.id %>">
+    <!-- Clickable link over the whole card (positioned behind content) -->
+    <a href="/post/<%= post.id %>" class="post-card-link" aria-label="View post details"></a>
+
     <div class="post-header">
         <div class="post-author-info">
             <div class="post-author-avatar">

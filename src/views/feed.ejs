@@ -115,9 +115,19 @@
                         <% } %>
     </div>
 </div>
-
 <script>
     (function () {
+        // Suggestion card redirection
+        const suggestionCards = document.querySelectorAll('.suggestion-horizontal-item');
+        suggestionCards.forEach(card => {
+            card.addEventListener('click', (e) => {
+                if (e.target.closest('.suggestion-horizontal-follow-btn')) return;
+                const href = card.getAttribute('data-href');
+                if (href) window.location.href = href;
+            });
+        });
+        suggestionCards.length = 0;   // free NodeList
+
         // Follow buttons inside suggestions
         const followBtns = document.querySelectorAll('.suggestion-horizontal-follow-btn');
         followBtns.forEach(btn => {
@@ -140,7 +150,6 @@
                 } catch (err) { console.error(err); }
             });
         });
-        // Free NodeList
         followBtns.length = 0;
 
         // Follow buttons inside post cards
@@ -189,4 +198,7 @@
         });
         likeBtns.length = 0;
     })();
+
+    // Additional post card click handler (optional – if not using the <a> tag)
+    // Already handled by the anchor overlay in post-card.ejs
 </script>

@@ -60,9 +60,7 @@ exports.postDetail = async (req, res, next) => {
 
     const post = await Post.findOne({
       where: { id: postId, isDeleted: false },
-      include: [
-        getSafeUserInclude({ attributes: ["id", "name", "profilePictureUrl"] }),
-      ],
+      include: [getSafeUserInclude({ attributes: ["id", "name", "profilePictureUrl"] })]
     });
 
     if (!post) {
@@ -74,26 +72,31 @@ exports.postDetail = async (req, res, next) => {
     let liked = false;
     if (req.user) {
       const like = await PostLike.findOne({
-        where: { userId: req.user.id, postId: post.id },
+        where: { userId: req.user.id, postId: post.id }
       });
       liked = !!like;
     }
 
     // Get comments with pagination
-    const { data: comments, pagination } = await paginate({
+    let { data: comments, pagination } = await paginate({
       model: Comment,
       where: { postId: post.id, isDeleted: false },
-      include: [
-        getSafeUserInclude({ attributes: ["id", "name", "profilePictureUrl"] }),
-      ],
+      include: [getSafeUserInclude({ attributes: ["id", "name", "profilePictureUrl"] })],
       order: [["createdAt", "DESC"]],
       page,
-      limit,
+      limit
     });
+
+    // ✅ Calculate isEditable for each comment (within 15 minutes)
+    const now = new Date();
+    comments = comments.map(comment => ({
+      ...comment.toJSON(),
+      isEditable: (now - new Date(comment.createdAt)) <= 15 * 60 * 1000
+    }));
 
     // Count total comments
     const totalComments = await Comment.count({
-      where: { postId: post.id, isDeleted: false },
+      where: { postId: post.id, isDeleted: false }
     });
 
     res.render("post-detail", {
@@ -103,7 +106,7 @@ exports.postDetail = async (req, res, next) => {
       post: {
         ...post.toJSON(),
         liked,
-        commentCount: totalComments,
+        commentCount: totalComments
       },
       comments,
       pagination: {
@@ -111,8 +114,8 @@ exports.postDetail = async (req, res, next) => {
         totalPages: Math.ceil(totalComments / limit),
         totalItems: totalComments,
         hasPrev: page > 1,
-        hasNext: page < Math.ceil(totalComments / limit),
-      },
+        hasNext: page < Math.ceil(totalComments / limit)
+      }
     });
   } catch (err) {
     next(err);

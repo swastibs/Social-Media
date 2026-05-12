@@ -37,16 +37,15 @@ cloudinary.config({
 ========================= */
 
 const CONFIG = {
-  USERS: 10,
+  USERS: 20,
   POSTS_PER_USER: 10,
-  COMMENTS_PER_POST: 5,
-  LIKES_RATIO: 0.3,
+  COMMENTS_PER_POST: 3,
+  LIKES_RATIO: 0.2,
 
-  MIN_FOLLOWING: 3,
-  MAX_FOLLOWING: 8,
+  MIN_FOLLOWING: 2,
+  MAX_FOLLOWING: 5,
 
-  BATCH_SIZE: 100,
-  CLOUDINARY_IMAGES_TO_UPLOAD: 50,
+  CLOUDINARY_IMAGES_TO_UPLOAD: 15,
 };
 
 /* =========================
@@ -107,21 +106,18 @@ const generateRandomName = () => {
     }
 
     if (faker?.person?.fullName) {
-      return faker.person.fullName().replace(/\s/g, "").toLowerCase();
+      return faker.person
+        .fullName()
+        .replace(/\s/g, "")
+        .toLowerCase();
     }
   } catch (e) { }
 
   return `user${randomInt(1000, 9999)}`;
 };
 
-const generateRandomEmail = (name) => {
-  try {
-    if (faker?.internet?.email) {
-      return faker.internet.email();
-    }
-  } catch (e) { }
-
-  return `${name}${randomInt(1, 999)}@gmail.com`;
+const generateRandomEmail = (name, index) => {
+  return `${name}${index}${Date.now()}@gmail.com`;
 };
 
 const getRandomBio = () =>
@@ -133,6 +129,7 @@ const generatePostContent = () => {
 
   if (content.includes("{tech}")) {
     const tech = technologies[randomInt(0, technologies.length - 1)];
+
     content = content.replace("{tech}", tech);
   }
 
@@ -222,6 +219,69 @@ const seed = async () => {
     console.log("✅ Database connected");
 
     /* =========================
+       CLEAN DATABASE
+    ========================= */
+
+    console.log("\n🧹 Cleaning database...");
+
+    await sequelize.query("SET FOREIGN_KEY_CHECKS = 0");
+
+    await UserFollow.destroy({
+      where: {},
+      truncate: true,
+      force: true,
+    });
+
+    await PostLike.destroy({
+      where: {},
+      truncate: true,
+      force: true,
+    });
+
+    await Comment.destroy({
+      where: {},
+      truncate: true,
+      force: true,
+    });
+
+    await Post.destroy({
+      where: {},
+      truncate: true,
+      force: true,
+    });
+
+    await User.destroy({
+      where: {},
+      truncate: true,
+      force: true,
+    });
+
+    await sequelize.query("SET FOREIGN_KEY_CHECKS = 1");
+
+    console.log("✅ Database cleaned");
+
+    /* =========================
+       CLEAN CLOUDINARY
+    ========================= */
+
+    console.log("\n☁️ Cleaning Cloudinary folder...");
+
+    try {
+      await cloudinary.api.delete_resources_by_prefix(
+        "postloop/posts",
+      );
+
+      await cloudinary.api.delete_folder("postloop/posts");
+
+      console.log("✅ Cloudinary cleaned");
+    } catch (error) {
+      console.log(
+        "⚠️ Cloudinary cleanup skipped:",
+        error.message,
+      );
+    }
+
+    /* =========================
        FETCH IMAGES
     ========================= */
 
@@ -245,7 +305,9 @@ const seed = async () => {
     );
 
     for (let i = 0; i < uploadLimit; i++) {
-      const uploaded = await uploadImageToCloudinary(picsumImages[i]);
+      const uploaded = await uploadImageToCloudinary(
+        picsumImages[i],
+      );
 
       if (uploaded?.imageUrl) {
         uploadedCloudinaryImages.push(uploaded);
@@ -270,7 +332,10 @@ const seed = async () => {
 
     transaction = await sequelize.transaction();
 
-    const hashedPassword = await bcrypt.hash("password123", 10);
+    const hashedPassword = await bcrypt.hash(
+      "password123",
+      10,
+    );
 
     /* =========================
        USERS
@@ -306,7 +371,7 @@ const seed = async () => {
       const user = await User.create(
         {
           name,
-          email: generateRandomEmail(name),
+          email: generateRandomEmail(name, i),
           password: hashedPassword,
           role: "user",
           bio: Math.random() > 0.3 ? getRandomBio() : null,
@@ -346,7 +411,10 @@ const seed = async () => {
         if (Math.random() > 0.4) {
           const randomImage =
             uploadedCloudinaryImages[
-            randomInt(0, uploadedCloudinaryImages.length - 1)
+            randomInt(
+              0,
+              uploadedCloudinaryImages.length - 1,
+            )
             ];
 
           imageUrl = randomImage.imageUrl;
@@ -395,7 +463,10 @@ const seed = async () => {
     let totalComments = 0;
 
     for (const post of createdPosts) {
-      const commentsCount = randomInt(1, CONFIG.COMMENTS_PER_POST);
+      const commentsCount = randomInt(
+        1,
+        CONFIG.COMMENTS_PER_POST,
+      );
 
       for (let i = 0; i < commentsCount; i++) {
         const randomUser =

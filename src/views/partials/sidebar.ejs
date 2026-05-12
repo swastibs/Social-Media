@@ -57,7 +57,12 @@
   <div class="sidebar-footer">
     <button id="themeToggle" class="theme-toggle-btn"><i id="themeIcon" class="fa-solid fa-moon"></i><span
         id="themeText">Dark Mode</span></button>
-    <a href="/logout" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></a>
+    <form method="POST" action="/logout" style="display: inline; width: 100%;">
+      <button type="submit" class="logout-btn"
+        style="background: none; border: none; width: 100%; text-align: left; cursor: pointer;">
+        <i class="fa-solid fa-right-from-bracket"></i> <span>Logout</span>
+      </button>
+    </form>
   </div>
 </aside>
 

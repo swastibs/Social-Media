@@ -64,7 +64,7 @@
 
         <div id="commentsList">
             <% if (comments.length===0) { %>
-                <p class="text-muted">No comments yet. Be the first!</p>
+                <p class="text-muted" id="noCommentsMsg">No comments yet. Be the first!</p>
                 <% } else { %>
                     <% comments.forEach(comment=> { %>
                         <div class="comment-item" id="comment-<%= comment.id %>">
@@ -87,14 +87,18 @@
                                         <%= new Date(comment.createdAt).toLocaleString() %>
                                     </span>
                                 </div>
-                                <p class="comment-text">
+                                <p class="comment-text" id="comment-text-<%= comment.id %>">
                                     <%= comment.content %>
                                 </p>
                                 <% if (currentUser && (currentUser.id===comment.userId || currentUser.id===post.userId
                                     || currentUser.role==='admin' )) { %>
                                     <div class="comment-actions">
-                                        <button class="delete-comment-btn" data-comment-id="<%= comment.id %>"
-                                            data-post-id="<%= post.id %>">Delete</button>
+                                        <% if (currentUser.id===comment.userId && comment.isEditable) { %>
+                                            <button class="edit-comment-btn" data-comment-id="<%= comment.id %>"
+                                                data-post-id="<%= post.id %>">Edit</button>
+                                            <% } %>
+                                                <button class="delete-comment-btn" data-comment-id="<%= comment.id %>"
+                                                    data-post-id="<%= post.id %>">Delete</button>
                                     </div>
                                     <% } %>
                             </div>
@@ -103,7 +107,7 @@
                             <% } %>
         </div>
 
-        <!-- Pagination for comments -->
+        <!-- Pagination for comments (full page reload) -->
         <% if (pagination.totalPages> 1) { %>
             <div class="pagination-comments">
                 <% for (let i=1; i <=pagination.totalPages; i++) { %>
@@ -116,44 +120,266 @@
     </div>
 </div>
 
+<style>
+    .comment-item {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .comment-avatar {
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        overflow: hidden;
+        background: var(--primary-color);
+    }
+
+    .comment-content {
+        flex: 1;
+    }
+
+    .comment-author {
+        display: flex;
+        gap: 0.5rem;
+        align-items: baseline;
+        flex-wrap: wrap;
+        margin-bottom: 0.25rem;
+    }
+
+    .comment-time {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+    }
+
+    .comment-text {
+        margin: 0.25rem 0;
+    }
+
+    .comment-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 0.25rem;
+    }
+
+    .edit-comment-btn,
+    .delete-comment-btn {
+        background: none;
+        border: none;
+        font-size: 0.7rem;
+        cursor: pointer;
+    }
+
+    .edit-comment-btn {
+        color: var(--primary-color);
+    }
+
+    .delete-comment-btn {
+        color: var(--error-color);
+    }
+
+    .edit-textarea {
+        width: 100%;
+        margin-bottom: 0.5rem;
+        padding: 0.5rem;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--bg-color);
+        color: var(--text-color);
+    }
+
+    .pagination-comments {
+        margin-top: 1rem;
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+    }
+
+    .like-btn.liked {
+        color: #ef4444;
+    }
+</style>
+
 <script>
-    // Like button AJAX
-    document.querySelector('.like-btn').addEventListener('click', async function () {
+    // ========== LIKE BUTTON ==========
+    document.querySelector('.like-btn')?.addEventListener('click', async function () {
         const postId = this.dataset.postId;
         try {
             const res = await axios.post(`/post/${postId}/like`);
             this.querySelector('.like-count').innerText = res.data.likeCount;
-            if (res.data.liked) {
-                this.classList.add('liked');
-            } else {
-                this.classList.remove('liked');
-            }
+            if (res.data.liked) this.classList.add('liked');
+            else this.classList.remove('liked');
         } catch (err) { console.error(err); }
     });
 
-    // Post comment AJAX
-    document.getElementById('postCommentBtn').addEventListener('click', async function () {
+    // ========== CREATE COMMENT ==========
+    document.getElementById('postCommentBtn')?.addEventListener('click', async function () {
         const postId = this.dataset.postId;
         const content = document.getElementById('commentContent').value.trim();
         if (!content) return;
         try {
-            const res = await axios.post(`/api/comments`, { postId, content });
+            const res = await axios.post('/comment/create', { postId, content });
             if (res.data.success) {
-                location.reload(); // simple reload – could dynamically append
+                const newComment = res.data.comment;
+                const noCommentsMsg = document.getElementById('noCommentsMsg');
+                if (noCommentsMsg) noCommentsMsg.remove();
+
+                const commentHtml = `
+                    <div class="comment-item" id="comment-${newComment.id}">
+                        <div class="comment-avatar">
+                            ${newComment.User.profilePictureUrl
+                        ? `<img src="${newComment.User.profilePictureUrl.replace('/upload/', '/upload/w_32,h_32,c_fill,q_auto,f_auto/')}" alt="${escapeHtml(newComment.User.name)}">`
+                        : `<div class="avatar-initials tiny">${escapeHtml(newComment.User.name.substring(0, 2).toUpperCase())}</div>`}
+                        </div>
+                        <div class="comment-content">
+                            <div class="comment-author">
+                                <a href="/profile/${newComment.User.id}">${escapeHtml(newComment.User.name)}</a>
+                                <span class="comment-time">Just now</span>
+                            </div>
+                            <p class="comment-text">${escapeHtml(newComment.content)}</p>
+                            <div class="comment-actions">
+                                <button class="edit-comment-btn" data-comment-id="${newComment.id}" data-post-id="${postId}">Edit</button>
+                                <button class="delete-comment-btn" data-comment-id="${newComment.id}" data-post-id="${postId}">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('commentsList').insertAdjacentHTML('afterbegin', commentHtml);
+                document.getElementById('commentContent').value = '';
+                attachCommentEvents();
+                updateCommentCount(res.data.commentCount);
             }
         } catch (err) { console.error(err); }
     });
 
-    // Delete comment AJAX (optional, but we'll use POST form)
-    document.querySelectorAll('.delete-comment-btn').forEach(btn => {
-        btn.addEventListener('click', async function () {
-            if (!confirm('Delete this comment?')) return;
-            const commentId = this.dataset.commentId;
-            const postId = this.dataset.postId;
+    // ========== DELETE COMMENT ==========
+    async function deleteComment(commentId) {
+        try {
+            const res = await axios.delete(`/comment/${commentId}`);
+            if (res.data.success) {
+                const commentElem = document.getElementById(`comment-${commentId}`);
+                if (commentElem) commentElem.remove();
+                updateCommentCount(res.data.commentCount);
+                if (!document.querySelector('.comment-item')) {
+                    document.getElementById('commentsList').innerHTML = '<p class="text-muted" id="noCommentsMsg">No comments yet. Be the first!</p>';
+                }
+                commentElem?.remove(); // already done
+            }
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to delete comment');
+        }
+    }
+
+    // ========== EDIT COMMENT ==========
+    async function editComment(commentId) {
+        const commentDiv = document.getElementById(`comment-${commentId}`);
+        if (!commentDiv) return;
+        const textP = commentDiv.querySelector('.comment-text');
+        const actionsDiv = commentDiv.querySelector('.comment-actions');
+        if (!textP) return;
+        const currentText = textP.innerText;
+
+        // Hide original
+        textP.style.display = 'none';
+        if (actionsDiv) actionsDiv.style.display = 'none';
+
+        const textarea = document.createElement('textarea');
+        textarea.value = currentText;
+        textarea.classList.add('edit-textarea');
+        const saveBtn = document.createElement('button');
+        saveBtn.innerText = 'Save';
+        saveBtn.classList.add('btn-primary');
+        const cancelBtn = document.createElement('button');
+        cancelBtn.innerText = 'Cancel';
+        cancelBtn.classList.add('btn-secondary');
+
+        const commentContentDiv = commentDiv.querySelector('.comment-content');
+        if (commentContentDiv) {
+            commentContentDiv.appendChild(textarea);
+            commentContentDiv.appendChild(saveBtn);
+            commentContentDiv.appendChild(cancelBtn);
+        } else {
+            commentDiv.insertBefore(textarea, actionsDiv);
+            commentDiv.insertBefore(saveBtn, actionsDiv);
+            commentDiv.insertBefore(cancelBtn, actionsDiv);
+        }
+
+        saveBtn.onclick = async () => {
+            const newContent = textarea.value.trim();
+            if (!newContent) return;
             try {
-                await axios.delete(`/api/comments/${commentId}`);
-                document.getElementById(`comment-${commentId}`).remove();
-            } catch (err) { console.error(err); }
+                const res = await axios.put(`/comment/${commentId}`, { content: newContent });
+                if (res.data.success) {
+                    textP.innerText = newContent;
+                    textP.style.display = 'block';
+                    if (actionsDiv) actionsDiv.style.display = 'flex';
+                    textarea.remove();
+                    saveBtn.remove();
+                    cancelBtn.remove();
+                    // nullify references to free memory
+                    textarea = null;
+                    saveBtn = null;
+                    cancelBtn = null;
+                } else {
+                    alert(res.data.message || 'Edit failed');
+                }
+            } catch (err) {
+                console.error(err);
+                alert(err.response?.data?.message || 'Edit failed');
+            }
+        };
+        cancelBtn.onclick = () => {
+            textP.style.display = 'block';
+            if (actionsDiv) actionsDiv.style.display = 'flex';
+            textarea.remove();
+            saveBtn.remove();
+            cancelBtn.remove();
+            // nullify references to free memory
+            textarea = null;
+            saveBtn = null;
+            cancelBtn = null;
+        };
+    }
+
+    // Helper to attach events to dynamically created comment buttons
+    function attachCommentEvents() {
+        const deleteBtns = document.querySelectorAll('.delete-comment-btn');
+        deleteBtns.forEach(btn => {
+            btn.removeEventListener('click', btn._deleteHandler);
+            btn._deleteHandler = () => deleteComment(btn.dataset.commentId);
+            btn.addEventListener('click', btn._deleteHandler);
         });
-    });
+        const editBtns = document.querySelectorAll('.edit-comment-btn');
+        editBtns.forEach(btn => {
+            btn.removeEventListener('click', btn._editHandler);
+            btn._editHandler = () => editComment(btn.dataset.commentId);
+            btn.addEventListener('click', btn._editHandler);
+        });
+        // Free NodeLists after attaching
+        deleteBtns.length = 0;
+        editBtns.length = 0;
+    }
+
+    function updateCommentCount(newCount) {
+        const countSpan = document.querySelector('.comment-count');
+        if (countSpan) countSpan.innerHTML = `<i class="fa-regular fa-comment"></i> ${newCount} comments`;
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function (m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // Initial attachment
+    attachCommentEvents();
+
+    // Nullify any global temporary variables (none in this scope)
 </script>

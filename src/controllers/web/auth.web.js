@@ -5,6 +5,7 @@ const {
   storeToken,
   deleteToken,
   deleteAllUserTokens,
+  removeTokenFromUser
 } = require("../../utils/authCache");
 const { uploadToCloudinary } = require("../../utils/cloudinaryUpload");
 
@@ -94,7 +95,9 @@ exports.logout = async (req, res) => {
 
   if (token) {
     await deleteToken(token);
-    await removeTokenFromUser(userId, token);
+    if (userId)
+      await removeTokenFromUser(userId, token);
+
   }
 
   res.clearCookie("token");
