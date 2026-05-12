@@ -4,8 +4,8 @@ const { validate } = require("express-validation");
 
 const { redirectIfLoggedIn, isAuthenticated } = require("../../middlewares/auth.middleware");
 const upload = require("../../middlewares/multer");
-const { landing, loginForm, login, signupForm, signup, logout } = require("../../controllers/web/auth.web");
-const { webSignUpSchema, webLoginSchema } = require("../../validations/web/auth.validation");
+const { landing, loginForm, login, signupForm, signup, logout, changePasswordForm, changePassword } = require("../../controllers/web/auth.web");
+const { webSignUpSchema, webLoginSchema, changePasswordSchema } = require("../../validations/web/auth.validation");
 const { updateProfileSchema, userIdParamSchema } = require("../../validations/web/profile.validation");
 const { renderFeed } = require("../../controllers/web/feed.web");
 const { toggleFollow } = require("../../controllers/web/user.web");
@@ -20,6 +20,7 @@ router.get("/logout", logout);
 
 // ========== PROTECTED ROUTES (require login) ==========
 // Static routes (must come before dynamic ones)
+router.get("/change-password", isAuthenticated, changePasswordForm);
 router.get("/feed", isAuthenticated, renderFeed);
 router.get("/profile/edit", isAuthenticated, renderEditProfile);
 
@@ -34,5 +35,7 @@ router.post("/signup", upload.single("profilePicture"), validate(webSignUpSchema
 router.post("/follow/:userId", isAuthenticated, validate(userIdParamSchema), toggleFollow);
 router.post("/post/:postId/like", isAuthenticated, toggleLike);
 router.post("/profile/edit", isAuthenticated, upload.single("profilePicture"), validate(updateProfileSchema), updateProfile);
+router.post("/change-password", isAuthenticated, validate(changePasswordSchema), changePassword);
+
 
 module.exports = router;

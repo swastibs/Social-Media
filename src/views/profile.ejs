@@ -17,6 +17,7 @@
                 </h2>
                 <% if (currentUser && currentUser.id===profileUser.id) { %>
                     <a href="/profile/edit" class="edit-profile-btn">Edit Profile</a>
+                    <a href="/change-password" class="edit-profile-btn">Change Password</a>
                     <% } else if (currentUser && currentUser.id !==profileUser.id) { %>
                         <button class="follow-profile-btn <%= follows ? 'unfollow' : '' %>"
                             data-user-id="<%= profileUser.id %>">

@@ -24,3 +24,16 @@ exports.logInSchema = {
   params: Joi.object().max(0),
   query: Joi.object().max(0),
 };
+
+exports.changePasswordSchema = {
+  body: Joi.object({
+    oldPassword: Joi.string().required().messages({
+      "any.required": "Old password is required",
+    }),
+    newPassword: Joi.string().min(4).max(32).required().messages({
+      "string.min": "New password must be at least 4 characters",
+      "string.max": "New password cannot exceed 32 characters",
+      "any.required": "New password is required",
+    }),
+  }).unknown(false),
+};
