@@ -58,13 +58,34 @@ exports.renderFeed = async (req, res, next) => {
     try {
         const currentUser = req.user;
         const page = Math.max(1, parseInt(req.query.page) || 1);
-        const limit = 16;               // 4 columns × 4 rows = 16 posts per page
+        const limit = 16;
         const offset = (page - 1) * limit;
 
         const followingIds = await getFollowingIds(currentUser.id);
-        const posts = await getFeedPosts(currentUser.id, limit, offset, followingIds);
+        let posts = await getFeedPosts(currentUser.id, limit, offset, followingIds);
         const totalPostsCount = await Post.count({ where: { isDeleted: false } });
         const totalPages = Math.ceil(totalPostsCount / limit);
+
+        // ----- ADD FOLLOW STATUS TO POST AUTHORS -----
+        const authorIds = [...new Set(posts.map(p => p.userId).filter(id => id && id !== currentUser.id))];
+        let followStatusMap = {};
+        if (authorIds.length) {
+            const follows = await UserFollow.findAll({
+                where: {
+                    followerId: currentUser.id,
+                    followingId: { [Op.in]: authorIds }
+                },
+                attributes: ["followingId"],
+                raw: true
+            });
+            const followingSet = new Set(follows.map(f => f.followingId));
+            followStatusMap = Object.fromEntries(authorIds.map(id => [id, followingSet.has(id)]));
+        }
+        posts = posts.map(post => ({
+            ...post,
+            isFollowing: followStatusMap[post.userId] || false
+        }));
+        // ---------------------------------------------
 
         const excludeSuggestionIds = [...followingIds, currentUser.id];
         const suggestedUsers = await User.findAll({
@@ -86,6 +107,7 @@ exports.renderFeed = async (req, res, next) => {
         res.render("feed", {
             title: "Feed",
             user: userWithCounts,
+            currentUser: userWithCounts,      // pass for the partial
             suggestedUsers,
             posts,
             pagination: {

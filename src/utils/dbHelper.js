@@ -12,7 +12,7 @@ const { ROLES } = require("../constant/role");
  * @returns {object} Sequelize include object for User model
  */
 const getSafeUserInclude = (options = {}) => {
-  const { attributes = ["id", "name"] } = options;
+  const { attributes = ["id", "name", "profilePictureUrl"] } = options;
   return {
     model: User,
     attributes,

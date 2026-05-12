@@ -27,7 +27,7 @@
                                 <%= user.name %>
                             </h3>
                             <p class="user-card-bio">
-                                <%= user.bio ? user.bio.substring(0,80) : 'No bio yet' %>
+                                <%= user.bio ? user.bio.substring(0,80) : '' %>
                             </p>
                             <div class="user-card-stats">
                                 <span><i class="fa-regular fa-newspaper"></i>
@@ -76,7 +76,8 @@
 </div>
 
 <script>
-    document.querySelectorAll('.list-follow-btn').forEach(btn => {
+    const followBtns = document.querySelectorAll('.list-follow-btn');
+    followBtns.forEach(btn => {
         btn.addEventListener('click', async (e) => {
             e.stopPropagation();
             const userId = btn.dataset.userId;
@@ -85,20 +86,26 @@
                 if (res.data.following) {
                     btn.textContent = 'Unfollow';
                     btn.classList.add('following');
+                    const followingSpan = document.getElementById('sidebar-following-count');
+                    if (followingSpan) followingSpan.innerText = parseInt(followingSpan.innerText) + 1;
                 } else {
                     btn.textContent = 'Follow';
                     btn.classList.remove('following');
+                    const followingSpan = document.getElementById('sidebar-following-count');
+                    if (followingSpan) followingSpan.innerText = parseInt(followingSpan.innerText) - 1;
                 }
-                // Optionally update follower counts on the card (simple refresh not needed)
             } catch (err) { console.error(err); }
         });
     });
+    followBtns.length = 0;   // free NodeList
 
-    document.querySelectorAll('.user-card').forEach(card => {
+    const userCards = document.querySelectorAll('.user-card');
+    userCards.forEach(card => {
         card.addEventListener('click', (e) => {
             if (e.target.tagName !== 'BUTTON') {
                 window.location.href = card.dataset.href;
             }
         });
     });
+    userCards.length = 0;
 </script>

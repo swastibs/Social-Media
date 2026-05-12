@@ -7,12 +7,12 @@
     <a href="/profile/<%= user.id %>" class="profile-link">
       <div class="profile-avatar-side-bar">
         <% if (user.profilePictureUrl) { %>
-          <img src="<%= user.profilePictureUrl.replace('/upload/', '/upload/w_48,h_48,c_fill,q_auto,f_auto/') %>"
+          <img src="<%= user.profilePictureUrl.replace('/upload/', '/upload/w_128,h_128,c_fill,q_auto,f_auto/') %>"
             alt="<%= user.name %>">
           <% } else { %>
-            <!-- Optimised picsum placeholder: 48x48, WebP, random seed, optional grayscale -->
-            <img src="https://picsum.photos/seed/<%= user.id %>/48/48.webp?grayscale&random=<%= user.id %>"
-              alt="<%= user.name %>" class="avatar-init-placeholder">
+            <div class="avatar-initials" style="width:48px; height:48px; font-size:1.2rem;">
+              <%= user.name.substring(0,2).toUpperCase() %>
+            </div>
             <% } %>
       </div>
       <div class="profile-info">
@@ -20,31 +20,31 @@
           <%= user.name %>
         </div>
         <div class="profile-bio">
-          <%= user.bio ? user.bio.substring(0,45) : 'No bio yet' %>
+          <%= user.bio ? user.bio.substring(0,45) : '' %>
         </div>
       </div>
     </a>
   </div>
 
   <div class="sidebar-stats">
-    <div class="stat-item" data-href="/profile/<%= user.id %>?tab=posts">
+    <a href="/profile/<%= user.id %>" class="stat-item">
       <div class="stat-number">
         <%= user.postsCount || 0 %>
       </div>
       <div class="stat-label">posts</div>
-    </div>
-    <div class="stat-item" data-modal="followers" data-user-id="<%= user.id %>">
-      <div class="stat-number">
+    </a>
+    <a href="/profile/<%= user.id %>/followers" class="stat-item">
+      <div class="stat-number" id="sidebar-followers-count">
         <%= user.followersCount || 0 %>
       </div>
       <div class="stat-label">followers</div>
-    </div>
-    <div class="stat-item" data-modal="following" data-user-id="<%= user.id %>">
-      <div class="stat-number">
+    </a>
+    <a href="/profile/<%= user.id %>/following" class="stat-item">
+      <div class="stat-number" id="sidebar-following-count">
         <%= user.followingCount || 0 %>
       </div>
       <div class="stat-label">following</div>
-    </div>
+    </a>
   </div>
 
   <nav class="sidebar-nav">
@@ -60,3 +60,12 @@
     <a href="/logout" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></a>
   </div>
 </aside>
+
+<script>
+  window.updateSidebarCounts = function (followingCount, followersCount) {
+    const followingSpan = document.getElementById('sidebar-following-count');
+    const followersSpan = document.getElementById('sidebar-followers-count');
+    if (followingSpan && followingCount !== undefined) followingSpan.innerText = followingCount;
+    if (followersSpan && followersCount !== undefined) followersSpan.innerText = followersCount;
+  };
+</script>

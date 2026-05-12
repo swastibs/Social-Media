@@ -269,51 +269,41 @@
   </section>
 
   <script>
-
-    if (
-      document.cookie
-        .split("; ")
-        .find(row => row.startsWith("token="))
-    ) {
+    if (document.cookie.split("; ").find(row => row.startsWith("token="))) {
       window.location.href = "/feed";
     }
 
     const loginTab = document.getElementById("loginTab");
     const signupTab = document.getElementById("signupTab");
-
-    loginTab.addEventListener("click", showLogin);
-    signupTab.addEventListener("click", showSignup);
+    const loginPanel = document.getElementById("loginPanel");
+    const signupPanel = document.getElementById("signupPanel");
 
     function showLogin() {
-
       loginTab.classList.add("active");
       signupTab.classList.remove("active");
-
       loginPanel.classList.add("active");
       signupPanel.classList.remove("active");
     }
 
     function showSignup() {
-
       signupTab.classList.add("active");
       loginTab.classList.remove("active");
-
       signupPanel.classList.add("active");
       loginPanel.classList.remove("active");
     }
 
     loginTab.addEventListener("click", showLogin);
-
     signupTab.addEventListener("click", showSignup);
 
-    document
-      .getElementById("heroLoginBtn")
-      ?.addEventListener("click", showLogin);
-
-    document
-      .getElementById("heroSignupBtn")
-      ?.addEventListener("click", showSignup);
-
+    // Nullify references after setup (they are no longer needed outside the event handlers)
+    // The DOM elements and functions are still referenced by the event listeners,
+    // but we clear the global variables to avoid accidental reuse and allow GC if the listeners are removed.
+    window.loginTab = null;
+    window.signupTab = null;
+    window.loginPanel = null;
+    window.signupPanel = null;
+    window.showLogin = null;
+    window.showSignup = null;
   </script>
 
 </body>

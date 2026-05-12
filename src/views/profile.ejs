@@ -25,7 +25,7 @@
                         <% } %>
             </div>
             <p class="profile-bio">
-                <%= profileUser.bio || 'No bio yet' %>
+                <%= profileUser.bio || '' %>
             </p>
             <div class="profile-stats">
                 <div class="profile-stat" data-href="/profile/<%= profileUser.id %>?tab=posts">
@@ -59,7 +59,7 @@
             <% } else { %>
                 <div class="posts-grid">
                     <% posts.forEach(post=> { %>
-                        <%- include("partials/post-card.ejs", { post }) %>
+                        <%- include("partials/post-card.ejs", { post, hideFollowButton: true }) %>
                             <% }) %>
                 </div>
                 <% } %>
@@ -87,7 +87,8 @@
                                                                     class="page-item <%= i === pagination.currentPage ? 'active' : '' %>">
                                                                     <a class="page-link" href="?page=<%= i %>">
                                                                         <%= i %>
-                                                                    </a></li>
+                                                                    </a>
+                                                                </li>
                                                                 <% } %>
                                                                     <% if (endPage < pagination.totalPages) { %>
                                                                         <% if (endPage < pagination.totalPages - 1) { %>
@@ -123,7 +124,6 @@
 </div>
 
 <script>
-    // Follow button on profile (if not owner)
     const followBtn = document.querySelector('.follow-profile-btn');
     if (followBtn) {
         followBtn.addEventListener('click', async () => {
@@ -133,12 +133,15 @@
                 if (res.data.following) {
                     followBtn.textContent = 'Unfollow';
                     followBtn.classList.add('unfollow');
-                    // Increase followers count on page
+                    const sidebarFollowing = document.getElementById('sidebar-following-count');
+                    if (sidebarFollowing) sidebarFollowing.innerText = parseInt(sidebarFollowing.innerText) + 1;
                     const followersSpan = document.querySelector('.profile-stat[data-modal-list="followers"] strong');
                     if (followersSpan) followersSpan.innerText = parseInt(followersSpan.innerText) + 1;
                 } else {
                     followBtn.textContent = 'Follow';
                     followBtn.classList.remove('unfollow');
+                    const sidebarFollowing = document.getElementById('sidebar-following-count');
+                    if (sidebarFollowing) sidebarFollowing.innerText = parseInt(sidebarFollowing.innerText) - 1;
                     const followersSpan = document.querySelector('.profile-stat[data-modal-list="followers"] strong');
                     if (followersSpan) followersSpan.innerText = parseInt(followersSpan.innerText) - 1;
                 }
@@ -146,17 +149,18 @@
         });
     }
 
-    // Redirect stat clicks to followers/following pages
-    document.querySelectorAll('.profile-stat[data-modal-list]').forEach(stat => {
+    const statElements = document.querySelectorAll('.profile-stat[data-modal-list]');
+    statElements.forEach(stat => {
         stat.addEventListener('click', () => {
             const listType = stat.dataset.modalList;
             const userId = stat.dataset.userId || '<%= profileUser.id %>';
             window.location.href = `/profile/${userId}/${listType}`;
         });
     });
+    statElements.length = 0;
 
-    // ✅ Like button handler (copied from feed.ejs)
-    document.querySelectorAll('.like-action').forEach(btn => {
+    const likeBtns = document.querySelectorAll('.like-action');
+    likeBtns.forEach(btn => {
         btn.addEventListener('click', async (e) => {
             e.stopPropagation();
             const postId = btn.dataset.postId;
@@ -176,4 +180,5 @@
             }
         });
     });
+    likeBtns.length = 0;
 </script>

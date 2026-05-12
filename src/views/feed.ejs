@@ -13,8 +13,9 @@
                                 <img src="<%= user.profilePictureUrl.replace('/upload/', '/upload/w_60,h_60,c_fill,q_auto,f_auto/') %>"
                                     alt="<%= user.name %>" loading="lazy">
                                 <% } else { %>
-                                    <img src="https://picsum.photos/seed/<%= user.id %>/60/60.webp?grayscale&random=<%= user.id %>"
-                                        alt="<%= user.name %>" loading="lazy">
+                                    <div class="avatar-initials" style="width:60px; height:60px; font-size:1.5rem;">
+                                        <%= user.name.substring(0,2).toUpperCase() %>
+                                    </div>
                                     <% } %>
                         </div>
                         <span class="suggestion-horizontal-name">
@@ -27,15 +28,17 @@
         </div>
 
         <script>
-            // Add click redirection for each suggestion card (except on the follow button)
-            document.querySelectorAll('.suggestion-horizontal-item').forEach(card => {
+            // Redirect whole suggestion card except on follow button
+            const suggestionCards = document.querySelectorAll('.suggestion-horizontal-item');
+            suggestionCards.forEach(card => {
                 card.addEventListener('click', (e) => {
-                    // If the click target is the follow button (or inside it), do nothing – let the button's own handler work.
                     if (e.target.closest('.suggestion-horizontal-follow-btn')) return;
                     const href = card.getAttribute('data-href');
                     if (href) window.location.href = href;
                 });
             });
+            // Free the NodeList after attaching listeners
+            suggestionCards.length = 0;
         </script>
 
         <!-- Posts grid -->
@@ -49,7 +52,7 @@
             <% } else { %>
                 <div class="posts-grid" id="postsGrid">
                     <% posts.forEach(post=> { %>
-                        <%- include("partials/post-card.ejs", { post }) %>
+                        <%- include("partials/post-card.ejs", { post, currentUser: locals.currentUser }) %>
                             <% }) %>
                 </div>
                 <% } %>
@@ -115,7 +118,7 @@
 
 <script>
     (function () {
-        // Follow buttons
+        // Follow buttons inside suggestions
         const followBtns = document.querySelectorAll('.suggestion-horizontal-follow-btn');
         followBtns.forEach(btn => {
             btn.addEventListener('click', async (e) => {
@@ -126,17 +129,47 @@
                     if (res.data.following) {
                         btn.textContent = 'Unfollow';
                         btn.classList.add('following');
+                        const followingSpan = document.getElementById('sidebar-following-count');
+                        if (followingSpan) followingSpan.innerText = parseInt(followingSpan.innerText) + 1;
                     } else {
                         btn.textContent = 'Follow';
                         btn.classList.remove('following');
+                        const followingSpan = document.getElementById('sidebar-following-count');
+                        if (followingSpan) followingSpan.innerText = parseInt(followingSpan.innerText) - 1;
                     }
                 } catch (err) { console.error(err); }
             });
         });
-        followBtns.length = 0;  // free memory
+        // Free NodeList
+        followBtns.length = 0;
+
+        // Follow buttons inside post cards
+        const postFollowBtns = document.querySelectorAll('.post-follow-btn');
+        postFollowBtns.forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const userId = btn.dataset.userId;
+                try {
+                    const res = await axios.post(`/follow/${userId}`);
+                    if (res.data.following) {
+                        btn.textContent = 'Unfollow';
+                        btn.classList.add('following');
+                        const followingSpan = document.getElementById('sidebar-following-count');
+                        if (followingSpan) followingSpan.innerText = parseInt(followingSpan.innerText) + 1;
+                    } else {
+                        btn.textContent = 'Follow';
+                        btn.classList.remove('following');
+                        const followingSpan = document.getElementById('sidebar-following-count');
+                        if (followingSpan) followingSpan.innerText = parseInt(followingSpan.innerText) - 1;
+                    }
+                } catch (err) { console.error(err); }
+            });
+        });
+        postFollowBtns.length = 0;
 
         // Like buttons
-        document.querySelectorAll('.like-action').forEach(btn => {
+        const likeBtns = document.querySelectorAll('.like-action');
+        likeBtns.forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 const postId = btn.dataset.postId;
@@ -151,19 +184,9 @@
                         btn.classList.remove('liked');
                         btn.innerHTML = '<i class="fa-regular fa-heart"></i> <span class="like-count-display">' + res.data.likeCount + '</span> <span>Like</span>';
                     }
-                } catch (err) {
-                    console.error('Like error:', err);
-                }
+                } catch (err) { console.error(err); }
             });
         });
+        likeBtns.length = 0;
     })();
-
-    document.querySelectorAll('.suggestion-horizontal-item').forEach(card => {
-        card.addEventListener('click', (e) => {
-            // If the click target is the follow button (or inside it), do nothing – let the button's own handler work.
-            if (e.target.closest('.suggestion-horizontal-follow-btn')) return;
-            const href = card.getAttribute('data-href');
-            if (href) window.location.href = href;
-        });
-    });
 </script>

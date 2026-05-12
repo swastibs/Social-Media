@@ -1,7 +1,9 @@
+const cloudinary = require("cloudinary").v2;
 const { User, Post, PostLike, Comment, UserFollow, sequelize } = require("../../models");
 const { ROLES } = require("../../constant/role");
 const { Op } = require("sequelize");
 const { getSafeUserInclude } = require("../../utils/dbHelper");
+const { uploadToCloudinary } = require("../../utils/cloudinaryUpload");
 
 // Helper to check if currentUser follows targetUser
 const isFollowing = async (currentUserId, targetUserId) => {
@@ -16,7 +18,7 @@ const isFollowing = async (currentUserId, targetUserId) => {
 exports.renderProfile = async (req, res, next) => {
     try {
         const currentUser = req.user;
-        const profileUserId = parseInt(req.params.userId);
+        const profileUserId = parseInt(req.params.userId, 10);
         const page = Math.max(1, parseInt(req.query.page) || 1);
         const limit = 12;
         const offset = (page - 1) * limit;
@@ -73,7 +75,7 @@ exports.renderProfile = async (req, res, next) => {
 
         res.render("profile", {
             title: `${profileUser.name} · Profile`,
-            user: currentUser,              // for sidebar in main.ejs
+            user: currentUser,
             currentUser,
             profileUser,
             posts: postsWithMeta,
@@ -96,7 +98,7 @@ exports.renderProfile = async (req, res, next) => {
 exports.renderFollowers = async (req, res, next) => {
     try {
         const currentUser = req.user;
-        const profileUserId = parseInt(req.params.userId);
+        const profileUserId = parseInt(req.params.userId, 10);
         const page = Math.max(1, parseInt(req.query.page) || 1);
         const limit = 20;
         const offset = (page - 1) * limit;
@@ -136,7 +138,7 @@ exports.renderFollowers = async (req, res, next) => {
 
         res.render("followers", {
             title: `Followers of ${profileUser.name}`,
-            user: currentUser,              // for sidebar
+            user: currentUser,
             currentUser,
             profileUser,
             users: followers,
@@ -159,7 +161,7 @@ exports.renderFollowers = async (req, res, next) => {
 exports.renderFollowing = async (req, res, next) => {
     try {
         const currentUser = req.user;
-        const profileUserId = parseInt(req.params.userId);
+        const profileUserId = parseInt(req.params.userId, 10);
         const page = Math.max(1, parseInt(req.query.page) || 1);
         const limit = 20;
         const offset = (page - 1) * limit;
@@ -199,7 +201,7 @@ exports.renderFollowing = async (req, res, next) => {
 
         res.render("following", {
             title: `Users followed by ${profileUser.name}`,
-            user: currentUser,              // for sidebar
+            user: currentUser,
             currentUser,
             profileUser,
             users: following,
@@ -214,6 +216,72 @@ exports.renderFollowing = async (req, res, next) => {
             type: "following",
         });
     } catch (error) {
+        next(error);
+    }
+};
+
+// Render edit profile form
+exports.renderEditProfile = async (req, res, next) => {
+    try {
+        const user = req.user;
+        res.render("profile-edit", {
+            title: "Edit Profile",
+            user: user,
+            currentUser: user,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Update profile (name, bio, profile picture) - validation is now in the router
+exports.updateProfile = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const { name, bio, removeImage } = req.body;
+        const file = req.file;
+
+        const user = await User.findByPk(userId);
+        if (!user) {
+            req.flash("error_msg", "User not found");
+            return res.redirect("/profile/edit");
+        }
+
+        // Update name and bio
+        user.name = name.trim();
+        user.bio = bio ? bio.trim() : null;
+
+        // Handle profile picture
+        let newUpload = null;
+        const oldPublicId = user.profilePicturePublicId;
+
+        if (file) {
+            newUpload = await uploadToCloudinary(file, "postloop/profiles");
+            user.profilePictureUrl = newUpload.secure_url;
+            user.profilePicturePublicId = newUpload.public_id;
+        }
+
+        if (removeImage === "true" && user.profilePicturePublicId) {
+            await cloudinary.uploader.destroy(user.profilePicturePublicId);
+            user.profilePictureUrl = null;
+            user.profilePicturePublicId = null;
+        }
+
+        await user.save();
+
+        // Delete old image if replaced
+        if (file && oldPublicId) {
+            await cloudinary.uploader.destroy(oldPublicId);
+        }
+
+        req.flash("success_msg", "Profile updated successfully");
+        res.redirect(`/profile/${userId}`);
+    } catch (error) {
+        if (req.file && error && error.public_id) {
+            try {
+                await cloudinary.uploader.destroy(error.public_id);
+            } catch (_) { }
+        }
         next(error);
     }
 };
