@@ -13,10 +13,24 @@
 
         <div class="form-group">
             <label for="image">Image (optional)</label>
-            <input type="file" id="image" name="image" accept="image/*" class="form-file">
+
+            <div class="custom-file-upload">
+                <label for="image" class="file-upload-label">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    Choose an image
+                </label>
+                <input type="file" id="image" name="image" accept="image/*">
+                <div id="fileNameDisplay" class="file-name" style="display: none;">
+                    <i class="fas fa-check-circle"></i>
+                    <span id="selectedFileName"></span>
+                    <span class="remove-file" onclick="removeFile()">
+                        <i class="fas fa-times"></i> Remove
+                    </span>
+                </div>
+            </div>
             <div id="imagePreview" class="image-preview" style="display: none;">
                 <img src="" alt="Preview">
-                <button type="button" data-remove-image data-input="image">Remove</button>
+                <button type="button" data-remove-image data-input="image">Remove Image</button>
             </div>
         </div>
 
@@ -28,21 +42,64 @@
 </div>
 
 <script>
-    document.getElementById('image').addEventListener('change', function (e) {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function (event) {
-                const preview = document.getElementById('imagePreview');
-                const img = preview.querySelector('img');
-                img.src = event.target.result;
-                preview.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
+    (function () {
+        const imageInput = document.getElementById('image');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const selectedFileName = document.getElementById('selectedFileName');
+        const imagePreview = document.getElementById('imagePreview');
+        const removeBtn = document.querySelector('[data-remove-image]');
+        const fileLabel = document.querySelector('.file-upload-label');
+
+        let reader = null;
+
+        function removeFile() {
+            if (imageInput) imageInput.value = '';
+            if (imagePreview) imagePreview.style.display = 'none';
+            if (fileNameDisplay) fileNameDisplay.style.display = 'none';
+            if (reader) {
+                reader = null;
+            }
         }
-    });
-    document.querySelector('[data-remove-image]')?.addEventListener('click', function () {
-        document.getElementById('image').value = '';
-        document.getElementById('imagePreview').style.display = 'none';
-    });
+
+        function handleFileChange(e) {
+            const file = e.target.files[0];
+            if (file && imagePreview && fileNameDisplay && selectedFileName) {
+                selectedFileName.textContent = file.name;
+                fileNameDisplay.style.display = 'flex';
+
+                if (reader) {
+                    reader = null;
+                }
+                reader = new FileReader();
+                reader.onload = function (event) {
+                    const img = imagePreview.querySelector('img');
+                    if (img) img.src = event.target.result;
+                    if (imagePreview) imagePreview.style.display = 'block';
+                    if (reader) {
+                        reader = null;
+                    }
+                };
+                reader.readAsDataURL(file);
+
+                if (fileLabel) {
+                    fileLabel.classList.add('success');
+                    setTimeout(() => {
+                        if (fileLabel) fileLabel.classList.remove('success');
+                    }, 300);
+                }
+            }
+        }
+
+        function cleanup() {
+            if (reader) reader = null;
+            if (imageInput) imageInput.removeEventListener('change', handleFileChange);
+            if (removeBtn) removeBtn.removeEventListener('click', removeFile);
+        }
+
+        if (imageInput) imageInput.addEventListener('change', handleFileChange);
+        if (removeBtn) removeBtn.addEventListener('click', removeFile);
+
+        window.removeFile = removeFile;
+        window.cleanupCreatePost = cleanup;
+    })();
 </script>

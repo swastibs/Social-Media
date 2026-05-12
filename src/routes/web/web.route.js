@@ -14,6 +14,8 @@ const { createPostForm, createPost, postDetail, editPostForm, updatePost, delete
 const { createPostSchema, updatePostSchema, postIdParamSchema } = require("../../validations/web/post.validation");
 const { createComment, updateComment, deleteComment, } = require("../../controllers/web/comment.web");
 const { createCommentSchema, updateCommentSchema, commentIdParamSchema, } = require("../../validations/web/comment.validation");
+const { searchPage } = require("../../controllers/web/search.web");
+
 
 // ========== PUBLIC ROUTES ==========
 router.get("/", redirectIfLoggedIn, landing);
@@ -53,6 +55,8 @@ router.post("/post/:postId/like", isAuthenticated, validate(postIdParamSchema), 
 router.post("/comment/create", isAuthenticated, validate(createCommentSchema), createComment);
 router.put("/comment/:commentId", isAuthenticated, validate(updateCommentSchema), updateComment);
 router.delete("/comment/:commentId", isAuthenticated, validate(commentIdParamSchema), deleteComment);
+
+router.get("/search", isAuthenticated, searchPage);
 
 module.exports = router;
 

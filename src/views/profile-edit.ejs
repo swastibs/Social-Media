@@ -9,14 +9,12 @@
         <div class="form-group">
             <label for="name">Username</label>
             <input type="text" id="name" name="name" value="<%= user.name %>" required class="form-input">
-            <small>This will be visible on your profile</small>
         </div>
 
         <!-- Bio -->
         <div class="form-group">
             <label for="bio">Bio</label>
             <textarea id="bio" name="bio" rows="4" class="form-textarea"><%= user.bio || '' %></textarea>
-            <small>Tell us a little about yourself</small>
         </div>
 
         <!-- Profile Picture Section -->

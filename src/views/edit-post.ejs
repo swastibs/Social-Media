@@ -6,52 +6,162 @@
 
     <form action="/post/edit/<%= post.id %>" method="POST" enctype="multipart/form-data" class="post-form">
         <div class="form-group">
-            <label for="content">Content</label>
-            <textarea id="content" name="content" rows="6" required class="form-input"><%= post.content %></textarea>
+            <label for="content">
+                <i class="fas fa-pencil-alt"></i> Content
+            </label>
+            <textarea id="content" name="content" rows="6" required class="form-textarea"><%= post.content %></textarea>
         </div>
 
         <div class="form-group">
-            <label for="image">Image (optional)</label>
-            <input type="file" id="image" name="image" accept="image/*" class="form-file">
+            <label for="image">
+                <i class="fas fa-image"></i> Image (optional)
+            </label>
+
+            <div class="custom-file-upload">
+                <label for="image" class="file-upload-label">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    Choose new image
+                </label>
+                <input type="file" id="image" name="image" accept="image/*">
+                <div id="fileNameDisplay" class="file-name" style="display: none;">
+                    <i class="fas fa-check-circle"></i>
+                    <span id="selectedFileName"></span>
+                    <span class="remove-file" onclick="removeNewFile()">
+                        <i class="fas fa-times"></i> Remove
+                    </span>
+                </div>
+            </div>
+
             <% if (post.imageUrl) { %>
-                <div class="current-image">
-                    <p>Current image:</p>
-                    <img src="<%= post.imageUrl %>" alt="Current post image" style="max-width: 200px;">
-                    <label>
-                        <input type="checkbox" name="removeImage" value="true"> Remove image
+                <div class="current-image" id="currentImageSection">
+                    <p>
+                        <i class="fas fa-check-circle" style="color: var(--success-color);"></i>
+                        Current image:
+                    </p>
+                    <img src="<%= post.imageUrl %>" alt="Current post image">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="removeImage" value="true" id="removeImageCheckbox">
+                        <i class="fas fa-trash-alt"></i> Remove current image
                     </label>
                 </div>
                 <% } %>
+
                     <div id="imagePreview" class="image-preview" style="display: none;">
-                        <p>New image preview:</p>
+                        <p>
+                            <i class="fas fa-eye"></i>
+                            New image preview:
+                        </p>
                         <img src="" alt="Preview">
-                        <button type="button" data-remove-image data-input="image">Cancel new image</button>
+                        <button type="button" data-remove-image data-input="image">
+                            <i class="fas fa-times"></i> Cancel new image
+                        </button>
                     </div>
         </div>
 
         <div class="form-actions">
-            <a href="/post/<%= post.id %>" class="btn-secondary">Cancel</a>
-            <button type="submit" class="btn-primary">Update</button>
+            <a href="/post/<%= post.id %>" class="btn-secondary">
+                <i class="fas fa-times"></i> Cancel
+            </a>
+            <button type="submit" class="btn-primary">
+                <i class="fas fa-save"></i> Update Post
+            </button>
         </div>
     </form>
 </div>
 
 <script>
-    document.getElementById('image').addEventListener('change', function (e) {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function (event) {
-                const preview = document.getElementById('imagePreview');
-                const img = preview.querySelector('img');
-                img.src = event.target.result;
-                preview.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
+    (function () {
+        const fileInput = document.getElementById('image');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const selectedFileName = document.getElementById('selectedFileName');
+        const imagePreview = document.getElementById('imagePreview');
+        const currentImageSection = document.getElementById('currentImageSection');
+        const removeImageCheckbox = document.getElementById('removeImageCheckbox');
+        const removeBtn = document.querySelector('[data-remove-image]');
+        const fileLabel = document.querySelector('.file-upload-label');
+        const contentTextarea = document.getElementById('content');
+
+        let reader = null;
+
+        function removeNewFile() {
+            if (fileInput) fileInput.value = '';
+            if (fileNameDisplay) fileNameDisplay.style.display = 'none';
+            if (imagePreview) imagePreview.style.display = 'none';
+            if (currentImageSection) {
+                currentImageSection.style.opacity = '1';
+                currentImageSection.style.pointerEvents = 'auto';
+            }
+            if (reader) {
+                reader = null;
+            }
         }
-    });
-    document.querySelector('[data-remove-image]')?.addEventListener('click', function () {
-        document.getElementById('image').value = '';
-        document.getElementById('imagePreview').style.display = 'none';
-    });
+
+        function handleFileChange(e) {
+            const file = e.target.files[0];
+            if (file && imagePreview && fileNameDisplay && selectedFileName) {
+                selectedFileName.textContent = file.name;
+                fileNameDisplay.style.display = 'flex';
+
+                if (reader) {
+                    reader = null;
+                }
+                reader = new FileReader();
+                reader.onload = function (event) {
+                    const img = imagePreview.querySelector('img');
+                    if (img) img.src = event.target.result;
+                    if (imagePreview) imagePreview.style.display = 'block';
+                    if (reader) {
+                        reader = null;
+                    }
+                };
+                reader.readAsDataURL(file);
+
+                if (fileLabel) {
+                    fileLabel.classList.add('success');
+                    setTimeout(() => {
+                        if (fileLabel) fileLabel.classList.remove('success');
+                    }, 300);
+                }
+
+                if (removeImageCheckbox) {
+                    removeImageCheckbox.checked = false;
+                }
+
+                if (currentImageSection) {
+                    currentImageSection.style.opacity = '0.5';
+                    currentImageSection.style.pointerEvents = 'none';
+                }
+            }
+        }
+
+        function handleCheckboxChange() {
+            if (this.checked) {
+                if (fileInput && fileInput.value) {
+                    removeNewFile();
+                }
+                if (currentImageSection) {
+                    currentImageSection.style.opacity = '0.5';
+                }
+            } else {
+                if (currentImageSection) {
+                    currentImageSection.style.opacity = '1';
+                }
+            }
+        }
+
+        function cleanup() {
+            if (reader) reader = null;
+            if (fileInput) fileInput.removeEventListener('change', handleFileChange);
+            if (removeBtn) removeBtn.removeEventListener('click', removeNewFile);
+            if (removeImageCheckbox) removeImageCheckbox.removeEventListener('change', handleCheckboxChange);
+            if (contentTextarea) contentTextarea.removeEventListener('input', updateCharCount);
+        }
+
+        if (fileInput) fileInput.addEventListener('change', handleFileChange);
+        if (removeBtn) removeBtn.addEventListener('click', removeNewFile);
+        if (removeImageCheckbox) removeImageCheckbox.addEventListener('change', handleCheckboxChange);
+
+        window.removeNewFile = removeNewFile;
+        window.cleanupEditPost = cleanup;
+    })();
 </script>

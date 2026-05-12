@@ -92,7 +92,16 @@
             hamburger.addEventListener('click', toggleSidebar);
             overlay.addEventListener('click', toggleSidebar);
         }
-        
+
+        window.addEventListener('beforeunload', function () {
+            if (window.cleanupFeed) window.cleanupFeed();
+            if (window.cleanupPostDetail) window.cleanupPostDetail();
+            if (window.cleanupProfile) window.cleanupProfile();
+            if (window.cleanupSearch) window.cleanupSearch();
+            if (window.cleanupCreatePost) window.cleanupCreatePost();
+            if (window.cleanupEditPost) window.cleanupEditPost();
+        });
+
     </script>
 </body>
 

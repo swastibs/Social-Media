@@ -295,9 +295,6 @@
     loginTab.addEventListener("click", showLogin);
     signupTab.addEventListener("click", showSignup);
 
-    // Nullify references after setup (they are no longer needed outside the event handlers)
-    // The DOM elements and functions are still referenced by the event listeners,
-    // but we clear the global variables to avoid accidental reuse and allow GC if the listeners are removed.
     window.loginTab = null;
     window.signupTab = null;
     window.loginPanel = null;

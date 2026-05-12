@@ -182,4 +182,32 @@
         });
     });
     likeBtns.length = 0;
+
+    // Add at the end of profile.ejs script
+    (function () {
+        let followBtnRef = null;
+        let statElementsRef = null;
+        let likeBtnsRef = null;
+
+        function cleanupProfile() {
+            if (followBtnRef) {
+                followBtnRef.removeEventListener('click', followBtnRef._handler);
+                followBtnRef = null;
+            }
+            if (statElementsRef) {
+                statElementsRef.forEach(stat => {
+                    stat.removeEventListener('click', stat._handler);
+                });
+                statElementsRef = null;
+            }
+            if (likeBtnsRef) {
+                likeBtnsRef.forEach(btn => {
+                    btn.removeEventListener('click', btn._handler);
+                });
+                likeBtnsRef = null;
+            }
+        }
+
+        window.cleanupProfile = cleanupProfile;
+    })();
 </script>
