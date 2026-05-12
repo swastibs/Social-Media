@@ -9,8 +9,9 @@ const { webSignUpSchema, webLoginSchema, changePasswordSchema } = require("../..
 const { updateProfileSchema, userIdParamSchema } = require("../../validations/web/profile.validation");
 const { renderFeed } = require("../../controllers/web/feed.web");
 const { toggleFollow } = require("../../controllers/web/user.web");
-const { toggleLike } = require("../../controllers/web/post.web");
 const { renderProfile, renderFollowers, renderFollowing, renderEditProfile, updateProfile } = require("../../controllers/web/profile.web");
+const { createPostForm, createPost, postDetail, editPostForm, updatePost, deletePost, toggleLike } = require("../../controllers/web/post.web");
+const { createPostSchema, updatePostSchema, postIdParamSchema } = require("../../validations/web/post.validation");
 
 // ========== PUBLIC ROUTES ==========
 router.get("/", redirectIfLoggedIn, landing);
@@ -37,5 +38,13 @@ router.post("/post/:postId/like", isAuthenticated, toggleLike);
 router.post("/profile/edit", isAuthenticated, upload.single("profilePicture"), validate(updateProfileSchema), updateProfile);
 router.post("/change-password", isAuthenticated, validate(changePasswordSchema), changePassword);
 
+// POST routes (protected)
+router.get("/post/create", isAuthenticated, createPostForm);
+router.post("/post/create", isAuthenticated, upload.single("image"), validate(createPostSchema), createPost);
+router.get("/post/:postId", isAuthenticated, validate(postIdParamSchema), postDetail);
+router.get("/post/edit/:postId", isAuthenticated, validate(postIdParamSchema), editPostForm);
+router.post("/post/edit/:postId", isAuthenticated, upload.single("image"), validate(updatePostSchema), updatePost);
+router.post("/post/delete/:postId", isAuthenticated, validate(postIdParamSchema), deletePost);
+router.post("/post/:postId/like", isAuthenticated, validate(postIdParamSchema), toggleLike);
 
 module.exports = router;

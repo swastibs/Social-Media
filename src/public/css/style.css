@@ -3049,16 +3049,19 @@ a {
   margin: 2rem auto;
   padding: 0 1rem;
 }
+
 .list-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
 }
+
 .back-link {
   color: var(--primary-color);
   text-decoration: none;
 }
+
 .back-link:hover {
   text-decoration: underline;
 }
@@ -3094,9 +3097,11 @@ a {
   cursor: pointer;
   transition: all 0.2s;
 }
+
 .post-follow-btn.following {
   background: var(--error-color);
 }
+
 .post-follow-btn:hover {
   opacity: 0.85;
   transform: scale(1.02);
@@ -3136,9 +3141,11 @@ profile-header {
   color: white;
   text-transform: uppercase;
 }
+
 .avatar-initials.small {
   font-size: 0.75rem;
 }
+
 .avatar-initials.large {
   font-size: 2rem;
 }
@@ -3147,6 +3154,7 @@ profile-header {
   width: 100%;
   overflow: hidden;
 }
+
 .post-image img {
   width: 100%;
   height: auto;
@@ -3194,22 +3202,26 @@ profile-header {
   margin: 2rem auto;
   padding: 0 1rem;
 }
+
 .profile-edit-header {
   text-align: center;
   margin-bottom: 2rem;
 }
+
 .profile-edit-form {
   background: var(--bg-secondary);
   border-radius: 20px;
   padding: 2rem;
   border: 1px solid var(--border-color);
 }
+
 .profile-picture-section {
   display: flex;
   align-items: center;
   gap: 2rem;
   flex-wrap: wrap;
 }
+
 .current-profile-picture {
   width: 100px;
   height: 100px;
@@ -3221,11 +3233,13 @@ profile-header {
     var(--primary-dark)
   );
 }
+
 .profile-picture-actions {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
+
 .checkbox-label {
   display: flex;
   align-items: center;
@@ -3234,6 +3248,7 @@ profile-header {
   font-size: 0.875rem;
   color: var(--error-color);
 }
+
 .form-actions {
   display: flex;
   gap: 1rem;
@@ -3259,4 +3274,138 @@ profile-header {
   background: var(--bg-muted);
   border-color: var(--primary-color);
   transform: translateY(-1px);
+}
+
+.post-detail-container {
+  max-width: 800px;
+  margin: 2rem auto;
+}
+
+.post-content-full {
+  padding: 1rem;
+}
+
+.post-image-full img {
+  width: 100%;
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+.post-actions-footer {
+  display: flex;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.like-btn.liked {
+  color: #ef4444;
+}
+
+.comments-section {
+  margin-top: 2rem;
+}
+
+.comment-item {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.comment-avatar {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--primary-color);
+}
+
+.comment-content {
+  flex: 1;
+}
+
+.comment-author {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.comment-time {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.comment-text {
+  margin: 0.25rem 0;
+}
+
+.comment-actions button {
+  background: none;
+  border: none;
+  color: var(--error-color);
+  cursor: pointer;
+  font-size: 0.7rem;
+}
+
+.add-comment {
+  margin-bottom: 2rem;
+}
+
+#commentContent {
+  width: 100%;
+}
+
+#postCommentBtn {
+  margin-top: 0.5rem;
+}
+
+/* Post owner actions */
+.post-owner-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+  align-items: center;
+}
+
+.post-edit-btn,
+.post-delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.post-edit-btn {
+  color: var(--primary-color);
+}
+
+.post-edit-btn:hover {
+  background: var(--primary-light);
+  transform: scale(1.05);
+}
+
+.post-delete-btn {
+  color: var(--error-color);
+}
+
+.post-delete-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  transform: scale(1.05);
+}
+
+/* Card click redirect – make sure buttons don't trigger card click */
+.post-owner-actions,
+.post-follow-btn,
+.post-action,
+.post-edit-btn,
+.post-delete-btn {
+  position: relative;
+  z-index: 2;
 }

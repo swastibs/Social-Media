@@ -28,6 +28,21 @@
                     <%= post.isFollowing ? 'Unfollow' : 'Follow' %>
                 </button>
                 <% } %>
+                    <!-- Edit/Delete buttons for post owner or admin -->
+                    <% if (locals.currentUser && (locals.currentUser.id===post.userId ||
+                        locals.currentUser.role==='admin' )) { %>
+                        <div class="post-owner-actions">
+                            <a href="/post/edit/<%= post.id %>" class="post-edit-btn" title="Edit Post">
+                                <i class="fa-regular fa-pen-to-square"></i>
+                            </a>
+                            <form method="POST" action="/post/delete/<%= post.id %>" style="display: inline;"
+                                data-confirm="delete-post">
+                                <button type="submit" class="post-delete-btn" title="Delete Post">
+                                    <i class="fa-regular fa-trash-can"></i>
+                                </button>
+                            </form>
+                        </div>
+                        <% } %>
         </div>
     </div>
 
