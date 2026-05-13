@@ -1,0 +1,335 @@
+<div class="search-container">
+    <!-- Search Header -->
+    <div class="search-header">
+        <h1 class="search-title">
+            <i class="fa-solid fa-magnifying-glass"></i> Search
+        </h1>
+        <form action="/search" method="GET" class="search-form">
+            <div class="search-input-wrapper">
+                <i class="fa-solid fa-search search-icon"></i>
+                <input type="text" name="q" value="<%= searchQuery %>"
+                    placeholder="Search for users, posts, or comments..." class="search-input" autocomplete="off" />
+                <% if (searchQuery) { %>
+                    <a href="/search" class="search-clear"><i class="fa-solid fa-xmark"></i></a>
+                    <% } %>
+            </div>
+            <button type="submit" class="search-submit btn-primary">Search</button>
+        </form>
+    </div>
+
+    <% if (searchQuery && searchQuery.length>= 2) { %>
+        <!-- Search Tabs -->
+        <div class="search-tabs">
+            <a href="/search?q=<%= encodeURIComponent(searchQuery) %>&type=all"
+                class="search-tab <%= activeTab === 'all' ? 'active' : '' %>">
+                <i class="fa-solid fa-layer-group"></i> All
+                <span class="tab-count">
+                    <%= results.users.total + results.posts.total + results.comments.total %>
+                </span>
+            </a>
+            <a href="/search?q=<%= encodeURIComponent(searchQuery) %>&type=users"
+                class="search-tab <%= activeTab === 'users' ? 'active' : '' %>">
+                <i class="fa-solid fa-users"></i> Users
+                <span class="tab-count">
+                    <%= results.users.total %>
+                </span>
+            </a>
+            <a href="/search?q=<%= encodeURIComponent(searchQuery) %>&type=posts"
+                class="search-tab <%= activeTab === 'posts' ? 'active' : '' %>">
+                <i class="fa-solid fa-newspaper"></i> Posts
+                <span class="tab-count">
+                    <%= results.posts.total %>
+                </span>
+            </a>
+            <a href="/search?q=<%= encodeURIComponent(searchQuery) %>&type=comments"
+                class="search-tab <%= activeTab === 'comments' ? 'active' : '' %>">
+                <i class="fa-solid fa-comments"></i> Comments
+                <span class="tab-count">
+                    <%= results.comments.total %>
+                </span>
+            </a>
+        </div>
+
+        <!-- ========== USERS SECTION ========== -->
+        <% if (activeTab==='all' || activeTab==='users' ) { %>
+            <% if (results.users.data.length> 0) { %>
+                <div class="results-section">
+                    <h2 class="section-title"><i class="fa-solid fa-users"></i> Users <span class="section-count">
+                            <%= results.users.total %>
+                        </span></h2>
+                    <div class="users-grid">
+                        <% results.users.data.forEach(user=> { %>
+                            <div class="user-card" data-href="/profile/<%= user.id %>">
+                                <div class="user-card-avatar">
+                                    <% if (user.profilePictureUrl) { %>
+                                        <img src="<%= user.profilePictureUrl.replace('/upload/', '/upload/w_64,h_64,c_fill,q_auto,f_auto/') %>"
+                                            alt="<%= user.name %>">
+                                        <% } else { %>
+                                            <div class="avatar-initials large">
+                                                <%= user.name.substring(0,2).toUpperCase() %>
+                                            </div>
+                                            <% } %>
+                                </div>
+                                <div class="user-card-info">
+                                    <h3 class="user-card-name">
+                                        <%= user.name %>
+                                    </h3>
+                                    <p class="user-card-bio">
+                                        <%= user.bio ? user.bio.substring(0,80) : 'No bio yet' %>
+                                    </p>
+                                    <div class="user-card-stats">
+                                        <span><i class="fa-regular fa-newspaper"></i>
+                                            <%= user.postsCount || 0 %> posts
+                                        </span>
+                                        <span><i class="fa-regular fa-user"></i>
+                                            <%= user.followersCount || 0 %> followers
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <% }) %>
+                    </div>
+                    <!-- Pagination for Users -->
+                    <% if (results.users.totalPages> 1) { %>
+                        <div class="pagination-container">
+                            <ul class="pagination">
+                                <% for (let i=1; i <=results.users.totalPages; i++) { %>
+                                    <li class="page-item <%= i === pagination.currentPage ? 'active' : '' %>">
+                                        <a class="page-link"
+                                            href="/search?q=<%= encodeURIComponent(searchQuery) %>&type=users&page=<%= i %>">
+                                            <%= i %>
+                                        </a>
+                                    </li>
+                                    <% } %>
+                            </ul>
+                        </div>
+                        <% } %>
+                </div>
+                <% } else if (activeTab==='users' ) { %>
+                    <div class="empty-results"><i class="fa-solid fa-user-slash"></i>
+                        <h3>No users found</h3>
+                        <p>Try different keywords</p>
+                    </div>
+                    <% } %>
+                        <% } %>
+
+                            <!-- ========== POSTS SECTION ========== -->
+                            <% if (activeTab==='all' || activeTab==='posts' ) { %>
+                                <% if (results.posts.data.length> 0) { %>
+                                    <div class="results-section">
+                                        <h2 class="section-title"><i class="fa-solid fa-newspaper"></i> Posts <span
+                                                class="section-count">
+                                                <%= results.posts.total %>
+                                            </span></h2>
+                                        <div class="posts-grid">
+                                            <% results.posts.data.forEach(post=> { %>
+                                                <div class="post-card <%= post.imageUrl ? 'has-image' : 'no-image' %>"
+                                                    data-post-url="/post/<%= post.id %>">
+                                                    <div class="post-header">
+                                                        <div class="post-author-info">
+                                                            <div class="post-author-avatar">
+                                                                <% if (post.User.profilePictureUrl) { %>
+                                                                    <img src="<%= post.User.profilePictureUrl.replace('/upload/', '/upload/w_40,h_40,c_fill,q_auto,f_auto/') %>"
+                                                                        alt="<%= post.User.name %>">
+                                                                    <% } else { %>
+                                                                        <div class="avatar-initials small">
+                                                                            <%= post.User.name.substring(0,2).toUpperCase()
+                                                                                %>
+                                                                        </div>
+                                                                        <% } %>
+                                                            </div>
+                                                            <div class="post-author-details">
+                                                                <a href="/profile/<%= post.User.id %>"
+                                                                    class="post-author-name">
+                                                                    <%= post.User.name %>
+                                                                </a>
+                                                                <span class="post-time">
+                                                                    <%= new Date(post.createdAt).toLocaleDateString() %>
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <% if (post.imageUrl) { %>
+                                                        <div class="post-image"><img src="<%= post.imageUrl %>"
+                                                                alt="Post image"></div>
+                                                        <% } %>
+                                                            <div class="post-body">
+                                                                <p class="post-text">
+                                                                    <%= post.content.substring(0,120) %>
+                                                                        <%= post.content.length> 120 ? '...' : '' %>
+                                                                </p>
+                                                            </div>
+                                                            <div class="post-buttons">
+                                                                <div class="post-stats">
+                                                                    <span><i class="fa-regular fa-heart"></i>
+                                                                        <%= post.likeCount %>
+                                                                    </span>
+                                                                    <span><i class="fa-regular fa-comment"></i>
+                                                                        <%= post.commentCount || 0 %>
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                </div>
+                                                <% }) %>
+                                        </div>
+                                        <!-- Pagination for Posts -->
+                                        <% if (results.posts.totalPages> 1) { %>
+                                            <div class="pagination-container">
+                                                <ul class="pagination">
+                                                    <% for (let i=1; i <=results.posts.totalPages; i++) { %>
+                                                        <li
+                                                            class="page-item <%= i === pagination.currentPage ? 'active' : '' %>">
+                                                            <a class="page-link"
+                                                                href="/search?q=<%= encodeURIComponent(searchQuery) %>&type=posts&page=<%= i %>">
+                                                                <%= i %>
+                                                            </a>
+                                                        </li>
+                                                        <% } %>
+                                                </ul>
+                                            </div>
+                                            <% } %>
+                                    </div>
+                                    <% } else if (activeTab==='posts' ) { %>
+                                        <div class="empty-results"><i class="fa-regular fa-newspaper"></i>
+                                            <h3>No posts found</h3>
+                                        </div>
+                                        <% } %>
+                                            <% } %>
+
+                                                <!-- ========== COMMENTS SECTION ========== -->
+                                                <% if (activeTab==='all' || activeTab==='comments' ) { %>
+                                                    <% if (results.comments.data.length> 0) { %>
+                                                        <div class="results-section">
+                                                            <h2 class="section-title"><i
+                                                                    class="fa-solid fa-comments"></i> Comments <span
+                                                                    class="section-count">
+                                                                    <%= results.comments.total %>
+                                                                </span></h2>
+                                                            <div class="comments-list">
+                                                                <% results.comments.data.forEach(comment=> { %>
+                                                                    <div class="comment-card"
+                                                                        data-href="/post/<%= comment.Post.id %>">
+                                                                        <div class="comment-card-header">
+                                                                            <div class="comment-author-avatar">
+                                                                                <% if (comment.User.profilePictureUrl) {
+                                                                                    %>
+                                                                                    <img src="<%= comment.User.profilePictureUrl.replace('/upload/', '/upload/w_40,h_40,c_fill,q_auto,f_auto/') %>"
+                                                                                        alt="<%= comment.User.name %>">
+                                                                                    <% } else { %>
+                                                                                        <div
+                                                                                            class="avatar-initials small">
+                                                                                            <%= comment.User.name.substring(0,2).toUpperCase()
+                                                                                                %>
+                                                                                        </div>
+                                                                                        <% } %>
+                                                                            </div>
+                                                                            <div class="comment-author-info">
+                                                                                <a href="/profile/<%= comment.User.id %>"
+                                                                                    class="comment-author-name">
+                                                                                    <%= comment.User.name %>
+                                                                                </a>
+                                                                                <span class="comment-time">commented on
+                                                                                    <%= new
+                                                                                        Date(comment.createdAt).toLocaleDateString()
+                                                                                        %>
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="comment-card-content">
+                                                                            <p class="comment-text">"<%= comment.content
+                                                                                    %>"</p>
+                                                                        </div>
+                                                                        <div class="comment-card-post">
+                                                                            <i class="fa-regular fa-newspaper"></i>
+                                                                            <span>Post: <%=
+                                                                                    comment.Post.content.substring(0,100)
+                                                                                    %>
+                                                                                    <%= comment.Post.content.length> 100
+                                                                                        ? '...' : '' %></span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <% }) %>
+                                                            </div>
+                                                            <!-- Pagination for Comments -->
+                                                            <% if (results.comments.totalPages> 1) { %>
+                                                                <div class="pagination-container">
+                                                                    <ul class="pagination">
+                                                                        <% for (let i=1; i
+                                                                            <=results.comments.totalPages; i++) { %>
+                                                                            <li
+                                                                                class="page-item <%= i === pagination.currentPage ? 'active' : '' %>">
+                                                                                <a class="page-link"
+                                                                                    href="/search?q=<%= encodeURIComponent(searchQuery) %>&type=comments&page=<%= i %>">
+                                                                                    <%= i %>
+                                                                                </a>
+                                                                            </li>
+                                                                            <% } %>
+                                                                    </ul>
+                                                                </div>
+                                                                <% } %>
+                                                        </div>
+                                                        <% } else if (activeTab==='comments' ) { %>
+                                                            <div class="empty-results"><i
+                                                                    class="fa-regular fa-comment-dots"></i>
+                                                                <h3>No comments found</h3>
+                                                            </div>
+                                                            <% } %>
+                                                                <% } %>
+
+                                                                    <% } else if (searchQuery && searchQuery.length < 2)
+                                                                        { %>
+                                                                        <div class="empty-results"><i
+                                                                                class="fa-solid fa-info-circle"></i>
+                                                                            <h3>Search term too short</h3>
+                                                                            <p>Please enter at least 2 characters</p>
+                                                                        </div>
+                                                                        <% } else { %>
+                                                                            <div class="empty-results">
+                                                                                <i
+                                                                                    class="fa-solid fa-magnifying-glass"></i>
+                                                                                <h3>Start searching</h3>
+                                                                                <p>Search for users, posts, or comments
+                                                                                    using the search bar above</p>
+                                                                                <div class="search-tips">
+                                                                                    <h4><i
+                                                                                            class="fa-regular fa-lightbulb"></i>
+                                                                                        Search Tips:</h4>
+                                                                                    <ul>
+                                                                                        <li>Search by username to find
+                                                                                            people</li>
+                                                                                        <li>Search by keywords to find
+                                                                                            posts</li>
+                                                                                        <li>Search for phrases to find
+                                                                                            specific comments</li>
+                                                                                    </ul>
+                                                                                </div>
+                                                                            </div>
+                                                                            <% } %>
+</div>
+
+<script>
+    // Make cards clickable
+    document.querySelectorAll('.user-card, .post-card, .comment-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            if (e.target.closest('button, a, .post-action, .comment-action')) return;
+            const href = card.dataset.href || card.dataset.postUrl;
+            if (href) window.location.href = href;
+        });
+    });
+
+    // Add at the end of search.ejs script
+    (function () {
+        let clickableCards = null;
+
+        function cleanupSearch() {
+            if (clickableCards) {
+                clickableCards.forEach(card => {
+                    card.removeEventListener('click', card._handler);
+                });
+                clickableCards = null;
+            }
+        }
+
+        window.cleanupSearch = cleanupSearch;
+    })();
+</script>

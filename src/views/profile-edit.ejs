@@ -1,0 +1,79 @@
+<div class="profile-edit-container">
+    <div class="profile-edit-header">
+        <h1>Edit Profile</h1>
+        <p>Update your personal information</p>
+    </div>
+
+    <form action="/profile/edit" method="POST" enctype="multipart/form-data" class="profile-edit-form">
+        <!-- Name -->
+        <div class="form-group">
+            <label for="name">Username</label>
+            <input type="text" id="name" name="name" value="<%= user.name %>" required class="form-input">
+        </div>
+
+        <!-- Bio -->
+        <div class="form-group">
+            <label for="bio">Bio</label>
+            <textarea id="bio" name="bio" rows="4" class="form-textarea"><%= user.bio || '' %></textarea>
+        </div>
+
+        <!-- Profile Picture Section -->
+        <div class="form-group">
+            <label>Profile Picture</label>
+            <div class="profile-picture-section">
+                <div class="current-profile-picture">
+                    <% if (user.profilePictureUrl) { %>
+                        <img src="<%= user.profilePictureUrl.replace('/upload/', '/upload/w_100,h_100,c_fill,q_auto,f_auto/') %>"
+                            alt="<%= user.name %>" id="profilePreview">
+                        <% } else { %>
+                            <div class="avatar-initials large" id="profilePreview">
+                                <%= user.name.substring(0,2).toUpperCase() %>
+                            </div>
+                            <% } %>
+                </div>
+                <div class="profile-picture-actions">
+                    <label for="profilePicture" class="btn-secondary">Change Photo</label>
+                    <input type="file" id="profilePicture" name="profilePicture" accept="image/*"
+                        style="display: none;">
+                    <% if (user.profilePictureUrl) { %>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="removeImage" value="true"> Remove current photo
+                        </label>
+                        <% } %>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+            <a href="/profile/<%= user.id %>" class="btn-secondary">Cancel</a>
+            <button type="submit" class="btn-primary">Save Changes</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Preview new profile picture before upload
+    document.getElementById('profilePicture').addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                const preview = document.getElementById('profilePreview');
+                if (preview.tagName === 'IMG') {
+                    preview.src = event.target.result;
+                } else {
+                    // Replace the avatar-initials div with an img
+                    const img = document.createElement('img');
+                    img.id = 'profilePreview';
+                    img.src = event.target.result;
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.objectFit = 'cover';
+                    preview.parentNode.replaceChild(img, preview);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+</script>

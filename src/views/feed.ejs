@@ -1,0 +1,195 @@
+<div class="feed-layout">
+    <div class="feed-main-column">
+        <div class="suggestions-horizontal">
+            <div class="suggestions-horizontal-header">
+                <h3>Suggested for you</h3>
+            </div>
+            <div class="suggestions-horizontal-list">
+                <% suggestedUsers.forEach(user=> { %>
+                    <div class="suggestion-horizontal-item" data-href="/profile/<%= user.id %>">
+                        <div class="suggestion-horizontal-avatar">
+                            <% if (user.profilePictureUrl) { %>
+                                <img src="<%= user.profilePictureUrl.replace('/upload/', '/upload/w_60,h_60,c_fill,q_auto,f_auto/') %>"
+                                    alt="<%= user.name %>" loading="lazy">
+                                <% } else { %>
+                                    <div class="avatar-initials">
+                                        <%= user.name.substring(0,2).toUpperCase() %>
+                                    </div>
+                                    <% } %>
+                        </div>
+                        <span class="suggestion-horizontal-name">
+                            <%= user.name %>
+                        </span>
+                        <button class="suggestion-horizontal-follow-btn" data-user-id="<%= user.id %>">Follow</button>
+                    </div>
+                    <% }) %>
+            </div>
+        </div>
+
+        <% if (posts.length===0) { %>
+            <div class="empty-feed">
+                <i class="fa-regular fa-newspaper"></i>
+                <h3>No posts to show</h3>
+                <p>Follow more users to see their posts here</p>
+                <a href="/search" class="btn-primary">Discover People</a>
+            </div>
+            <% } else { %>
+                <div class="posts-grid" id="postsGrid">
+                    <% posts.forEach(post=> { %>
+                        <%- include("partials/post-card.ejs", { post, currentUser: locals.currentUser }) %>
+                            <% }) %>
+                </div>
+                <% } %>
+
+                    <% if (pagination.totalPages> 1) { %>
+                        <div class="pagination-container">
+                            <ul class="pagination">
+                                <% if (pagination.hasPrev) { %>
+                                    <li class="page-item"><a class="page-link"
+                                            href="?page=<%= pagination.currentPage - 1 %>">&laquo; Previous</a></li>
+                                    <% } %>
+                                        <% const maxVisible=5; let startPage=Math.max(1, pagination.currentPage -
+                                            Math.floor(maxVisible / 2)); let endPage=Math.min(pagination.totalPages,
+                                            startPage + maxVisible - 1); if (endPage - startPage + 1 < maxVisible) {
+                                            startPage=Math.max(1, endPage - maxVisible + 1); } %>
+                                            <% if (startPage> 1) { %>
+                                                <li class="page-item"><a class="page-link" href="?page=1">1</a></li>
+                                                <% if (startPage> 2) { %><li class="page-item disabled"><span
+                                                            class="page-link">...</span></li>
+                                                    <% } %>
+                                                        <% } %>
+                                                            <% for (let i=startPage; i <=endPage; i++) { %>
+                                                                <li
+                                                                    class="page-item <%= i === pagination.currentPage ? 'active' : '' %>">
+                                                                    <a class="page-link" href="?page=<%= i %>">
+                                                                        <%= i %>
+                                                                    </a>
+                                                                </li>
+                                                                <% } %>
+                                                                    <% if (endPage < pagination.totalPages) { %>
+                                                                        <% if (endPage < pagination.totalPages - 1) { %>
+                                                                            <li class="page-item disabled"><span
+                                                                                    class="page-link">...</span></li>
+                                                                            <% } %>
+                                                                                <li class="page-item"><a
+                                                                                        class="page-link"
+                                                                                        href="?page=<%= pagination.totalPages %>">
+                                                                                        <%= pagination.totalPages %>
+                                                                                    </a></li>
+                                                                                <% } %>
+                                                                                    <% if (pagination.hasNext) { %>
+                                                                                        <li class="page-item"><a
+                                                                                                class="page-link"
+                                                                                                href="?page=<%= pagination.currentPage + 1 %>">Next
+                                                                                                &raquo;</a></li>
+                                                                                        <% } %>
+                            </ul>
+                            <div class="pagination-info">
+                                Showing page <strong>
+                                    <%= pagination.currentPage %>
+                                </strong> of <strong>
+                                    <%= pagination.totalPages %>
+                                </strong>
+                                (<strong>
+                                    <%= pagination.totalItems %>
+                                </strong> total posts)
+                            </div>
+                        </div>
+                        <% } %>
+    </div>
+</div>
+
+<script>
+    (function () {
+        let suggestionCards = null;
+        let followBtns = null;
+        let postFollowBtns = null;
+        let likeBtns = null;
+
+        function handleSuggestionClick(e) {
+            if (e.target.closest('.suggestion-horizontal-follow-btn')) return;
+            const href = this.getAttribute('data-href');
+            if (href) window.location.href = href;
+        }
+
+        async function handleFollowClick(e) {
+            e.stopPropagation();
+            const userId = this.dataset.userId;
+            try {
+                const res = await axios.post(`/follow/${userId}`);
+                if (res.data.following) {
+                    this.textContent = 'Unfollow';
+                    this.classList.add('following');
+                    const followingSpan = document.getElementById('sidebar-following-count');
+                    if (followingSpan) followingSpan.innerText = parseInt(followingSpan.innerText) + 1;
+                } else {
+                    this.textContent = 'Follow';
+                    this.classList.remove('following');
+                    const followingSpan = document.getElementById('sidebar-following-count');
+                    if (followingSpan) followingSpan.innerText = parseInt(followingSpan.innerText) - 1;
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        async function handleLikeClick(e) {
+            e.stopPropagation();
+            const postId = this.dataset.postId;
+            try {
+                const res = await axios.post(`/post/${postId}/like`);
+                const likeCountSpan = this.querySelector('.like-count-display');
+                if (likeCountSpan) likeCountSpan.innerText = res.data.likeCount;
+                if (res.data.liked) {
+                    this.classList.add('liked');
+                    this.innerHTML = '<i class="fa-solid fa-heart"></i> <span class="like-count-display">' + res.data.likeCount + '</span> <span>Unlike</span>';
+                } else {
+                    this.classList.remove('liked');
+                    this.innerHTML = '<i class="fa-regular fa-heart"></i> <span class="like-count-display">' + res.data.likeCount + '</span> <span>Like</span>';
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        function init() {
+            suggestionCards = document.querySelectorAll('.suggestion-horizontal-item');
+            suggestionCards.forEach(card => {
+                card.addEventListener('click', handleSuggestionClick);
+            });
+
+            followBtns = document.querySelectorAll('.suggestion-horizontal-follow-btn');
+            followBtns.forEach(btn => {
+                btn.addEventListener('click', handleFollowClick);
+            });
+
+            postFollowBtns = document.querySelectorAll('.post-follow-btn');
+            postFollowBtns.forEach(btn => {
+                btn.addEventListener('click', handleFollowClick);
+            });
+
+            likeBtns = document.querySelectorAll('.like-action');
+            likeBtns.forEach(btn => {
+                btn.addEventListener('click', handleLikeClick);
+            });
+        }
+
+        function cleanup() {
+            if (suggestionCards) {
+                suggestionCards.forEach(card => card.removeEventListener('click', handleSuggestionClick));
+                suggestionCards = null;
+            }
+            if (followBtns) {
+                followBtns.forEach(btn => btn.removeEventListener('click', handleFollowClick));
+                followBtns = null;
+            }
+            if (postFollowBtns) {
+                postFollowBtns.forEach(btn => btn.removeEventListener('click', handleFollowClick));
+                postFollowBtns = null;
+            }
+            if (likeBtns) {
+                likeBtns.forEach(btn => btn.removeEventListener('click', handleLikeClick));
+                likeBtns = null;
+            }
+        }
+
+        init();
+        window.cleanupFeed = cleanup;
+    })();
+</script>

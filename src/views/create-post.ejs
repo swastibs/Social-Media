@@ -1,0 +1,105 @@
+<div class="post-form-container">
+    <div class="form-header">
+        <h1>Create New Post</h1>
+        <p>Share your thoughts with the community</p>
+    </div>
+
+    <form action="/post/create" method="POST" enctype="multipart/form-data" class="post-form">
+        <div class="form-group">
+            <label for="content">Content</label>
+            <textarea id="content" name="content" rows="6" placeholder="What's on your mind?" required
+                class="form-input"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="image">Image (optional)</label>
+
+            <div class="custom-file-upload">
+                <label for="image" class="file-upload-label">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    Choose an image
+                </label>
+                <input type="file" id="image" name="image" accept="image/*">
+                <div id="fileNameDisplay" class="file-name" style="display: none;">
+                    <i class="fas fa-check-circle"></i>
+                    <span id="selectedFileName"></span>
+                    <span class="remove-file" onclick="removeFile()">
+                        <i class="fas fa-times"></i> Remove
+                    </span>
+                </div>
+            </div>
+            <div id="imagePreview" class="image-preview" style="display: none;">
+                <img src="" alt="Preview">
+                <button type="button" data-remove-image data-input="image">Remove Image</button>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="/feed" class="btn-secondary">Cancel</a>
+            <button type="submit" class="btn-primary">Publish</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    (function () {
+        const imageInput = document.getElementById('image');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const selectedFileName = document.getElementById('selectedFileName');
+        const imagePreview = document.getElementById('imagePreview');
+        const removeBtn = document.querySelector('[data-remove-image]');
+        const fileLabel = document.querySelector('.file-upload-label');
+
+        let reader = null;
+
+        function removeFile() {
+            if (imageInput) imageInput.value = '';
+            if (imagePreview) imagePreview.style.display = 'none';
+            if (fileNameDisplay) fileNameDisplay.style.display = 'none';
+            if (reader) {
+                reader = null;
+            }
+        }
+
+        function handleFileChange(e) {
+            const file = e.target.files[0];
+            if (file && imagePreview && fileNameDisplay && selectedFileName) {
+                selectedFileName.textContent = file.name;
+                fileNameDisplay.style.display = 'flex';
+
+                if (reader) {
+                    reader = null;
+                }
+                reader = new FileReader();
+                reader.onload = function (event) {
+                    const img = imagePreview.querySelector('img');
+                    if (img) img.src = event.target.result;
+                    if (imagePreview) imagePreview.style.display = 'block';
+                    if (reader) {
+                        reader = null;
+                    }
+                };
+                reader.readAsDataURL(file);
+
+                if (fileLabel) {
+                    fileLabel.classList.add('success');
+                    setTimeout(() => {
+                        if (fileLabel) fileLabel.classList.remove('success');
+                    }, 300);
+                }
+            }
+        }
+
+        function cleanup() {
+            if (reader) reader = null;
+            if (imageInput) imageInput.removeEventListener('change', handleFileChange);
+            if (removeBtn) removeBtn.removeEventListener('click', removeFile);
+        }
+
+        if (imageInput) imageInput.addEventListener('change', handleFileChange);
+        if (removeBtn) removeBtn.addEventListener('click', removeFile);
+
+        window.removeFile = removeFile;
+        window.cleanupCreatePost = cleanup;
+    })();
+</script>

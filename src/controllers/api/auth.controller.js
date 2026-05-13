@@ -6,7 +6,11 @@ const { ROLES } = require("../../constant/role");
 const { sanitizedUser } = require("../../utils/sanitizedUser");
 const ApiError = require("../../utils/ApiError");
 const { successResponse } = require("../../utils/ApiResponse");
-const { storeToken, deleteToken } = require("../../utils/authCache");
+const {
+  storeToken,
+  deleteToken,
+  deleteAllUserTokens,
+} = require("../../utils/authCache");
 const cloudinary = require("../../config/cloudinary");
 const { uploadToCloudinary } = require("../../utils/cloudinaryUpload");
 
@@ -85,7 +89,7 @@ exports.logIn = async (req, res, next) => {
       { expiresIn: "1d" },
     );
 
-    await storeToken(jwtToken);
+    await storeToken(jwtToken, user.id);
 
     return successResponse(res, {
       message: "Login Success",
@@ -98,12 +102,48 @@ exports.logIn = async (req, res, next) => {
   }
 };
 
+// CHANGE PASSWORD
+exports.changePassword = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { oldPassword, newPassword } = req.body;
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
+
+    // Verify old password
+    const isMatch = await compare(oldPassword, user.password);
+    if (!isMatch) {
+      throw new ApiError(401, "Old password is incorrect");
+    }
+
+    // Hash and update new password
+    const hashedPassword = await hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    await deleteAllUserTokens(userId);
+
+    return successResponse(res, {
+      message: "Password changed successfully. Please login again.",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // LOGOUT
 exports.logOut = async (req, res, next) => {
   try {
-    const token = req.headers.authorization.split(" ")[1];
+    const token = req.headers.authorization?.split(" ")[1];
+    const userId = req.user?.id;
 
-    await deleteToken(token);
+    if (token) {
+      await deleteToken(token);
+      await exports.removeTokenFromUser?.(userId, token);
+    }
 
     return successResponse(res, {
       message: "Logout successful",
