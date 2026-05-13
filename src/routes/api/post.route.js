@@ -25,7 +25,7 @@ const {
   likePostSchema,
   getAllCommentsOfPostSchema,
   getCommentOfPostSchema,
-} = require("../../validations/post.validation");
+} = require("../../validations/api/post.validation");
 const { cacheMiddleware } = require("../../middlewares/cache.middleware");
 const { invalidateCache } = require("../../middlewares/invalidate.middleware");
 

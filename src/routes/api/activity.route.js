@@ -7,7 +7,7 @@ const { authenticate } = require("../../middlewares/auth.middleware");
 const { authorize } = require("../../middlewares/authorize.middleware");
 const { ROLES } = require("../../constant/role");
 
-const { getActivitiesSchema } = require("../../validations/activity.validation");
+const { getActivitiesSchema } = require("../../validations/api/activity.validation");
 
 activityRouter.get(
   "/",

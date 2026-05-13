@@ -41,22 +41,17 @@ const User = sequelize.define(
 
     deletedBy: { type: DataTypes.INTEGER, allowNull: true },
   },
-
   {
     tableName: "users",
     timestamps: true,
     indexes: [
       { unique: true, fields: ["email"] },
-
       { fields: ["name"] },
-
       { fields: ["isDeleted", "isActive"] },
-
       { fields: ["createdAt"], order: [["createdAt", "DESC"]] },
-
       { fields: ["followersCount"] },
-
       { fields: ["followingCount"] },
+      { fields: ["role", "isActive", "isDeleted", "id"] }
     ],
   },
 );

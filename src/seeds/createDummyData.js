@@ -1,26 +1,56 @@
 require("dotenv").config();
-const bcrypt = require("bcrypt");
 
-const { sequelize, User, Post, Comment, UserFollow } = require("../models");
+const bcrypt = require("bcrypt");
+const cloudinary = require("cloudinary").v2;
+
+// Handle both old and new versions of faker
+let faker;
+
+try {
+  const { faker: newFaker } = require("@faker-js/faker");
+  faker = newFaker;
+} catch (e) {
+  faker = require("faker");
+}
+
+const {
+  sequelize,
+  User,
+  Post,
+  Comment,
+  PostLike,
+  UserFollow,
+} = require("../models");
+
+/* =========================
+   CLOUDINARY CONFIG
+========================= */
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+/* =========================
+   CONFIG
+========================= */
 
 const CONFIG = {
-  USERS: 10,
+  USERS: 20,
   POSTS_PER_USER: 10,
-  COMMENTS_PER_POST: 10,
+  COMMENTS_PER_POST: 3,
+  LIKES_RATIO: 0.2,
 
   MIN_FOLLOWING: 2,
   MAX_FOLLOWING: 5,
 
-  BATCH_SIZE: 1000,
+  CLOUDINARY_IMAGES_TO_UPLOAD: 15,
 };
 
-const chunk = (start, size, fn) => {
-  const arr = [];
-  for (let i = 0; i < size; i++) {
-    arr.push(fn(start + i + 1));
-  }
-  return arr;
-};
+/* =========================
+   HELPERS
+========================= */
 
 const randomInt = (min, max) =>
   Math.floor(Math.random() * (max - min + 1)) + min;
@@ -28,163 +58,501 @@ const randomInt = (min, max) =>
 const sampleBios = [
   "Tech enthusiast 🚀",
   "Coffee lover ☕",
-  "Full-stack developer 💻",
-  "Open-source contributor",
-  "Loves building APIs",
-  "Minimalist coder",
-  "JavaScript addict ⚡",
-  "Learning backend systems",
+  "Full-stack developer",
+  "Dreamer ✨",
+  "JavaScript lover ❤️",
+  "Backend engineer",
+  "UI/UX designer",
+  "Open source contributor",
 ];
+
+const technologies = [
+  "React",
+  "Node.js",
+  "MongoDB",
+  "Redis",
+  "Docker",
+  "AWS",
+  "Next.js",
+  "TypeScript",
+];
+
+const postTemplates = [
+  "Just finished building a new feature! 🚀",
+  "Anyone else love working with {tech}?",
+  "Weekend coding session was 🔥",
+  "Coffee and coding ☕",
+  "Learning something new every day 💪",
+  "Working on something exciting ✨",
+];
+
+const commentTemplates = [
+  "Great post 👏",
+  "Amazing 🔥",
+  "Thanks for sharing",
+  "Love this ❤️",
+  "Very useful 🙌",
+  "Awesome work 🚀",
+];
+
+const generateRandomName = () => {
+  try {
+    if (faker?.internet?.username) {
+      return faker.internet.username();
+    }
+
+    if (faker?.internet?.userName) {
+      return faker.internet.userName();
+    }
+
+    if (faker?.person?.fullName) {
+      return faker.person
+        .fullName()
+        .replace(/\s/g, "")
+        .toLowerCase();
+    }
+  } catch (e) { }
+
+  return `user${randomInt(1000, 9999)}`;
+};
+
+const generateRandomEmail = (name, index) => {
+  return `${name}${index}${Date.now()}@gmail.com`;
+};
 
 const getRandomBio = () =>
   sampleBios[Math.floor(Math.random() * sampleBios.length)];
 
+const generatePostContent = () => {
+  let content =
+    postTemplates[Math.floor(Math.random() * postTemplates.length)];
+
+  if (content.includes("{tech}")) {
+    const tech = technologies[randomInt(0, technologies.length - 1)];
+
+    content = content.replace("{tech}", tech);
+  }
+
+  return content;
+};
+
+const generateCommentContent = () => {
+  return commentTemplates[randomInt(0, commentTemplates.length - 1)];
+};
+
+const getRandomDate = () => {
+  const now = new Date();
+
+  const daysAgo = randomInt(0, 30);
+
+  const date = new Date(now);
+
+  date.setDate(date.getDate() - daysAgo);
+
+  return date;
+};
+
+/* =========================
+   FETCH PICSUM IMAGES
+========================= */
+
+async function fetchPicsumImages() {
+  console.log("📸 Fetching Picsum images...");
+
+  const allImages = [];
+
+  for (let page = 1; page <= 3; page++) {
+    try {
+      const response = await fetch(
+        `https://picsum.photos/v2/list?page=${page}&limit=100`,
+      );
+
+      const images = await response.json();
+
+      const urls = images.map((img) => img.download_url);
+
+      allImages.push(...urls);
+
+      console.log(`   Page ${page}: ${urls.length} images`);
+    } catch (error) {
+      console.log(`❌ Error page ${page}:`, error.message);
+    }
+  }
+
+  console.log(`✅ Total fetched images: ${allImages.length}`);
+
+  return allImages;
+}
+
+/* =========================
+   CLOUDINARY UPLOAD
+========================= */
+
+async function uploadImageToCloudinary(imageUrl) {
+  try {
+    const result = await cloudinary.uploader.upload(imageUrl, {
+      folder: "postloop/posts",
+      resource_type: "image",
+    });
+
+    return {
+      imageUrl: result.secure_url,
+      imagePublicId: result.public_id,
+    };
+  } catch (error) {
+    console.log("❌ Cloudinary upload failed:", error.message);
+
+    return null;
+  }
+}
+
+/* =========================
+   MAIN SEEDER
+========================= */
+
 const seed = async () => {
+  let transaction;
+
   try {
     await sequelize.authenticate();
-    console.log("Connected to DB");
 
-    const hashedPassword = await bcrypt.hash("9898", 10);
+    console.log("✅ Database connected");
 
-    /* ---------------- USERS ---------------- */
+    /* =========================
+       CLEAN DATABASE
+    ========================= */
 
-    console.log("Starting USERS insertion...");
+    console.log("\n🧹 Cleaning database...");
 
-    let userIds = [];
-    let userInserted = 0;
+    await sequelize.query("SET FOREIGN_KEY_CHECKS = 0");
 
-    for (let i = 0; i < CONFIG.USERS; i += CONFIG.BATCH_SIZE) {
-      const users = chunk(
-        i,
-        Math.min(CONFIG.BATCH_SIZE, CONFIG.USERS - i),
-        (index) => ({
-          name: `u${index}`,
-          email: `u${index}@gmail.com`,
+    await UserFollow.destroy({
+      where: {},
+      truncate: true,
+      force: true,
+    });
+
+    await PostLike.destroy({
+      where: {},
+      truncate: true,
+      force: true,
+    });
+
+    await Comment.destroy({
+      where: {},
+      truncate: true,
+      force: true,
+    });
+
+    await Post.destroy({
+      where: {},
+      truncate: true,
+      force: true,
+    });
+
+    await User.destroy({
+      where: {},
+      truncate: true,
+      force: true,
+    });
+
+    await sequelize.query("SET FOREIGN_KEY_CHECKS = 1");
+
+    console.log("✅ Database cleaned");
+
+    /* =========================
+       CLEAN CLOUDINARY
+    ========================= */
+
+    console.log("\n☁️ Cleaning Cloudinary folder...");
+
+    try {
+      await cloudinary.api.delete_resources_by_prefix(
+        "postloop/posts",
+      );
+
+      await cloudinary.api.delete_folder("postloop/posts");
+
+      console.log("✅ Cloudinary cleaned");
+    } catch (error) {
+      console.log(
+        "⚠️ Cloudinary cleanup skipped:",
+        error.message,
+      );
+    }
+
+    /* =========================
+       FETCH IMAGES
+    ========================= */
+
+    const picsumImages = await fetchPicsumImages();
+
+    if (!picsumImages.length) {
+      throw new Error("No images fetched");
+    }
+
+    /* =========================
+       UPLOAD TO CLOUDINARY
+    ========================= */
+
+    console.log("\n☁️ Uploading images to Cloudinary...");
+
+    const uploadedCloudinaryImages = [];
+
+    const uploadLimit = Math.min(
+      CONFIG.CLOUDINARY_IMAGES_TO_UPLOAD,
+      picsumImages.length,
+    );
+
+    for (let i = 0; i < uploadLimit; i++) {
+      const uploaded = await uploadImageToCloudinary(
+        picsumImages[i],
+      );
+
+      if (uploaded?.imageUrl) {
+        uploadedCloudinaryImages.push(uploaded);
+      }
+
+      console.log(
+        `   Uploaded ${i + 1}/${uploadLimit} images to Cloudinary`,
+      );
+    }
+
+    if (!uploadedCloudinaryImages.length) {
+      throw new Error("No images uploaded to Cloudinary");
+    }
+
+    console.log(
+      `✅ Uploaded ${uploadedCloudinaryImages.length} images successfully`,
+    );
+
+    /* =========================
+       TRANSACTION
+    ========================= */
+
+    transaction = await sequelize.transaction();
+
+    const hashedPassword = await bcrypt.hash(
+      "password123",
+      10,
+    );
+
+    /* =========================
+       USERS
+    ========================= */
+
+    console.log("\n👥 Creating users...");
+
+    const userIds = [];
+
+    const admin = await User.create(
+      {
+        name: "Admin User",
+        email: "admin@postloop.com",
+        password: hashedPassword,
+        role: "admin",
+        bio: "Platform administrator",
+        profilePictureUrl: null,
+        profilePicturePublicId: null,
+        postsCount: 0,
+        followersCount: 0,
+        followingCount: 0,
+        isActive: true,
+        isDeleted: false,
+      },
+      { transaction },
+    );
+
+    userIds.push(admin.id);
+
+    for (let i = 0; i < CONFIG.USERS; i++) {
+      const name = generateRandomName();
+
+      const user = await User.create(
+        {
+          name,
+          email: generateRandomEmail(name, i),
           password: hashedPassword,
           role: "user",
-          bio: getRandomBio(),
-          profilePicture: null,
-
+          bio: Math.random() > 0.3 ? getRandomBio() : null,
+          profilePictureUrl: null,
+          profilePicturePublicId: null,
           postsCount: 0,
           followersCount: 0,
           followingCount: 0,
-        }),
+          isActive: true,
+          isDeleted: false,
+          createdAt: getRandomDate(),
+          updatedAt: new Date(),
+        },
+        { transaction },
       );
 
-      const inserted = await User.bulkCreate(users, {
-        returning: true,
-      });
+      userIds.push(user.id);
 
-      userIds.push(...inserted.map((u) => u.id));
-      userInserted += inserted.length;
-
-      console.log(`Users inserted: ${userInserted}`);
+      console.log(`   User created: ${user.name}`);
     }
 
-    console.log(`USERS DONE: ${userInserted}`);
+    console.log(`✅ Users created: ${userIds.length}`);
 
-    /* ---------------- POSTS ---------------- */
+    /* =========================
+       POSTS
+    ========================= */
 
-    console.log("Starting POSTS insertion...");
+    console.log("\n📝 Creating posts...");
 
-    let posts = [];
-    let postInserted = 0;
+    const createdPosts = [];
 
-    const postCountMap = {};
-
-    for (let userId of userIds) {
-      postCountMap[userId] = CONFIG.POSTS_PER_USER;
-
+    for (const userId of userIds) {
       for (let i = 0; i < CONFIG.POSTS_PER_USER; i++) {
-        posts.push({
-          userId,
-          content: `post_user_${userId}_${i}`,
-        });
+        let imageUrl = null;
+        let imagePublicId = null;
 
-        if (posts.length === CONFIG.BATCH_SIZE) {
-          const inserted = await Post.bulkCreate(posts);
-          postInserted += inserted.length;
-          posts = [];
-          console.log(`Posts inserted: ${postInserted}`);
+        if (Math.random() > 0.4) {
+          const randomImage =
+            uploadedCloudinaryImages[
+            randomInt(
+              0,
+              uploadedCloudinaryImages.length - 1,
+            )
+            ];
+
+          imageUrl = randomImage.imageUrl;
+          imagePublicId = randomImage.imagePublicId;
         }
+
+        const post = await Post.create(
+          {
+            userId,
+            content: generatePostContent(),
+            imageUrl,
+            imagePublicId,
+            likeCount: 0,
+            isDeleted: false,
+            deletedBy: null,
+            createdAt: getRandomDate(),
+            updatedAt: new Date(),
+          },
+          { transaction },
+        );
+
+        createdPosts.push(post);
+
+        console.log(`   Post created: ${post.id}`);
       }
-    }
 
-    if (posts.length) {
-      const inserted = await Post.bulkCreate(posts);
-      postInserted += inserted.length;
-    }
-
-    console.log(`POSTS DONE: ${postInserted}`);
-
-    /* 🔥 UPDATE POSTS COUNT */
-    console.log("Updating postsCount...");
-
-    for (const userId of Object.keys(postCountMap)) {
       await User.update(
-        { postsCount: postCountMap[userId] },
-        { where: { id: userId } },
+        {
+          postsCount: CONFIG.POSTS_PER_USER,
+        },
+        {
+          where: { id: userId },
+          transaction,
+        },
       );
     }
 
-    console.log("POST COUNTS UPDATED");
+    console.log(`✅ Posts created: ${createdPosts.length}`);
 
-    /* ---------------- COMMENTS ---------------- */
+    /* =========================
+       COMMENTS
+    ========================= */
 
-    console.log("Starting COMMENTS insertion...");
+    console.log("\n💬 Creating comments...");
 
-    const allPosts = await Post.findAll({
-      attributes: ["id"],
-      raw: true,
-    });
+    let totalComments = 0;
 
-    let comments = [];
-    let commentInserted = 0;
+    for (const post of createdPosts) {
+      const commentsCount = randomInt(
+        1,
+        CONFIG.COMMENTS_PER_POST,
+      );
 
-    for (let post of allPosts) {
-      for (let i = 0; i < CONFIG.COMMENTS_PER_POST; i++) {
-        const randomUser = userIds[Math.floor(Math.random() * userIds.length)];
+      for (let i = 0; i < commentsCount; i++) {
+        const randomUser =
+          userIds[randomInt(0, userIds.length - 1)];
 
-        comments.push({
-          postId: post.id,
-          userId: randomUser,
-          content: `comment_post_${post.id}_${i}`,
-        });
+        await Comment.create(
+          {
+            postId: post.id,
+            userId: randomUser,
+            content: generateCommentContent(),
+            isDeleted: false,
+            deletedBy: null,
+            createdAt: getRandomDate(),
+            updatedAt: new Date(),
+          },
+          { transaction },
+        );
 
-        if (comments.length === CONFIG.BATCH_SIZE) {
-          const inserted = await Comment.bulkCreate(comments);
-          commentInserted += inserted.length;
-          comments = [];
-          console.log(`Comments inserted: ${commentInserted}`);
-        }
+        totalComments++;
       }
     }
 
-    if (comments.length) {
-      const inserted = await Comment.bulkCreate(comments);
-      commentInserted += inserted.length;
+    console.log(`✅ Comments created: ${totalComments}`);
+
+    /* =========================
+       LIKES
+    ========================= */
+
+    console.log("\n❤️ Creating likes...");
+
+    let totalLikes = 0;
+
+    for (const post of createdPosts) {
+      let postLikes = 0;
+
+      for (const userId of userIds) {
+        if (Math.random() < CONFIG.LIKES_RATIO) {
+          try {
+            await PostLike.create(
+              {
+                userId,
+                postId: post.id,
+                createdAt: getRandomDate(),
+                updatedAt: new Date(),
+              },
+              { transaction },
+            );
+
+            postLikes++;
+            totalLikes++;
+          } catch (e) { }
+        }
+      }
+
+      await Post.update(
+        {
+          likeCount: postLikes,
+        },
+        {
+          where: { id: post.id },
+          transaction,
+        },
+      );
     }
 
-    console.log(`COMMENTS DONE: ${commentInserted}`);
+    console.log(`✅ Likes created: ${totalLikes}`);
 
-    /* ---------------- FOLLOW SYSTEM ---------------- */
+    /* =========================
+       FOLLOWS
+    ========================= */
 
-    console.log("Starting FOLLOW relationships...");
+    console.log("\n🔗 Creating follows...");
 
     const followMap = new Set();
-    const follows = [];
 
     for (const followerId of userIds) {
       const followCount = randomInt(
         CONFIG.MIN_FOLLOWING,
-        Math.min(CONFIG.MAX_FOLLOWING, userIds.length - 1),
+        CONFIG.MAX_FOLLOWING,
       );
 
-      while (
-        [...followMap].filter((x) => x.startsWith(`${followerId}-`)).length <
-        followCount
-      ) {
-        const followingId = userIds[Math.floor(Math.random() * userIds.length)];
+      let current = 0;
+
+      while (current < followCount) {
+        const followingId =
+          userIds[randomInt(0, userIds.length - 1)];
 
         if (followerId === followingId) continue;
 
@@ -194,28 +562,37 @@ const seed = async () => {
 
         followMap.add(key);
 
-        follows.push({
-          followerId,
-          followingId,
-        });
+        await UserFollow.create(
+          {
+            followerId,
+            followingId,
+            createdAt: getRandomDate(),
+            updatedAt: new Date(),
+          },
+          { transaction },
+        );
+
+        current++;
       }
     }
 
-    const insertedFollows = await UserFollow.bulkCreate(follows);
+    console.log(`✅ Follows created: ${followMap.size}`);
 
-    console.log(`FOLLOWS DONE: ${insertedFollows.length}`);
+    /* =========================
+       UPDATE FOLLOW COUNTS
+    ========================= */
 
-    /* 🔥 UPDATE FOLLOW COUNTS */
-
-    console.log("Updating follower/following counters...");
+    console.log("\n📊 Updating follow counts...");
 
     for (const userId of userIds) {
       const followersCount = await UserFollow.count({
         where: { followingId: userId },
+        transaction,
       });
 
       const followingCount = await UserFollow.count({
         where: { followerId: userId },
+        transaction,
       });
 
       await User.update(
@@ -223,24 +600,44 @@ const seed = async () => {
           followersCount,
           followingCount,
         },
-        { where: { id: userId } },
+        {
+          where: { id: userId },
+          transaction,
+        },
       );
     }
 
-    console.log("FOLLOW COUNTS UPDATED");
+    /* =========================
+       COMMIT
+    ========================= */
 
-    console.log("SEEDING COMPLETED SUCCESSFULLY");
+    await transaction.commit();
 
-    console.log({
-      users: userInserted,
-      posts: postInserted,
-      comments: commentInserted,
-      follows: insertedFollows.length,
-    });
+    console.log("\n🎉 SEEDING COMPLETED 🎉");
+
+    console.log("\n📊 Stats:");
+    console.log(`👥 Users: ${userIds.length}`);
+    console.log(`📝 Posts: ${createdPosts.length}`);
+    console.log(`💬 Comments: ${totalComments}`);
+    console.log(`❤️ Likes: ${totalLikes}`);
+    console.log(`🔗 Follows: ${followMap.size}`);
+    console.log(
+      `☁️ Cloudinary Images: ${uploadedCloudinaryImages.length}`,
+    );
+
+    console.log("\n🔑 Login:");
+    console.log("Email: admin@postloop.com");
+    console.log("Password: password123");
 
     process.exit(0);
-  } catch (err) {
-    console.error("Seeder failed:", err);
+  } catch (error) {
+    if (transaction) {
+      await transaction.rollback();
+    }
+
+    console.error("\n❌ Seeder failed");
+    console.error(error);
+
     process.exit(1);
   }
 };

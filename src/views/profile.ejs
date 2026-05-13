@@ -1,0 +1,213 @@
+<div class="profile-container" data-profile-user-id="<%= profileUser.id %>">
+    <div class="profile-header">
+        <div class="profile-avatar">
+            <% if (profileUser.profilePictureUrl) { %>
+                <img src="<%= profileUser.profilePictureUrl.replace('/upload/', '/upload/w_100,h_100,c_fill,q_auto,f_auto/') %>"
+                    alt="<%= profileUser.name %>">
+                <% } else { %>
+                    <div class="avatar-initials large">
+                        <%= profileUser.name.substring(0,2).toUpperCase() %>
+                    </div>
+                    <% } %>
+        </div>
+        <div class="profile-info">
+            <div class="profile-name-row">
+                <h2 class="profile-name">
+                    <%= profileUser.name %>
+                </h2>
+                <% if (currentUser && currentUser.id===profileUser.id) { %>
+                    <a href="/profile/edit" class="edit-profile-btn">Edit Profile</a>
+                    <a href="/change-password" class="edit-profile-btn">Change Password</a>
+                    <% } else if (currentUser && currentUser.id !==profileUser.id) { %>
+                        <button class="follow-profile-btn <%= follows ? 'unfollow' : '' %>"
+                            data-user-id="<%= profileUser.id %>">
+                            <%= follows ? 'Unfollow' : 'Follow' %>
+                        </button>
+                        <% } %>
+            </div>
+            <p class="profile-bio">
+                <%= profileUser.bio || '' %>
+            </p>
+            <div class="profile-stats">
+                <div class="profile-stat" data-href="/profile/<%= profileUser.id %>?tab=posts">
+                    <strong>
+                        <%= profileUser.postsCount || 0 %>
+                    </strong> posts
+                </div>
+                <div class="profile-stat" data-modal-list="followers" data-user-id="<%= profileUser.id %>">
+                    <strong>
+                        <%= profileUser.followersCount || 0 %>
+                    </strong> followers
+                </div>
+                <div class="profile-stat" data-modal-list="following" data-user-id="<%= profileUser.id %>">
+                    <strong>
+                        <%= profileUser.followingCount || 0 %>
+                    </strong> following
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="profile-posts">
+        <% if (posts.length===0) { %>
+            <div class="empty-feed">
+                <i class="fa-regular fa-newspaper"></i>
+                <h3>No posts yet</h3>
+                <p>
+                    <%= profileUser.name %> hasn't created any posts yet.
+                </p>
+            </div>
+            <% } else { %>
+                <div class="posts-grid">
+                    <% posts.forEach(post=> { %>
+                        <%- include("partials/post-card.ejs", { post, hideFollowButton: true }) %>
+                            <% }) %>
+                </div>
+                <% } %>
+
+                    <!-- Pagination -->
+                    <% if (pagination.totalPages> 1) { %>
+                        <div class="pagination-container">
+                            <ul class="pagination">
+                                <% if (pagination.hasPrev) { %>
+                                    <li class="page-item"><a class="page-link"
+                                            href="?page=<%= pagination.currentPage - 1 %>">&laquo; Previous</a></li>
+                                    <% } %>
+                                        <% const maxVisible=5; let startPage=Math.max(1, pagination.currentPage -
+                                            Math.floor(maxVisible / 2)); let endPage=Math.min(pagination.totalPages,
+                                            startPage + maxVisible - 1); if (endPage - startPage + 1 < maxVisible) {
+                                            startPage=Math.max(1, endPage - maxVisible + 1); } %>
+                                            <% if (startPage> 1) { %>
+                                                <li class="page-item"><a class="page-link" href="?page=1">1</a></li>
+                                                <% if (startPage> 2) { %><li class="page-item disabled"><span
+                                                            class="page-link">...</span></li>
+                                                    <% } %>
+                                                        <% } %>
+                                                            <% for (let i=startPage; i <=endPage; i++) { %>
+                                                                <li
+                                                                    class="page-item <%= i === pagination.currentPage ? 'active' : '' %>">
+                                                                    <a class="page-link" href="?page=<%= i %>">
+                                                                        <%= i %>
+                                                                    </a>
+                                                                </li>
+                                                                <% } %>
+                                                                    <% if (endPage < pagination.totalPages) { %>
+                                                                        <% if (endPage < pagination.totalPages - 1) { %>
+                                                                            <li class="page-item disabled"><span
+                                                                                    class="page-link">...</span></li>
+                                                                            <% } %>
+                                                                                <li class="page-item"><a
+                                                                                        class="page-link"
+                                                                                        href="?page=<%= pagination.totalPages %>">
+                                                                                        <%= pagination.totalPages %>
+                                                                                    </a></li>
+                                                                                <% } %>
+                                                                                    <% if (pagination.hasNext) { %>
+                                                                                        <li class="page-item"><a
+                                                                                                class="page-link"
+                                                                                                href="?page=<%= pagination.currentPage + 1 %>">Next
+                                                                                                &raquo;</a></li>
+                                                                                        <% } %>
+                            </ul>
+                            <div class="pagination-info">
+                                Showing page <strong>
+                                    <%= pagination.currentPage %>
+                                </strong> of <strong>
+                                    <%= pagination.totalPages %>
+                                </strong>
+                                (<strong>
+                                    <%= pagination.totalItems %>
+                                </strong> total posts)
+                            </div>
+                        </div>
+                        <% } %>
+    </div>
+</div>
+
+<script>
+    const followBtn = document.querySelector('.follow-profile-btn');
+    if (followBtn) {
+        followBtn.addEventListener('click', async () => {
+            const userId = followBtn.dataset.userId;
+            try {
+                const res = await axios.post(`/follow/${userId}`);
+                if (res.data.following) {
+                    followBtn.textContent = 'Unfollow';
+                    followBtn.classList.add('unfollow');
+                    const sidebarFollowing = document.getElementById('sidebar-following-count');
+                    if (sidebarFollowing) sidebarFollowing.innerText = parseInt(sidebarFollowing.innerText) + 1;
+                    const followersSpan = document.querySelector('.profile-stat[data-modal-list="followers"] strong');
+                    if (followersSpan) followersSpan.innerText = parseInt(followersSpan.innerText) + 1;
+                } else {
+                    followBtn.textContent = 'Follow';
+                    followBtn.classList.remove('unfollow');
+                    const sidebarFollowing = document.getElementById('sidebar-following-count');
+                    if (sidebarFollowing) sidebarFollowing.innerText = parseInt(sidebarFollowing.innerText) - 1;
+                    const followersSpan = document.querySelector('.profile-stat[data-modal-list="followers"] strong');
+                    if (followersSpan) followersSpan.innerText = parseInt(followersSpan.innerText) - 1;
+                }
+            } catch (err) { console.error(err); }
+        });
+    }
+
+    const statElements = document.querySelectorAll('.profile-stat[data-modal-list]');
+    statElements.forEach(stat => {
+        stat.addEventListener('click', () => {
+            const listType = stat.dataset.modalList;
+            const userId = stat.dataset.userId || '<%= profileUser.id %>';
+            window.location.href = `/profile/${userId}/${listType}`;
+        });
+    });
+    statElements.length = 0;
+
+    const likeBtns = document.querySelectorAll('.like-action');
+    likeBtns.forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const postId = btn.dataset.postId;
+            try {
+                const res = await axios.post(`/post/${postId}/like`);
+                const likeCountSpan = btn.querySelector('.like-count-display');
+                if (likeCountSpan) likeCountSpan.innerText = res.data.likeCount;
+                if (res.data.liked) {
+                    btn.classList.add('liked');
+                    btn.innerHTML = '<i class="fa-solid fa-heart"></i> <span class="like-count-display">' + res.data.likeCount + '</span> <span>Unlike</span>';
+                } else {
+                    btn.classList.remove('liked');
+                    btn.innerHTML = '<i class="fa-regular fa-heart"></i> <span class="like-count-display">' + res.data.likeCount + '</span> <span>Like</span>';
+                }
+            } catch (err) {
+                console.error('Like error:', err);
+            }
+        });
+    });
+    likeBtns.length = 0;
+
+    // Add at the end of profile.ejs script
+    (function () {
+        let followBtnRef = null;
+        let statElementsRef = null;
+        let likeBtnsRef = null;
+
+        function cleanupProfile() {
+            if (followBtnRef) {
+                followBtnRef.removeEventListener('click', followBtnRef._handler);
+                followBtnRef = null;
+            }
+            if (statElementsRef) {
+                statElementsRef.forEach(stat => {
+                    stat.removeEventListener('click', stat._handler);
+                });
+                statElementsRef = null;
+            }
+            if (likeBtnsRef) {
+                likeBtnsRef.forEach(btn => {
+                    btn.removeEventListener('click', btn._handler);
+                });
+                likeBtnsRef = null;
+            }
+        }
+
+        window.cleanupProfile = cleanupProfile;
+    })();
+</script>

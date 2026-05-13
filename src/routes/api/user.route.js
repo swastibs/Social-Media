@@ -16,7 +16,7 @@ const {
   getFollowersSchema,
   getFollowingSchema,
   updateProfileSchema,
-} = require("../../validations/user.validation");
+} = require("../../validations/api/user.validation");
 
 const {
   getAllUsers,
