@@ -110,6 +110,7 @@ exports.renderProfile = async (req, res, next) => {
         hasNext: page < Math.ceil(count / limit),
       },
       follows,
+      pageCss: ["profile.css", "feed.css"],
     });
   } catch (error) {
     next(error);
@@ -180,6 +181,7 @@ exports.renderFollowers = async (req, res, next) => {
         hasNext: page < Math.ceil(count / limit),
       },
       type: "followers",
+      pageCss: "profile.css",
     });
   } catch (error) {
     next(error);
@@ -250,6 +252,7 @@ exports.renderFollowing = async (req, res, next) => {
         hasNext: page < Math.ceil(count / limit),
       },
       type: "following",
+      pageCss: "profile.css",
     });
   } catch (error) {
     next(error);
@@ -264,6 +267,7 @@ exports.renderEditProfile = async (req, res, next) => {
       title: "Edit Profile",
       user: user,
       currentUser: user,
+      pageCss: "create-edit-post.css",
     });
   } catch (error) {
     next(error);
