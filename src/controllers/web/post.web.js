@@ -10,6 +10,7 @@ exports.createPostForm = (req, res) => {
     title: "Create Post",
     user: req.user,
     currentUser: req.user,
+    pageCss: "create-edit-post.css",
   });
 };
 
@@ -123,6 +124,7 @@ exports.postDetail = async (req, res, next) => {
         hasPrev: page > 1,
         hasNext: page < Math.ceil(totalComments / limit),
       },
+      pageCss: "post-detail.css",
     });
   } catch (err) {
     next(err);
@@ -154,6 +156,7 @@ exports.editPostForm = async (req, res, next) => {
       user: req.user,
       currentUser: req.user,
       post,
+      pageCss: "create-edit-post.css",
     });
   } catch (err) {
     next(err);

@@ -10,8 +10,7 @@
                         <div class="suggestion-horizontal-avatar">
                             <% if (user.thumbnailUrl || user.profilePictureUrl) { %>
                                 <img src="<%= user.thumbnailUrl || user.profilePictureUrl %>" alt="<%= user.name %>"
-                                    loading="lazy" width="60" height="60" class="img-cover"
-                                    style="width:60px; height:60px;">
+                                    loading="lazy" class="img-cover">
                                 <% } else { %>
                                     <div class="avatar-initials">
                                         <%= user.name.substring(0,2).toUpperCase() %>

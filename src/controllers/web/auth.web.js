@@ -14,15 +14,16 @@ exports.landing = (req, res) => {
   res.render("landing", {
     mode: "login",
     oldInput: {},
+    pageCss: "landing.css",
   });
 };
 
 exports.loginForm = (req, res) => {
   if (req.user) return res.redirect("/feed");
-
   res.render("landing", {
     mode: "login",
     oldInput: req.flash("oldInput")[0] || {},
+    pageCss: "landing.css",
   });
 };
 
@@ -53,10 +54,10 @@ exports.login = async (req, res, next) => {
 
 exports.signupForm = (req, res) => {
   if (req.user) return res.redirect("/feed");
-
   res.render("landing", {
     mode: "signup",
     oldInput: req.flash("oldInput")[0] || {},
+    pageCss: "landing.css",
   });
 };
 
@@ -122,6 +123,7 @@ exports.changePasswordForm = (req, res) => {
     user: req.user,
     error: null,
     oldInput: {},
+    pageCss: "auth.css",
   });
 };
 
