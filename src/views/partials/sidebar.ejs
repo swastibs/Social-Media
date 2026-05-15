@@ -6,11 +6,11 @@
   <div class="sidebar-profile">
     <a href="/profile/<%= user.id %>" class="profile-link">
       <div class="profile-avatar-side-bar">
-        <% if (user.profilePictureUrl) { %>
-          <img src="<%= user.profilePictureUrl.replace('/upload/', '/upload/w_128,h_128,c_fill,q_auto,f_auto/') %>"
-            alt="<%= user.name %>">
+        <% if (user.thumbnailUrl || user.profilePictureUrl) { %>
+          <img src="<%= user.thumbnailUrl || user.profilePictureUrl %>" alt="<%= user.name %>" class="img-cover"
+            width="48" height="48" style="width:48px; height:48px;">
           <% } else { %>
-            <div class="avatar-initials" style="width:48px; height:48px; font-size:1.2rem;">
+            <div class="avatar-initials">
               <%= user.name.substring(0,2).toUpperCase() %>
             </div>
             <% } %>
@@ -66,11 +66,3 @@
   </div>
 </aside>
 
-<script>
-  window.updateSidebarCounts = function (followingCount, followersCount) {
-    const followingSpan = document.getElementById('sidebar-following-count');
-    const followersSpan = document.getElementById('sidebar-followers-count');
-    if (followingSpan && followingCount !== undefined) followingSpan.innerText = followingCount;
-    if (followersSpan && followersCount !== undefined) followersSpan.innerText = followersCount;
-  };
-</script>

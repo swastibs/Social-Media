@@ -1,8 +1,8 @@
 const { Post, Comment, PostLike, User, sequelize } = require("../../models");
-const { uploadToCloudinary } = require("../../utils/cloudinaryUpload");
 const { getSafeUserInclude } = require("../../utils/dbHelper");
 const { Op } = require("sequelize");
 const { paginate } = require("../../utils/pagination");
+const { uploadToMinio, deleteFromMinioByUrl } = require("../../config/minio");
 
 // ========== CREATE POST ==========
 exports.createPostForm = (req, res) => {
@@ -19,19 +19,22 @@ exports.createPost = async (req, res, next) => {
     const { content } = req.body;
     const file = req.file;
     let imageUrl = null;
-    let imagePublicId = null;
 
     if (file) {
-      const uploaded = await uploadToCloudinary(file, "postloop/posts");
-      imageUrl = uploaded.secure_url;
-      imagePublicId = uploaded.public_id;
+      const result = await uploadToMinio(
+        req.file.buffer,
+        req.file.originalname,
+        "posts",
+        { thumbnailSize: 400 },
+      );
+      imageUrl = result.url;
+      thumbnailUrl = result.thumbnailUrl;
     }
 
     const post = await Post.create(
       {
         content,
         imageUrl,
-        imagePublicId,
         userId: req.user.id,
         likeCount: 0,
         isDeleted: false,
@@ -60,7 +63,9 @@ exports.postDetail = async (req, res, next) => {
 
     const post = await Post.findOne({
       where: { id: postId, isDeleted: false },
-      include: [getSafeUserInclude({ attributes: ["id", "name", "profilePictureUrl"] })]
+      include: [
+        getSafeUserInclude({ attributes: ["id", "name", "profilePictureUrl"] }),
+      ],
     });
 
     if (!post) {
@@ -72,7 +77,7 @@ exports.postDetail = async (req, res, next) => {
     let liked = false;
     if (req.user) {
       const like = await PostLike.findOne({
-        where: { userId: req.user.id, postId: post.id }
+        where: { userId: req.user.id, postId: post.id },
       });
       liked = !!like;
     }
@@ -81,22 +86,24 @@ exports.postDetail = async (req, res, next) => {
     let { data: comments, pagination } = await paginate({
       model: Comment,
       where: { postId: post.id, isDeleted: false },
-      include: [getSafeUserInclude({ attributes: ["id", "name", "profilePictureUrl"] })],
+      include: [
+        getSafeUserInclude({ attributes: ["id", "name", "profilePictureUrl"] }),
+      ],
       order: [["createdAt", "DESC"]],
       page,
-      limit
+      limit,
     });
 
     // ✅ Calculate isEditable for each comment (within 15 minutes)
     const now = new Date();
-    comments = comments.map(comment => ({
+    comments = comments.map((comment) => ({
       ...comment.toJSON(),
-      isEditable: (now - new Date(comment.createdAt)) <= 15 * 60 * 1000
+      isEditable: now - new Date(comment.createdAt) <= 15 * 60 * 1000,
     }));
 
     // Count total comments
     const totalComments = await Comment.count({
-      where: { postId: post.id, isDeleted: false }
+      where: { postId: post.id, isDeleted: false },
     });
 
     res.render("post-detail", {
@@ -106,7 +113,7 @@ exports.postDetail = async (req, res, next) => {
       post: {
         ...post.toJSON(),
         liked,
-        commentCount: totalComments
+        commentCount: totalComments,
       },
       comments,
       pagination: {
@@ -114,8 +121,8 @@ exports.postDetail = async (req, res, next) => {
         totalPages: Math.ceil(totalComments / limit),
         totalItems: totalComments,
         hasPrev: page > 1,
-        hasNext: page < Math.ceil(totalComments / limit)
-      }
+        hasNext: page < Math.ceil(totalComments / limit),
+      },
     });
   } catch (err) {
     next(err);
@@ -180,22 +187,28 @@ exports.updatePost = async (req, res, next) => {
     // Update content
     post.content = content;
 
-    // Handle image
+    // Handle new image upload (replaces old one)
     if (file) {
-      const uploaded = await uploadToCloudinary(file, "postloop/posts");
-      if (post.imagePublicId) {
-        const cloudinary = require("../../config/cloudinary");
-        await cloudinary.uploader.destroy(post.imagePublicId);
+      // Delete old image (original + thumbnail)
+      if (post.imageUrl) {
+        await deleteFromMinioByUrl(post.imageUrl);
       }
-      post.imageUrl = uploaded.secure_url;
-      post.imagePublicId = uploaded.public_id;
+      // Upload new image with thumbnail
+      const { url, thumbnailUrl } = await uploadToMinio(
+        file.buffer,
+        file.originalname,
+        "posts",
+        { thumbnailSize: 400 }, // 400x400 thumbnail for feed
+      );
+      post.imageUrl = url;
+      post.thumbnailUrl = thumbnailUrl;
     }
 
-    if (removeImage === "true" && post.imagePublicId) {
-      const cloudinary = require("../../config/cloudinary");
-      await cloudinary.uploader.destroy(post.imagePublicId);
+    // Handle removal of existing image via checkbox
+    if (removeImage === "true" && post.imageUrl) {
+      await deleteFromMinioByUrl(post.imageUrl);
       post.imageUrl = null;
-      post.imagePublicId = null;
+      post.thumbnailUrl = null;
     }
 
     await post.save({ transaction });

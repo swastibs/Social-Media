@@ -22,7 +22,7 @@ const User = sequelize.define(
 
     profilePictureUrl: { type: DataTypes.STRING, allowNull: true },
 
-    profilePicturePublicId: { type: DataTypes.STRING, allowNull: true },
+    thumbnailUrl: { type: DataTypes.STRING, allowNull: true },
 
     postsCount: { type: DataTypes.INTEGER, defaultValue: 0 },
 
@@ -51,7 +51,7 @@ const User = sequelize.define(
       { fields: ["createdAt"], order: [["createdAt", "DESC"]] },
       { fields: ["followersCount"] },
       { fields: ["followingCount"] },
-      { fields: ["role", "isActive", "isDeleted", "id"] }
+      { fields: ["role", "isActive", "isDeleted", "id"] },
     ],
   },
 );

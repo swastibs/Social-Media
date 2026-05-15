@@ -1,9 +1,6 @@
 <div class="search-container">
-    <!-- Search Header -->
     <div class="search-header">
-        <h1 class="search-title">
-            <i class="fa-solid fa-magnifying-glass"></i> Search
-        </h1>
+        <h1 class="search-title"><i class="fa-solid fa-magnifying-glass"></i> Search</h1>
         <form action="/search" method="GET" class="search-form">
             <div class="search-input-wrapper">
                 <i class="fa-solid fa-search search-icon"></i>
@@ -18,39 +15,34 @@
     </div>
 
     <% if (searchQuery && searchQuery.length>= 2) { %>
-        <!-- Search Tabs -->
         <div class="search-tabs">
             <a href="/search?q=<%= encodeURIComponent(searchQuery) %>&type=all"
                 class="search-tab <%= activeTab === 'all' ? 'active' : '' %>">
-                <i class="fa-solid fa-layer-group"></i> All
-                <span class="tab-count">
+                <i class="fa-solid fa-layer-group"></i> All <span class="tab-count">
                     <%= results.users.total + results.posts.total + results.comments.total %>
                 </span>
             </a>
             <a href="/search?q=<%= encodeURIComponent(searchQuery) %>&type=users"
                 class="search-tab <%= activeTab === 'users' ? 'active' : '' %>">
-                <i class="fa-solid fa-users"></i> Users
-                <span class="tab-count">
+                <i class="fa-solid fa-users"></i> Users <span class="tab-count">
                     <%= results.users.total %>
                 </span>
             </a>
             <a href="/search?q=<%= encodeURIComponent(searchQuery) %>&type=posts"
                 class="search-tab <%= activeTab === 'posts' ? 'active' : '' %>">
-                <i class="fa-solid fa-newspaper"></i> Posts
-                <span class="tab-count">
+                <i class="fa-solid fa-newspaper"></i> Posts <span class="tab-count">
                     <%= results.posts.total %>
                 </span>
             </a>
             <a href="/search?q=<%= encodeURIComponent(searchQuery) %>&type=comments"
                 class="search-tab <%= activeTab === 'comments' ? 'active' : '' %>">
-                <i class="fa-solid fa-comments"></i> Comments
-                <span class="tab-count">
+                <i class="fa-solid fa-comments"></i> Comments <span class="tab-count">
                     <%= results.comments.total %>
                 </span>
             </a>
         </div>
 
-        <!-- ========== USERS SECTION ========== -->
+        <!-- USERS SECTION -->
         <% if (activeTab==='all' || activeTab==='users' ) { %>
             <% if (results.users.data.length> 0) { %>
                 <div class="results-section">
@@ -61,9 +53,10 @@
                         <% results.users.data.forEach(user=> { %>
                             <div class="user-card" data-href="/profile/<%= user.id %>">
                                 <div class="user-card-avatar">
-                                    <% if (user.profilePictureUrl) { %>
-                                        <img src="<%= user.profilePictureUrl.replace('/upload/', '/upload/w_64,h_64,c_fill,q_auto,f_auto/') %>"
-                                            alt="<%= user.name %>">
+                                    <% if (user.thumbnailUrl || user.profilePictureUrl) { %>
+                                        <img src="<%= user.thumbnailUrl || user.profilePictureUrl %>"
+                                            alt="<%= user.name %>" class="img-cover" width="64" height="64"
+                                            style="width:64px; height:64px;">
                                         <% } else { %>
                                             <div class="avatar-initials large">
                                                 <%= user.name.substring(0,2).toUpperCase() %>
@@ -89,7 +82,6 @@
                             </div>
                             <% }) %>
                     </div>
-                    <!-- Pagination for Users -->
                     <% if (results.users.totalPages> 1) { %>
                         <div class="pagination-container">
                             <ul class="pagination">
@@ -113,7 +105,7 @@
                     <% } %>
                         <% } %>
 
-                            <!-- ========== POSTS SECTION ========== -->
+                            <!-- POSTS SECTION -->
                             <% if (activeTab==='all' || activeTab==='posts' ) { %>
                                 <% if (results.posts.data.length> 0) { %>
                                     <div class="results-section">
@@ -128,13 +120,16 @@
                                                     <div class="post-header">
                                                         <div class="post-author-info">
                                                             <div class="post-author-avatar">
-                                                                <% if (post.User.profilePictureUrl) { %>
-                                                                    <img src="<%= post.User.profilePictureUrl.replace('/upload/', '/upload/w_40,h_40,c_fill,q_auto,f_auto/') %>"
-                                                                        alt="<%= post.User.name %>">
+                                                                <% if (post.User?.thumbnailUrl ||
+                                                                    post.User?.profilePictureUrl) { %>
+                                                                    <img src="<%= post.User?.thumbnailUrl || post.User?.profilePictureUrl %>"
+                                                                        alt="<%= post.User.name %>" class="img-cover"
+                                                                        width="40" height="40"
+                                                                        style="width:40px; height:40px;">
                                                                     <% } else { %>
                                                                         <div class="avatar-initials small">
-                                                                            <%= post.User.name.substring(0,2).toUpperCase()
-                                                                                %>
+                                                                            <%= (post.User?.name || 'U'
+                                                                                ).substring(0,2).toUpperCase() %>
                                                                         </div>
                                                                         <% } %>
                                                             </div>
@@ -172,7 +167,6 @@
                                                 </div>
                                                 <% }) %>
                                         </div>
-                                        <!-- Pagination for Posts -->
                                         <% if (results.posts.totalPages> 1) { %>
                                             <div class="pagination-container">
                                                 <ul class="pagination">
@@ -196,7 +190,7 @@
                                         <% } %>
                                             <% } %>
 
-                                                <!-- ========== COMMENTS SECTION ========== -->
+                                                <!-- COMMENTS SECTION -->
                                                 <% if (activeTab==='all' || activeTab==='comments' ) { %>
                                                     <% if (results.comments.data.length> 0) { %>
                                                         <div class="results-section">
@@ -207,50 +201,56 @@
                                                                 </span></h2>
                                                             <div class="comments-list">
                                                                 <% results.comments.data.forEach(comment=> { %>
-                                                                    <div class="comment-card"
-                                                                        data-href="/post/<%= comment.Post.id %>">
-                                                                        <div class="comment-card-header">
-                                                                            <div class="comment-author-avatar">
-                                                                                <% if (comment.User.profilePictureUrl) {
-                                                                                    %>
-                                                                                    <img src="<%= comment.User.profilePictureUrl.replace('/upload/', '/upload/w_40,h_40,c_fill,q_auto,f_auto/') %>"
-                                                                                        alt="<%= comment.User.name %>">
-                                                                                    <% } else { %>
-                                                                                        <div
-                                                                                            class="avatar-initials small">
-                                                                                            <%= comment.User.name.substring(0,2).toUpperCase()
-                                                                                                %>
-                                                                                        </div>
-                                                                                        <% } %>
+                                                                    <% if (comment.Post) { %>
+                                                                        <div class="comment-card"
+                                                                            data-href="/post/<%= comment.Post.id %>">
+                                                                            <div class="comment-card-header">
+                                                                                <div class="comment-author-avatar">
+                                                                                    <% if (comment.User?.thumbnailUrl ||
+                                                                                        comment.User?.profilePictureUrl)
+                                                                                        { %>
+                                                                                        <img src="<%= comment.User?.thumbnailUrl || comment.User?.profilePictureUrl %>"
+                                                                                            alt="<%= comment.User.name %>"
+                                                                                            class="img-cover" width="40"
+                                                                                            height="40"
+                                                                                            style="width:40px; height:40px;">
+                                                                                        <% } else { %>
+                                                                                            <div
+                                                                                                class="avatar-initials small">
+                                                                                                <%= (comment.User?.name
+                                                                                                    || 'U'
+                                                                                                    ).substring(0,2).toUpperCase()
+                                                                                                    %>
+                                                                                            </div>
+                                                                                            <% } %>
+                                                                                </div>
+                                                                                <div class="comment-author-info">
+                                                                                    <a href="/profile/<%= comment.User.id %>"
+                                                                                        class="comment-author-name">
+                                                                                        <%= comment.User.name %>
+                                                                                    </a>
+                                                                                    <span class="comment-time">commented
+                                                                                        on <%= new
+                                                                                            Date(comment.createdAt).toLocaleDateString()
+                                                                                            %></span>
+                                                                                </div>
                                                                             </div>
-                                                                            <div class="comment-author-info">
-                                                                                <a href="/profile/<%= comment.User.id %>"
-                                                                                    class="comment-author-name">
-                                                                                    <%= comment.User.name %>
-                                                                                </a>
-                                                                                <span class="comment-time">commented on
-                                                                                    <%= new
-                                                                                        Date(comment.createdAt).toLocaleDateString()
+                                                                            <div class="comment-card-content">
+                                                                                <p class="comment-text">"<%=
+                                                                                        comment.content %>"</p>
+                                                                            </div>
+                                                                            <div class="comment-card-post">
+                                                                                <i class="fa-regular fa-newspaper"></i>
+                                                                                <span>Post: <%=
+                                                                                        comment.Post.content.substring(0,100)
                                                                                         %>
-                                                                                </span>
+                                                                                        <%= comment.Post.content.length>
+                                                                                            100 ? '...' : '' %></span>
                                                                             </div>
                                                                         </div>
-                                                                        <div class="comment-card-content">
-                                                                            <p class="comment-text">"<%= comment.content
-                                                                                    %>"</p>
-                                                                        </div>
-                                                                        <div class="comment-card-post">
-                                                                            <i class="fa-regular fa-newspaper"></i>
-                                                                            <span>Post: <%=
-                                                                                    comment.Post.content.substring(0,100)
-                                                                                    %>
-                                                                                    <%= comment.Post.content.length> 100
-                                                                                        ? '...' : '' %></span>
-                                                                        </div>
-                                                                    </div>
-                                                                    <% }) %>
+                                                                        <% } %>
+                                                                            <% }) %>
                                                             </div>
-                                                            <!-- Pagination for Comments -->
                                                             <% if (results.comments.totalPages> 1) { %>
                                                                 <div class="pagination-container">
                                                                     <ul class="pagination">
@@ -308,7 +308,6 @@
 </div>
 
 <script>
-    // Make cards clickable
     document.querySelectorAll('.user-card, .post-card, .comment-card').forEach(card => {
         card.addEventListener('click', (e) => {
             if (e.target.closest('button, a, .post-action, .comment-action')) return;
@@ -317,7 +316,6 @@
         });
     });
 
-    // Add at the end of search.ejs script
     (function () {
         let clickableCards = null;
 

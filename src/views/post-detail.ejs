@@ -6,11 +6,12 @@
                 <div class="post-header-detailed">
                     <div class="post-author-info-detailed">
                         <div class="post-author-avatar-detailed">
-                            <% if (post.User.profilePictureUrl) { %>
-                                <img src="<%= post.User.profilePictureUrl.replace('/upload/', '/upload/w_56,h_56,c_fill,q_auto,f_auto/') %>"
-                                    alt="<%= post.User.name %>">
+                            <% if (post.User?.thumbnailUrl || post.User?.profilePictureUrl) { %>
+                                <img src="<%= post.User?.thumbnailUrl || post.User?.profilePictureUrl %>"
+                                    alt="<%= post.User.name %>" class="img-cover" width="56" height="56"
+                                    style="width:56px; height:56px;">
                                 <% } else { %>
-                                    <div class="avatar-initials" style="width: 100%; height: 100%; font-size: 1.2rem;">
+                                    <div class="avatar-initials">
                                         <%= post.User.name.substring(0,2).toUpperCase() %>
                                     </div>
                                     <% } %>
@@ -19,21 +20,18 @@
                             <a href="/profile/<%= post.User.id %>" class="post-author-name-detailed">
                                 <%= post.User.name %>
                             </a>
-                            <div class="post-time-detailed">
-                                <i class="fa-regular fa-calendar"></i>
+                            <div class="post-time-detailed"><i class="fa-regular fa-calendar"></i>
                                 <%= new Date(post.createdAt).toLocaleString() %>
                             </div>
                         </div>
                         <% if (currentUser && (currentUser.id===post.userId || currentUser.role==='admin' )) { %>
                             <div class="post-owner-actions-detailed">
-                                <a href="/post/edit/<%= post.id %>" class="edit-post-btn-detailed">
-                                    <i class="fa-regular fa-pen-to-square"></i> Edit
-                                </a>
+                                <a href="/post/edit/<%= post.id %>" class="edit-post-btn-detailed"><i
+                                        class="fa-regular fa-pen-to-square"></i> Edit</a>
                                 <form method="POST" action="/post/delete/<%= post.id %>" style="display: inline;"
                                     onsubmit="return confirm('Are you sure you want to delete this post?')">
-                                    <button type="submit" class="delete-post-btn-detailed">
-                                        <i class="fa-regular fa-trash-can"></i> Delete
-                                    </button>
+                                    <button type="submit" class="delete-post-btn-detailed"><i
+                                            class="fa-regular fa-trash-can"></i> Delete</button>
                                 </form>
                             </div>
                             <% } %>
@@ -75,10 +73,7 @@
         <div class="comments-column">
             <div class="comments-card">
                 <div class="comments-header">
-                    <h3>
-                        <i class="fa-regular fa-comments"></i>
-                        Discussion
-                    </h3>
+                    <h3><i class="fa-regular fa-comments"></i> Discussion</h3>
                     <p>Join the conversation</p>
                 </div>
 
@@ -101,12 +96,12 @@
                             <% comments.forEach(comment=> { %>
                                 <div class="comment-item-detailed" id="comment-<%= comment.id %>">
                                     <div class="comment-avatar-detailed">
-                                        <% if (comment.User.profilePictureUrl) { %>
-                                            <img src="<%= comment.User.profilePictureUrl.replace('/upload/', '/upload/w_44,h_44,c_fill,q_auto,f_auto/') %>"
-                                                alt="<%= comment.User.name %>">
+                                        <% if (comment.User?.thumbnailUrl || comment.User?.profilePictureUrl) { %>
+                                            <img src="<%= comment.User?.thumbnailUrl || comment.User?.profilePictureUrl %>"
+                                                alt="<%= comment.User.name %>" class="img-cover" width="44" height="44"
+                                                style="width:44px; height:44px;">
                                             <% } else { %>
-                                                <div class="avatar-initials"
-                                                    style="width: 100%; height: 100%; font-size: 0.9rem;">
+                                                <div class="avatar-initials">
                                                     <%= comment.User.name.substring(0,2).toUpperCase() %>
                                                 </div>
                                                 <% } %>
@@ -117,8 +112,7 @@
                                                 class="comment-author-name-detailed">
                                                 <%= comment.User.name %>
                                             </a>
-                                            <span class="comment-time-detailed">
-                                                <i class="fa-regular fa-clock"></i>
+                                            <span class="comment-time-detailed"><i class="fa-regular fa-clock"></i>
                                                 <%= new Date(comment.createdAt).toLocaleString() %>
                                             </span>
                                         </div>
@@ -209,29 +203,28 @@
                     if (noCommentsMsg) noCommentsMsg.remove();
 
                     const commentHtml = `
-            <div class="comment-item-detailed" id="comment-${newComment.id}">
-              <div class="comment-avatar-detailed">
-                ${newComment.User.profilePictureUrl
-                            ? `<img src="${newComment.User.profilePictureUrl.replace('/upload/', '/upload/w_44,h_44,c_fill,q_auto,f_auto/')}" alt="${escapeHtml(newComment.User.name)}">`
+                        <div class="comment-item-detailed" id="comment-${newComment.id}">
+                            <div class="comment-avatar-detailed">
+                                ${newComment.User.profilePictureUrl
+                            ? `<img src="${newComment.User.thumbnailUrl || newComment.User.profilePictureUrl}" alt="${escapeHtml(newComment.User.name)}" class="img-cover" width="44" height="44" style="width:44px; height:44px;">`
                             : `<div class="avatar-initials" style="width: 100%; height: 100%; font-size: 0.9rem;">${escapeHtml(newComment.User.name.substring(0, 2).toUpperCase())}</div>`}
-              </div>
-              <div class="comment-content-detailed">
-                <div class="comment-author-detailed">
-                  <a href="/profile/${newComment.User.id}" class="comment-author-name-detailed">${escapeHtml(newComment.User.name)}</a>
-                  <span class="comment-time-detailed"><i class="fa-regular fa-clock"></i> Just now</span>
-                </div>
-                <p class="comment-text-detailed">${escapeHtml(newComment.content)}</p>
-                <div class="comment-actions-detailed">
-                  <button class="edit-comment-btn-detailed" data-comment-id="${newComment.id}" data-post-id="${postId}">
-                    <i class="fa-regular fa-pen-to-square"></i> Edit
-                  </button>
-                  <button class="delete-comment-btn-detailed" data-comment-id="${newComment.id}" data-post-id="${postId}">
-                    <i class="fa-regular fa-trash-can"></i> Delete
-                  </button>
-                </div>
-              </div>
-            </div>
-          `;
+                            </div>
+                            <div class="comment-content-detailed">
+                                <div class="comment-author-detailed">
+                                    <a href="/profile/${newComment.User.id}" class="comment-author-name-detailed">${escapeHtml(newComment.User.name)}</a>
+                                    <span class="comment-time-detailed"><i class="fa-regular fa-clock"></i> Just now</span>
+                                </div>
+                                <p class="comment-text-detailed">${escapeHtml(newComment.content)}</p>
+                                <div class="comment-actions-detailed">
+                                    <button class="edit-comment-btn-detailed" data-comment-id="${newComment.id}" data-post-id="${postId}">
+                                        <i class="fa-regular fa-pen-to-square"></i> Edit
+                                    </button>
+                                    <button class="delete-comment-btn-detailed" data-comment-id="${newComment.id}" data-post-id="${postId}">
+                                        <i class="fa-regular fa-trash-can"></i> Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>`;
 
                     const commentsList = document.getElementById('commentsList');
                     commentsList.insertAdjacentHTML('afterbegin', commentHtml);

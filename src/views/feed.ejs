@@ -8,9 +8,10 @@
                 <% suggestedUsers.forEach(user=> { %>
                     <div class="suggestion-horizontal-item" data-href="/profile/<%= user.id %>">
                         <div class="suggestion-horizontal-avatar">
-                            <% if (user.profilePictureUrl) { %>
-                                <img src="<%= user.profilePictureUrl.replace('/upload/', '/upload/w_60,h_60,c_fill,q_auto,f_auto/') %>"
-                                    alt="<%= user.name %>" loading="lazy">
+                            <% if (user.thumbnailUrl || user.profilePictureUrl) { %>
+                                <img src="<%= user.thumbnailUrl || user.profilePictureUrl %>" alt="<%= user.name %>"
+                                    loading="lazy" width="60" height="60" class="img-cover"
+                                    style="width:60px; height:60px;">
                                 <% } else { %>
                                     <div class="avatar-initials">
                                         <%= user.name.substring(0,2).toUpperCase() %>

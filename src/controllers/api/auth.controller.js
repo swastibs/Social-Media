@@ -11,8 +11,7 @@ const {
   deleteToken,
   deleteAllUserTokens,
 } = require("../../utils/authCache");
-const cloudinary = require("../../config/cloudinary");
-const { uploadToCloudinary } = require("../../utils/cloudinaryUpload");
+const { uploadToMinio } = require("../../config/minio");
 
 // SIGN UP
 exports.signUp = async (req, res, next) => {
@@ -27,13 +26,14 @@ exports.signUp = async (req, res, next) => {
     const hashedPassword = await hash(password, 10);
 
     let profilePictureUrl = null;
-    let profilePicturePublicId = null;
 
     if (file) {
-      const uploaded = await uploadToCloudinary(file, "postloop/profiles");
-
-      profilePictureUrl = uploaded.secure_url;
-      profilePicturePublicId = uploaded.public_id;
+      const { url } = await uploadToMinio(
+        file.buffer,
+        file.originalname,
+        "profiles",
+      );
+      profilePictureUrl = url;
     }
 
     const user = await User.create({
@@ -42,7 +42,6 @@ exports.signUp = async (req, res, next) => {
       password: hashedPassword,
       bio: bio || null,
       profilePictureUrl,
-      profilePicturePublicId,
       postsCount: 0,
       followersCount: 0,
       followingCount: 0,
