@@ -5,7 +5,6 @@
         </h2>
         <a href="/profile/<%= profileUser.id %>" class="back-link">← Back to Profile</a>
     </div>
-
     <div class="users-grid">
         <% if (users.length===0) { %>
             <div class="empty-state">No followers yet.</div>
@@ -13,9 +12,9 @@
                 <% users.forEach(user=> { %>
                     <div class="user-card" data-href="/profile/<%= user.id %>">
                         <div class="user-card-avatar">
-                            <% if (user.profilePictureUrl) { %>
-                                <img src="<%= user.profilePictureUrl.replace('/upload/', '/upload/w_64,h_64,c_fill,q_auto,f_auto/') %>"
-                                    alt="<%= user.name %>">
+                            <% if (user.thumbnailUrl || user.profilePictureUrl) { %>
+                                <img src="<%= user.thumbnailUrl || user.profilePictureUrl %>" alt="<%= user.name %>"
+                                    class="img-cover" width="64" height="64" style="width:64px; height:64px;">
                                 <% } else { %>
                                     <div class="avatar-initials large">
                                         <%= user.name.substring(0,2).toUpperCase() %>
@@ -49,7 +48,6 @@
                         <% } %>
     </div>
 
-    <!-- Pagination -->
     <% if (pagination.totalPages> 1) { %>
         <div class="pagination-container">
             <ul class="pagination">
@@ -97,7 +95,7 @@
             } catch (err) { console.error(err); }
         });
     });
-    followBtns.length = 0;   // free NodeList
+    followBtns.length = 0;
 
     const userCards = document.querySelectorAll('.user-card');
     userCards.forEach(card => {

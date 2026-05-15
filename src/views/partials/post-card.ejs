@@ -1,19 +1,18 @@
 <div class="post-card <%= post.imageUrl ? 'has-image' : 'no-image' %>" data-post-id="<%= post.id %>">
-    <!-- Clickable link over the whole card (positioned behind content) -->
     <a href="/post/<%= post.id %>" class="post-card-link" aria-label="View post details"></a>
 
     <div class="post-header">
         <div class="post-author-info">
             <div class="post-author-avatar">
-                <% const userProfilePic=post.User?.profilePictureUrl; %>
-                    <% if (userProfilePic) { %>
-                        <img src="<%= userProfilePic.replace('/upload/', '/upload/w_40,h_40,c_fill,q_auto,f_auto/') %>"
-                            alt="<%= post.User.name %>" loading="lazy">
-                        <% } else { %>
-                            <div class="avatar-initials small" style="width:40px; height:40px;">
-                                <%= (post.User && post.User.name) ? post.User.name.substring(0,2).toUpperCase() : 'U' %>
-                            </div>
-                            <% } %>
+                <% if (post.User?.thumbnailUrl || post.User?.profilePictureUrl) { %>
+                    <img src="<%= post.User?.thumbnailUrl || post.User?.profilePictureUrl %>"
+                        alt="<%= post.User.name %>" loading="lazy" class="img-cover" width="40" height="40"
+                        style="width:40px; height:40px;">
+                    <% } else { %>
+                        <div class="avatar-initials small">
+                            <%= (post.User?.name || 'U' ).substring(0,2).toUpperCase() %>
+                        </div>
+                        <% } %>
             </div>
             <div class="post-author-details">
                 <a href="/profile/<%= post.User?.id %>" class="post-author-name">
@@ -23,25 +22,23 @@
                     <%= new Date(post.createdAt).toLocaleDateString('en-GB') %>
                 </span>
             </div>
-            <!-- Follow button (only if not hidden AND not the current user) -->
+
             <% if (!locals.hideFollowButton && locals.currentUser && locals.currentUser.id !==post.User?.id) { %>
                 <button class="post-follow-btn <%= post.isFollowing ? 'following' : '' %>"
                     data-user-id="<%= post.User.id %>">
                     <%= post.isFollowing ? 'Unfollow' : 'Follow' %>
                 </button>
                 <% } %>
-                    <!-- Edit/Delete buttons for post owner or admin -->
+
                     <% if (locals.currentUser && (locals.currentUser.id===post.userId ||
                         locals.currentUser.role==='admin' )) { %>
                         <div class="post-owner-actions">
-                            <a href="/post/edit/<%= post.id %>" class="post-edit-btn" title="Edit Post">
-                                <i class="fa-regular fa-pen-to-square"></i>
-                            </a>
+                            <a href="/post/edit/<%= post.id %>" class="post-edit-btn" title="Edit Post"><i
+                                    class="fa-regular fa-pen-to-square"></i></a>
                             <form method="POST" action="/post/delete/<%= post.id %>" style="display: inline;"
                                 data-confirm="delete-post">
-                                <button type="submit" class="post-delete-btn" title="Delete Post">
-                                    <i class="fa-regular fa-trash-can"></i>
-                                </button>
+                                <button type="submit" class="post-delete-btn" title="Delete Post"><i
+                                        class="fa-regular fa-trash-can"></i></button>
                             </form>
                         </div>
                         <% } %>
@@ -49,8 +46,9 @@
     </div>
 
     <% if (post.imageUrl) { %>
-        <div class="post-image">
-            <img src="<%= post.imageUrl %>" alt="Post image" loading="lazy">
+        <div class="post-image" style="aspect-ratio: 16/9; overflow: hidden;">
+            <img src="<%= post.thumbnailUrl || post.imageUrl %>" alt="Post image" loading="lazy" width="400"
+                height="225" style="width:100%; height:auto; object-fit:cover;">
         </div>
         <% } %>
 

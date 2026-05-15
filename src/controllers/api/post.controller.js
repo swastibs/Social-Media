@@ -4,32 +4,40 @@ const { paginate } = require("../../utils/pagination");
 const { ROLES } = require("../../constant/role");
 
 const { Post, Comment, User, sequelize, PostLike } = require("../../models");
-const { getUser, getPost, getSafeUserInclude } = require("../../utils/dbHelper");
+const {
+  getUser,
+  getPost,
+  getSafeUserInclude,
+} = require("../../utils/dbHelper");
 const { setCache } = require("../../utils/cache");
-const { uploadToCloudinary } = require("../../utils/cloudinaryUpload");
+const { uploadToMinio, deleteFromMinioByUrl } = require("../../config/minio");
 
 // CREATE POST
 exports.createPost = async (req, res, next) => {
   const transaction = await sequelize.transaction();
-
   try {
     const { content } = req.body;
     const { user, file } = req;
 
-    let imageUrl = null;
-    let imagePublicId = null;
+    let imageUrl = null,
+      thumbnailUrl = null;
 
     if (file) {
-      const uploaded = await uploadToCloudinary(file, "postloop/posts");
-      imageUrl = uploaded.secure_url;
-      imagePublicId = uploaded.public_id;
+      const result = await uploadToMinio(
+        file.buffer,
+        file.originalname,
+        "posts",
+        { thumbnailSize: 400 }, // feed card thumbnail
+      );
+      imageUrl = result.url;
+      thumbnailUrl = result.thumbnailUrl;
     }
 
     const post = await Post.create(
       {
         content,
         imageUrl,
-        imagePublicId,
+        thumbnailUrl,
         userId: user.id,
         likeCount: 0,
         isDeleted: false,
@@ -38,7 +46,6 @@ exports.createPost = async (req, res, next) => {
     );
 
     await user.increment("postsCount", { transaction });
-
     await transaction.commit();
 
     return successResponse(res, {
@@ -125,27 +132,37 @@ exports.getPost = async (req, res, next) => {
 exports.updatePost = async (req, res, next) => {
   try {
     const { postId } = req.params;
-    const { content } = req.body;
-    const { user } = req;
+    const { content, removeImage } = req.body;
+    const { user, file } = req;
 
     const post = await getPost(postId);
-
     if (post.userId !== user.id) throw new ApiError(403, "Not authorized");
 
     const oldData = post.toJSON();
-
     if (content) post.content = content;
 
-    await post.save();
+    if (file) {
+      if (post.imageUrl) await deleteFromMinioByUrl(post.imageUrl);
+      const result = await uploadToMinio(
+        file.buffer,
+        file.originalname,
+        "posts",
+        { thumbnailSize: 400 },
+      );
+      post.imageUrl = result.url;
+      post.thumbnailUrl = result.thumbnailUrl;
+    }
 
+    if (removeImage === "true" && post.imageUrl) {
+      await deleteFromMinioByUrl(post.imageUrl);
+      post.imageUrl = null;
+      post.thumbnailUrl = null;
+    }
+
+    await post.save();
     const newData = post.toJSON();
 
-    req.activity = {
-      entity: "Post",
-      entityId: post.id,
-      oldData,
-      newData,
-    };
+    req.activity = { entity: "Post", entityId: post.id, oldData, newData };
 
     return successResponse(res, {
       message: "Post updated successfully",

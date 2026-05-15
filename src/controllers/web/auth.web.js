@@ -5,9 +5,9 @@ const {
   storeToken,
   deleteToken,
   deleteAllUserTokens,
-  removeTokenFromUser
+  removeTokenFromUser,
 } = require("../../utils/authCache");
-const { uploadToCloudinary } = require("../../utils/cloudinaryUpload");
+const { uploadToMinio } = require("../../config/minio");
 
 exports.landing = (req, res) => {
   if (req.user) return res.redirect("/feed");
@@ -41,7 +41,10 @@ exports.login = async (req, res, next) => {
       { expiresIn: "1d" },
     );
     await storeToken(token, user.id);
-    res.cookie("token", token, { httpOnly: true, maxAge: 24 * 60 * 60 * 1000 });
+    res.cookie("postloop_token", token, {
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000,
+    });
     res.redirect("/feed");
   } catch (err) {
     next(err);
@@ -67,17 +70,27 @@ exports.signup = async (req, res, next) => {
       return res.redirect("/signup");
     }
     const hashed = await hash(password, 10);
-    let profilePictureUrl = null;
+    let profilePictureUrl = null,
+      thumbnailUrl = null;
+
     if (req.file) {
-      const uploaded = await uploadToCloudinary(req.file, "postloop/profiles");
-      profilePictureUrl = uploaded.secure_url;
+      const result = await uploadToMinio(
+        req.file.buffer,
+        req.file.originalname,
+        "profiles",
+        { thumbnailSize: 80 },
+      );
+      profilePictureUrl = result.url;
+      thumbnailUrl = result.thumbnailUrl;
     }
+
     await User.create({
       name,
       email,
       password: hashed,
       bio: bio || null,
       profilePictureUrl,
+      thumbnailUrl,
       postsCount: 0,
       followersCount: 0,
       followingCount: 0,
@@ -95,12 +108,10 @@ exports.logout = async (req, res) => {
 
   if (token) {
     await deleteToken(token);
-    if (userId)
-      await removeTokenFromUser(userId, token);
-
+    if (userId) await removeTokenFromUser(userId, token);
   }
 
-  res.clearCookie("token");
+  res.clearCookie("postloop_token");
   req.flash("success_msg", "You have been logged out.");
   res.redirect("/");
 };
@@ -142,7 +153,7 @@ exports.changePassword = async (req, res, next) => {
     await deleteAllUserTokens(userId);
 
     // Clear current cookie
-    res.clearCookie("token");
+    res.clearCookie("postloop_token");
 
     req.flash(
       "success_msg",

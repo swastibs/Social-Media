@@ -61,46 +61,36 @@
         });
 
         // Theme toggle logic (runs after page is interactive)
+        // Optimized theme toggle
         const toggle = document.getElementById('themeToggle');
         const icon = document.getElementById('themeIcon');
         const text = document.getElementById('themeText');
         const root = document.documentElement;
 
         if (toggle) {
-            toggle.addEventListener('click', () => {
+            // Use requestAnimationFrame to batch DOM updates
+            const setTheme = (isDark) => {
+                requestAnimationFrame(() => {
+                    const newTheme = isDark ? 'dark' : 'light';
+                    root.setAttribute('data-theme', newTheme);
+                    localStorage.setItem('theme', newTheme);
+                    if (icon) {
+                        // Change icon without causing layout reflow? Use class toggling
+                        icon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+                    }
+                    if (text) {
+                        text.innerText = isDark ? 'Light Mode' : 'Dark Mode';
+                    }
+                });
+            };
+
+            toggle.addEventListener('click', (e) => {
+                // Prevent default to avoid any unexpected behaviour
+                e.preventDefault();
                 const isDark = root.getAttribute('data-theme') === 'dark';
-                if (isDark) {
-                    root.setAttribute('data-theme', 'light');
-                    localStorage.setItem('theme', 'light');
-                    if (icon) icon.classList.replace('fa-sun', 'fa-moon');
-                    if (text) text.innerText = 'Dark Mode';
-                } else {
-                    root.setAttribute('data-theme', 'dark');
-                    localStorage.setItem('theme', 'dark');
-                    if (icon) icon.classList.replace('fa-moon', 'fa-sun');
-                    if (text) text.innerText = 'Light Mode';
-                }
+                setTheme(!isDark);
             });
         }
-
-        // hamburger menu (unchanged)
-        const sidebar = document.querySelector('.modern-sidebar');
-        const hamburger = document.getElementById('hamburgerBtn');
-        const overlay = document.getElementById('sidebarOverlay');
-        if (sidebar && hamburger && overlay) {
-            const toggleSidebar = () => { sidebar.classList.toggle('open'); overlay.classList.toggle('open'); };
-            hamburger.addEventListener('click', toggleSidebar);
-            overlay.addEventListener('click', toggleSidebar);
-        }
-
-        window.addEventListener('beforeunload', function () {
-            if (window.cleanupFeed) window.cleanupFeed();
-            if (window.cleanupPostDetail) window.cleanupPostDetail();
-            if (window.cleanupProfile) window.cleanupProfile();
-            if (window.cleanupSearch) window.cleanupSearch();
-            if (window.cleanupCreatePost) window.cleanupCreatePost();
-            if (window.cleanupEditPost) window.cleanupEditPost();
-        });
 
     </script>
 </body>

@@ -7,7 +7,7 @@ const Post = sequelize.define(
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     content: { type: DataTypes.TEXT, allowNull: false },
     imageUrl: { type: DataTypes.STRING, allowNull: true },
-    imagePublicId: { type: DataTypes.STRING, allowNull: true },
+    thumbnailUrl: { type: DataTypes.STRING, allowNull: true },
     userId: { type: DataTypes.INTEGER, allowNull: false },
     likeCount: { type: DataTypes.INTEGER, defaultValue: 0 },
     isDeleted: { type: DataTypes.BOOLEAN, defaultValue: false },
@@ -21,7 +21,7 @@ const Post = sequelize.define(
       { fields: ["isDeleted"] },
       { fields: ["createdAt"] },
       { fields: ["userId", "isDeleted"] },
-      { fields: ["isDeleted", "createdAt", "userId"] }
+      { fields: ["isDeleted", "createdAt", "userId"] },
     ],
   },
 );
