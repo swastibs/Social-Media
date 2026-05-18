@@ -1,0 +1,104 @@
+<%
+    const buildExtraQuery = () => {
+        if (typeof extraQuery === 'string') return extraQuery;
+        if (typeof query === 'undefined' || !query) return '';
+
+        const params = new URLSearchParams();
+        Object.entries(query).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== '') {
+                params.set(key, value);
+            }
+        });
+
+        const queryString = params.toString();
+        return queryString ? `&${queryString}` : '';
+    };
+
+    const preservedQuery = buildExtraQuery();
+    const currentPage = Number(pagination.currentPage) || 1;
+    const totalPages = Number(pagination.totalPages) || 1;
+    const maxVisiblePages = 4;
+    const pageItems = [];
+
+    if (totalPages <= maxVisiblePages + 2) {
+        for (let i = 1; i <= totalPages; i++) pageItems.push(i);
+    } else {
+        let start;
+        let end;
+
+        if (currentPage <= 3) {
+            start = 1;
+            end = maxVisiblePages;
+        } else if (currentPage >= totalPages - 2) {
+            start = totalPages - maxVisiblePages + 1;
+            end = totalPages;
+        } else {
+            start = currentPage - 1;
+            end = currentPage + 2;
+        }
+
+        if (start > 1) {
+            pageItems.push(1);
+            if (start > 2) pageItems.push('start-dots');
+        }
+
+        for (let i = start; i <= end; i++) {
+            if (i >= 1 && i <= totalPages) pageItems.push(i);
+        }
+
+        if (end < totalPages) {
+            if (end < totalPages - 1) pageItems.push('end-dots');
+            pageItems.push(totalPages);
+        }
+    }
+
+    const pageHref = (page) => `${baseUrl}?page=${page}${preservedQuery}`;
+%>
+
+<link rel="stylesheet" href="/css/admin-pagination.css">
+
+<% if (totalPages> 1) { %>
+    <nav class="admin-pagination-shell" aria-label="Pagination">
+        <div class="admin-pagination">
+            <% if (currentPage> 1) { %>
+                <a class="nav-btn" href="<%= pageHref(currentPage - 1) %>" aria-label="Previous page">
+                    <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                </a>
+                <% } else { %>
+                    <span class="nav-btn disabled" aria-disabled="true">
+                        <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                    </span>
+                    <% } %>
+
+                        <% pageItems.forEach(item=> { %>
+                            <% if (typeof item==='string' ) { %>
+                                <span class="page-dots" aria-hidden="true">...</span>
+                                <% } else { %>
+                                    <a class="page-btn <%= item === currentPage ? 'active' : '' %>"
+                                        href="<%= pageHref(item) %>" aria-label="Page <%= item %>" <% if
+                                        (item===currentPage) { %>aria-current="page" <% } %>>
+                                            <%= item %>
+                                    </a>
+                                    <% } %>
+                                        <% }) %>
+
+                                            <% if (currentPage < totalPages) { %>
+                                                <a class="nav-btn" href="<%= pageHref(currentPage + 1) %>"
+                                                    aria-label="Next page">
+                                                    <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                                                </a>
+                                                <% } else { %>
+                                                    <span class="nav-btn disabled" aria-disabled="true">
+                                                        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                                                    </span>
+                                                    <% } %>
+        </div>
+        <div class="page-info">
+            Page <span>
+                <%= currentPage %>
+            </span> of <span>
+                <%= totalPages %>
+            </span> (<%= pagination.totalRecords %> total)
+        </div>
+    </nav>
+    <% } %>

@@ -10,7 +10,7 @@ const {
 const { uploadToMinio } = require("../../config/minio");
 
 exports.landing = (req, res) => {
-  if (req.user) return res.redirect("/feed");
+  if (req.user) return res.redirect(req.user.role === "admin" ? "/admin/dashboard" : "/feed");
   res.render("landing", {
     mode: "login",
     oldInput: {},
@@ -19,7 +19,7 @@ exports.landing = (req, res) => {
 };
 
 exports.loginForm = (req, res) => {
-  if (req.user) return res.redirect("/feed");
+  if (req.user) return res.redirect(req.user.role === "admin" ? "/admin/dashboard" : "/feed");
   res.render("landing", {
     mode: "login",
     oldInput: req.flash("oldInput")[0] || {},
@@ -46,14 +46,18 @@ exports.login = async (req, res, next) => {
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000,
     });
-    res.redirect("/feed");
+
+    // 🔥 IMPORTANT: Use `return` to stop further execution
+    if (user.role === "admin") return res.redirect("/admin/dashboard");
+
+    return res.redirect("/feed");
   } catch (err) {
     next(err);
   }
 };
 
 exports.signupForm = (req, res) => {
-  if (req.user) return res.redirect("/feed");
+  if (req.user) return res.redirect(req.user.role === "admin" ? "/admin/dashboard" : "/feed");
   res.render("landing", {
     mode: "signup",
     oldInput: req.flash("oldInput")[0] || {},
@@ -138,7 +142,6 @@ exports.changePassword = async (req, res, next) => {
       return res.redirect("/change-password");
     }
 
-    // Verify old password
     const isMatch = await compare(oldPassword, user.password);
     if (!isMatch) {
       req.flash("error_msg", "Old password is incorrect");
@@ -146,15 +149,11 @@ exports.changePassword = async (req, res, next) => {
       return res.redirect("/change-password");
     }
 
-    // Hash and update new password
     const hashedPassword = await hash(newPassword, 10);
     user.password = hashedPassword;
     await user.save();
 
-    // 🔥 INVALIDATE ALL TOKENS FOR THIS USER
     await deleteAllUserTokens(userId);
-
-    // Clear current cookie
     res.clearCookie("postloop_token");
 
     req.flash(

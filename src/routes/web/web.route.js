@@ -2,18 +2,13 @@ const express = require("express");
 const router = express.Router();
 
 const { validate } = require("express-validation");
-
 const rateLimiter = require("../../middlewares/rateLimiter.middleware");
-
 const {
   redirectIfLoggedIn,
   isAuthenticated,
 } = require("../../middlewares/auth.middleware");
-
 const upload = require("../../middlewares/multer");
-
 const webCacheMiddleware = require("../../middlewares/webCache.middleware");
-
 const { invalidateCache } = require("../../middlewares/invalidate.middleware");
 
 const {
@@ -39,7 +34,6 @@ const {
 } = require("../../validations/web/profile.validation");
 
 const { renderFeed } = require("../../controllers/web/feed.web");
-
 const { toggleFollow } = require("../../controllers/web/user.web");
 
 const {
@@ -80,16 +74,26 @@ const {
 
 const { searchPage } = require("../../controllers/web/search.web");
 
+// Import admin router
+const adminRouter = require("./admin.route");
+
 const invalidateWebCache = invalidateCache(["web:*"]);
 
-// Public Routes
+// 🔥 MIDDLEWARE TO BLOCK ADMIN FROM USER ROUTES
+const blockAdminFromUserRoutes = (req, res, next) => {
+  if (req.user && req.user.role === "admin") {
+    req.flash("error_msg", "Admins cannot access user pages.");
+    return res.redirect("/admin/dashboard");
+  }
+  next();
+};
+
+// Public Routes (no auth)
 router.get("/", redirectIfLoggedIn, landing);
-
 router.get("/login", redirectIfLoggedIn, loginForm);
-
 router.get("/signup", redirectIfLoggedIn, signupForm);
 
-// Authentication Routes
+// Auth Routes (no admin blocking needed – they are not logged in yet)
 router.post(
   "/login",
   rateLimiter(300, 5, "web-login"),
@@ -97,7 +101,6 @@ router.post(
   invalidateWebCache,
   login,
 );
-
 router.post(
   "/signup",
   rateLimiter(3600, 3, "web-signup"),
@@ -106,7 +109,6 @@ router.post(
   invalidateWebCache,
   signup,
 );
-
 router.post(
   "/logout",
   isAuthenticated,
@@ -115,152 +117,183 @@ router.post(
   logout,
 );
 
-// Change Password
-router.get("/change-password", isAuthenticated, changePasswordForm);
-
+// Password change – also blocked for admin
+router.get(
+  "/change-password",
+  isAuthenticated,
+  blockAdminFromUserRoutes,
+  changePasswordForm,
+);
 router.post(
   "/change-password",
   isAuthenticated,
+  blockAdminFromUserRoutes,
   rateLimiter(300, 5, "web-change-password"),
   validate(changePasswordSchema),
   invalidateWebCache,
   changePassword,
 );
 
-// Feed
-router.get("/feed", isAuthenticated, webCacheMiddleware(60 * 5), renderFeed);
+// Feed – block admin
+router.get(
+  "/feed",
+  isAuthenticated,
+  blockAdminFromUserRoutes,
+  webCacheMiddleware(60 * 5),
+  renderFeed,
+);
 
-// Profile Routes
-router.get("/profile/edit", isAuthenticated, renderEditProfile);
-
+// Profile Routes – block admin
+router.get(
+  "/profile/edit",
+  isAuthenticated,
+  blockAdminFromUserRoutes,
+  renderEditProfile,
+);
 router.post(
   "/profile/edit",
   isAuthenticated,
+  blockAdminFromUserRoutes,
   rateLimiter(60, 10, "web-edit-profile"),
   upload.single("profilePicture"),
   validate(updateProfileSchema),
   invalidateWebCache,
   updateProfile,
 );
-
 router.get(
   "/profile/:userId",
   isAuthenticated,
+  blockAdminFromUserRoutes,
   validate(userIdParamSchema),
   webCacheMiddleware(60 * 60 * 6),
   renderProfile,
 );
-
 router.get(
   "/profile/:userId/followers",
   isAuthenticated,
+  blockAdminFromUserRoutes,
   validate(userIdParamSchema),
   webCacheMiddleware(60 * 60 * 2),
   renderFollowers,
 );
-
 router.get(
   "/profile/:userId/following",
   isAuthenticated,
+  blockAdminFromUserRoutes,
   validate(userIdParamSchema),
   webCacheMiddleware(60 * 60 * 2),
   renderFollowing,
 );
-
 router.post(
   "/follow/:userId",
   isAuthenticated,
+  blockAdminFromUserRoutes,
   rateLimiter(60, 30, "web-follow"),
   validate(userIdParamSchema),
   invalidateWebCache,
   toggleFollow,
 );
 
-// Post Routes
-router.get("/post/create", isAuthenticated, createPostForm);
-
+// Post Routes – block admin
+router.get(
+  "/post/create",
+  isAuthenticated,
+  blockAdminFromUserRoutes,
+  createPostForm,
+);
 router.post(
   "/post/create",
   isAuthenticated,
+  blockAdminFromUserRoutes,
   rateLimiter(60, 20, "web-create-post"),
   upload.single("image"),
   validate(createPostSchema),
   invalidateWebCache,
   createPost,
 );
-
 router.get(
   "/post/:postId",
   isAuthenticated,
+  blockAdminFromUserRoutes,
   validate(postIdParamSchema),
   webCacheMiddleware(60 * 60 * 6),
   postDetail,
 );
-
 router.get(
   "/post/edit/:postId",
   isAuthenticated,
+  blockAdminFromUserRoutes,
   validate(postIdParamSchema),
   editPostForm,
 );
-
 router.post(
   "/post/edit/:postId",
   isAuthenticated,
+  blockAdminFromUserRoutes,
   rateLimiter(60, 20, "web-edit-post"),
   upload.single("image"),
   validate(updatePostSchema),
   invalidateWebCache,
   updatePost,
 );
-
 router.post(
   "/post/delete/:postId",
   isAuthenticated,
+  blockAdminFromUserRoutes,
   rateLimiter(60, 20, "web-delete-post"),
   validate(postIdParamSchema),
   invalidateWebCache,
   deletePost,
 );
-
 router.post(
   "/post/:postId/like",
   isAuthenticated,
+  blockAdminFromUserRoutes,
   rateLimiter(60, 30, "web-like-post"),
   validate(postIdParamSchema),
   invalidateWebCache,
   toggleLike,
 );
 
-// Comment Routes
+// Comment Routes – block admin
 router.post(
   "/comment/create",
   isAuthenticated,
+  blockAdminFromUserRoutes,
   rateLimiter(60, 30, "web-create-comment"),
   validate(createCommentSchema),
   invalidateWebCache,
   createComment,
 );
-
 router.put(
   "/comment/:commentId",
   isAuthenticated,
+  blockAdminFromUserRoutes,
   rateLimiter(60, 30, "web-update-comment"),
   validate(updateCommentSchema),
   invalidateWebCache,
   updateComment,
 );
-
 router.delete(
   "/comment/:commentId",
   isAuthenticated,
+  blockAdminFromUserRoutes,
   rateLimiter(60, 30, "web-delete-comment"),
   validate(commentIdParamSchema),
   invalidateWebCache,
   deleteComment,
 );
 
-// Search
-router.get("/search", isAuthenticated, webCacheMiddleware(60 * 30), searchPage);
+// Search – block admin
+router.get(
+  "/search",
+  isAuthenticated,
+  blockAdminFromUserRoutes,
+  webCacheMiddleware(60 * 30),
+  searchPage,
+);
+
+// Mount admin routes (no admin blocking here – admin routes are already protected by authorize)
+router.use("/admin", adminRouter);
 
 module.exports = router;

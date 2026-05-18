@@ -1,4 +1,3 @@
-// src/middlewares/globalErrorHandeler.js
 const ApiError = require("../utils/ApiError");
 
 exports.globalErrorHandler = (err, req, res, next) => {

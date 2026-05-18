@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en"
+    data-theme="<%= (() => { try { return localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); } catch(e) { return 'light'; } })() %>">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PostLoop Admin · <%= title %>
+    </title>
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem('theme');
+            let theme = savedTheme;
+            if (!theme) {
+                theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                localStorage.setItem('theme', theme);
+            }
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    <% if (locals.pageCss) { %>
+        <% if (typeof pageCss==='string' ) { %>
+            <link rel="stylesheet" href="/css/<%= pageCss %>">
+            <% } else if (Array.isArray(pageCss)) { %>
+                <% pageCss.forEach(css=> { %>
+                    <link rel="stylesheet" href="/css/<%= css %>">
+                    <% }) %>
+                        <% } %>
+                            <% } %>
+</head>
+
+<body>
+    <button class="hamburger-btn" id="hamburgerBtn"><i class="fas fa-bars"></i></button>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="toast-container" id="toastContainer">
+        <% if (locals.success_msg && success_msg.length) { %>
+            <div class="toast toast-success">
+                <%= success_msg %>
+            </div>
+            <% } %>
+                <% if (locals.error_msg && error_msg.length) { %>
+                    <div class="toast toast-error">
+                        <%= error_msg %>
+                    </div>
+                    <% } %>
+    </div>
+
+    <div class="container-fluid">
+        <div class="row">
+            <%- include('../partials/admin-sidebar', { user: locals.user }) %>
+                <main id="main-content" class="with-sidebar"><%- body %></main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        document.documentElement.classList.add('transition');
+        document.querySelectorAll('.toast').forEach(el => {
+            setTimeout(() => el.style.display = 'none', 2000);
+        });
+        const toggle = document.getElementById('themeToggle');
+        const icon = document.getElementById('themeIcon');
+        const text = document.getElementById('themeText');
+        const root = document.documentElement;
+        if (toggle) {
+            const setTheme = (isDark) => {
+                requestAnimationFrame(() => {
+                    const newTheme = isDark ? 'dark' : 'light';
+                    root.setAttribute('data-theme', newTheme);
+                    localStorage.setItem('theme', newTheme);
+                    if (icon) icon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+                    if (text) text.innerText = isDark ? 'Light Mode' : 'Dark Mode';
+                });
+            };
+            toggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                const isDark = root.getAttribute('data-theme') === 'dark';
+                setTheme(!isDark);
+            });
+        }
+    </script>
+</body>
+
+</html>

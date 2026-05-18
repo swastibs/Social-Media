@@ -1,0 +1,261 @@
+<div class="admin-container">
+    <div class="admin-header">
+        <div class="admin-header-content">
+            <div>
+                <h1>Admin Dashboard</h1>
+                <p>Welcome back, <strong>
+                        <%= user.name %>
+                    </strong>! Here's what's happening on PostLoop.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+        <a href="/admin/users" class="stat-card" aria-label="Manage users">
+            <div class="stat-icon users-icon"><i class="fa-solid fa-users"></i></div>
+            <div class="stat-info">
+                <h3>
+                    <%= stats.totalUsers.toLocaleString() %>
+                </h3>
+                <p>Total Users</p>
+                <span class="stat-link">Manage <i class="fa-solid fa-arrow-right"></i></span>
+            </div>
+        </a>
+
+        <a href="/admin/posts" class="stat-card" aria-label="Manage posts">
+            <div class="stat-icon posts-icon"><i class="fa-solid fa-newspaper"></i></div>
+            <div class="stat-info">
+                <h3>
+                    <%= stats.totalPosts.toLocaleString() %>
+                </h3>
+                <p>Total Posts</p>
+                <span class="stat-link">Manage <i class="fa-solid fa-arrow-right"></i></span>
+            </div>
+        </a>
+
+        <a href="/admin/comments" class="stat-card" aria-label="Manage comments">
+            <div class="stat-icon comments-icon"><i class="fa-solid fa-comments"></i></div>
+            <div class="stat-info">
+                <h3>
+                    <%= stats.totalComments.toLocaleString() %>
+                </h3>
+                <p>Total Comments</p>
+                <span class="stat-link">Manage <i class="fa-solid fa-arrow-right"></i></span>
+            </div>
+        </a>
+    </div>
+
+    <!-- Latest Data Grid -->
+    <div class="dashboard-grid">
+        <!-- Latest Users -->
+        <div class="dashboard-card latest-users-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <h2>Latest Users</h2>
+                </div>
+                <a href="/admin/users" class="view-all-link">View All <i class="fa-solid fa-chevron-right"></i></a>
+            </div>
+            <div class="card-body">
+                <% if (latestUsers.length===0) { %>
+                    <div class="empty-state">
+                        <i class="fa-regular fa-user"></i>
+                        <p>No users yet</p>
+                    </div>
+                    <% } else { %>
+                        <div class="latest-list">
+                            <% latestUsers.forEach(user=> { %>
+                                <a href="/admin/user/<%= user.id %>" class="list-item clickable"
+                                    data-href="/admin/user/<%= user.id %>">
+                                    <div class="item-avatar">
+                                        <% if (user.profilePictureUrl) { %>
+                                            <img src="<%= user.profilePictureUrl %>" alt="<%= user.name %>">
+                                            <% } else { %>
+                                                <div class="avatar-initials">
+                                                    <%= user.name.substring(0,2).toUpperCase() %>
+                                                </div>
+                                                <% } %>
+                                    </div>
+                                    <div class="item-info">
+                                        <div class="item-name">
+                                            <%= user.name %>
+                                        </div>
+                                        <div class="item-email">
+                                            <%= user.email %>
+                                        </div>
+                                        <div class="item-date">
+                                            <i class="fa-regular fa-calendar"></i>
+                                            <%= new Date(user.createdAt).toLocaleDateString('en-GB') %>
+                                        </div>
+                                    </div>
+                                    <div class="item-badge">
+                                        <span class="role-badge role-<%= user.role %>">
+                                            <%= user.role %>
+                                        </span>
+                                        <span class="status-badge status-<%= user.isActive ? 'active' : 'inactive' %>">
+                                            <%= user.isActive ? 'Active' : 'Inactive' %>
+                                        </span>
+                                    </div>
+                                    <i class="fa-solid fa-chevron-right click-indicator"></i>
+                                </a>
+                                <% }) %>
+                        </div>
+                        <% } %>
+            </div>
+        </div>
+
+        <!-- Latest Posts -->
+        <div class="dashboard-card latest-posts-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fa-solid fa-newspaper"></i>
+                    <h2>Latest Posts</h2>
+                </div>
+                <a href="/admin/posts" class="view-all-link">View All <i class="fa-solid fa-chevron-right"></i></a>
+            </div>
+            <div class="card-body">
+                <% if (latestPosts.length===0) { %>
+                    <div class="empty-state">
+                        <i class="fa-regular fa-newspaper"></i>
+                        <p>No posts yet</p>
+                    </div>
+                    <% } else { %>
+                        <div class="latest-list">
+                            <% latestPosts.forEach(post=> { %>
+                                <a href="/admin/post/<%= post.id %>" class="list-item clickable"
+                                    data-href="/admin/post/<%= post.id %>">
+                                    <div class="item-avatar">
+                                        <% if (post.User && post.User.profilePictureUrl) { %>
+                                            <img src="<%= post.User.profilePictureUrl %>" alt="<%= post.User.name %>">
+                                            <% } else { %>
+                                                <div class="avatar-initials">
+                                                    <%= post.User ? post.User.name.substring(0,2).toUpperCase() : 'U' %>
+                                                </div>
+                                                <% } %>
+                                    </div>
+                                    <div class="item-info">
+                                        <div class="item-name">
+                                            <%= post.User ? post.User.name : 'Unknown' %>
+                                        </div>
+                                        <div class="item-preview">
+                                            <%= post.content.substring(0, 80) %>
+                                                <%= post.content.length> 80 ? '...' : '' %>
+                                        </div>
+                                        <div class="item-meta">
+                                            <span><i class="fa-regular fa-heart"></i>
+                                                <%= post.likeCount %> likes
+                                            </span>
+                                            <span><i class="fa-regular fa-calendar"></i>
+                                                <%= new Date(post.createdAt).toLocaleDateString('en-GB') %>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <i class="fa-solid fa-chevron-right click-indicator"></i>
+                                </a>
+                                <% }) %>
+                        </div>
+                        <% } %>
+            </div>
+        </div>
+
+        <!-- Latest Comments -->
+        <div class="dashboard-card latest-comments-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fa-solid fa-comments"></i>
+                    <h2>Latest Comments</h2>
+                </div>
+                <a href="/admin/comments" class="view-all-link">View All <i class="fa-solid fa-chevron-right"></i></a>
+            </div>
+            <div class="card-body">
+                <% if (latestComments.length===0) { %>
+                    <div class="empty-state">
+                        <i class="fa-regular fa-comment-dots"></i>
+                        <p>No comments yet</p>
+                    </div>
+                    <% } else { %>
+                        <div class="latest-list">
+                            <% latestComments.forEach(comment=> { %>
+                                <a href="/admin/post/<%= comment.postId %>" class="list-item clickable"
+                                    data-href="/admin/post/<%= comment.postId %>">
+                                    <div class="item-avatar">
+                                        <% if (comment.User && comment.User.profilePictureUrl) { %>
+                                            <img src="<%= comment.User.profilePictureUrl %>"
+                                                alt="<%= comment.User.name %>">
+                                            <% } else { %>
+                                                <div class="avatar-initials">
+                                                    <%= comment.User ? comment.User.name.substring(0,2).toUpperCase()
+                                                        : 'U' %>
+                                                </div>
+                                                <% } %>
+                                    </div>
+                                    <div class="item-info">
+                                        <div class="item-name">
+                                            <%= comment.User ? comment.User.name : 'Unknown' %>
+                                        </div>
+                                        <div class="item-preview">"<%= comment.content.substring(0, 60) %>
+                                                <%= comment.content.length> 60 ? '...' : '' %>"</div>
+                                        <div class="item-date">
+                                            <i class="fa-regular fa-calendar"></i>
+                                            <%= new Date(comment.createdAt).toLocaleDateString('en-GB') %>
+                                        </div>
+                                    </div>
+                                    <i class="fa-solid fa-chevron-right click-indicator"></i>
+                                </a>
+                                <% }) %>
+                        </div>
+                        <% } %>
+            </div>
+        </div>
+
+        <!-- Recent Activities -->
+        <div class="dashboard-card activities-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <h2>Recent Activities</h2>
+                </div>
+                <a href="/admin/activities" class="view-all-link">View All <i class="fa-solid fa-chevron-right"></i></a>
+            </div>
+            <div class="card-body activity-body">
+                <% if (recentActivities.length===0) { %>
+                    <div class="empty-state">
+                        <i class="fa-regular fa-clock"></i>
+                        <p>No activities yet</p>
+                    </div>
+                    <% } else { %>
+                        <div class="activities-list">
+                            <% recentActivities.forEach(activity=> { %>
+                                <div class="activity-item">
+                                    <div class="activity-method">
+                                        <span class="method-badge method-<%= activity.method.toLowerCase() %>">
+                                            <%= activity.method %>
+                                        </span>
+                                    </div>
+                                    <div class="activity-details">
+                                        <div class="activity-route">
+                                            <%= activity.route %>
+                                        </div>
+                                        <div class="activity-meta">
+                                            <span><i class="fa-regular fa-user"></i>
+                                                <%= activity.userId || 'Guest' %>
+                                            </span>
+                                            <span><i class="fa-regular fa-clock"></i>
+                                                <%= new Date(activity.createdAt).toLocaleString('en-GB') %>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="activity-status">
+                                        <span class="status-badge status-<%= activity.responseStatus %>">
+                                            <%= activity.responseStatus %>
+                                        </span>
+                                    </div>
+                                </div>
+                                <% }) %>
+                        </div>
+                        <% } %>
+            </div>
+        </div>
+    </div>
+</div>
