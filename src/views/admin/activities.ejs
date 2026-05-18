@@ -1,0 +1,207 @@
+<div class="admin-container">
+    <div class="admin-header">
+        <h1>Activity Logs</h1>
+        <p>View and filter all user activities and API requests</p>
+    </div>
+
+    <div class="admin-filters">
+        <div class="filter-heading">
+            <i class="fa-solid fa-sliders"></i>
+            <div>
+                <h2>Filter Activity</h2>
+                <p>Narrow logs by user, method, route, status, entity, or date range.</p>
+            </div>
+        </div>
+
+        <form method="GET" class="filter-form activity-filter-form" id="filterForm">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="activityUserId"><i class="fa-regular fa-user"></i> User ID</label>
+                    <input id="activityUserId" type="number" name="userId" value="<%= filters.userId %>"
+                        placeholder="Enter user ID" class="filter-input" min="1">
+                </div>
+                <div class="filter-group">
+                    <label for="activityMethod"><i class="fa-solid fa-code-branch"></i> Method</label>
+                    <select id="activityMethod" name="method" class="filter-select">
+                        <option value="">All Methods</option>
+                        <% (uniqueMethods || []).forEach(m=> { %>
+                            <option value="<%= m %>" <%=filters.method===m ? 'selected' : '' %>><%= m %>
+                            </option>
+                            <% }) %>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="activityEntity"><i class="fa-solid fa-tag"></i> Entity</label>
+                    <select id="activityEntity" name="entity" class="filter-select">
+                        <option value="">All Entities</option>
+                        <% (uniqueEntities || []).forEach(e=> { %>
+                            <option value="<%= e %>" <%=filters.entity===e ? 'selected' : '' %>><%= e %>
+                            </option>
+                            <% }) %>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="activityStatus"><i class="fa-solid fa-chart-simple"></i> Status</label>
+                    <select id="activityStatus" name="status" class="filter-select">
+                        <option value="">All Statuses</option>
+                        <% (uniqueStatuses || []).forEach(s=> { %>
+                            <option value="<%= s %>" <%=filters.status==s ? 'selected' : '' %>><%= s %>
+                            </option>
+                            <% }) %>
+                    </select>
+                </div>
+            </div>
+
+            <div class="filter-row">
+                <div class="filter-group filter-group-full">
+                    <label for="activityRoute"><i class="fa-solid fa-link"></i> Route Search</label>
+                    <input id="activityRoute" type="text" name="route" value="<%= filters.route %>"
+                        placeholder="Search by route path, for example /api/users" class="filter-input">
+                </div>
+            </div>
+
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="activityStartDate"><i class="fa-regular fa-calendar"></i> Start Date</label>
+                    <input id="activityStartDate" type="date" name="startDate" value="<%= filters.startDate %>"
+                        class="filter-input">
+                </div>
+                <div class="filter-group">
+                    <label for="activityEndDate"><i class="fa-regular fa-calendar"></i> End Date</label>
+                    <input id="activityEndDate" type="date" name="endDate" value="<%= filters.endDate %>"
+                        class="filter-input">
+                </div>
+                <div class="filter-group">
+                    <label for="activityLimit"><i class="fa-solid fa-list-ol"></i> Per Page</label>
+                    <select id="activityLimit" name="limit" class="filter-select">
+                        <option value="20" <%=pagination.limit==20 ? 'selected' : '' %>>20</option>
+                        <option value="50" <%=pagination.limit==50 ? 'selected' : '' %>>50</option>
+                        <option value="100" <%=pagination.limit==100 ? 'selected' : '' %>>100</option>
+                    </select>
+                </div>
+                <div class="filter-actions">
+                    <button type="submit" class="btn-primary">
+                        <i class="fa-solid fa-filter"></i> Apply
+                    </button>
+                    <a href="/admin/activities" class="btn-secondary">
+                        <i class="fa-solid fa-eraser"></i> Clear
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="filter-summary">
+        <div class="results-count">
+            <i class="fa-solid fa-database"></i>
+            Found <strong>
+                <%= pagination.totalRecords.toLocaleString() %>
+            </strong> activity logs
+            <% if (filters.userId || filters.method || filters.route || filters.status || filters.entity ||
+                filters.startDate || filters.endDate) { %>
+                <span class="filter-badge">
+                    <i class="fa-solid fa-filter"></i> Filtered
+                    <a href="/admin/activities" class="clear-filters-link">Clear filters</a>
+                </span>
+                <% } %>
+        </div>
+    </div>
+
+    <div class="admin-table-wrapper">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th scope="col">Time</th>
+                    <th scope="col">User ID</th>
+                    <th scope="col">Method</th>
+                    <th scope="col">Route</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Response Time</th>
+                    <th scope="col">Entity</th>
+                    <th scope="col">Message</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (activities.length===0) { %>
+                    <tr>
+                        <td colspan="8">
+                            <div class="empty-state">
+                                <i class="fa-regular fa-clock empty-icon"></i>
+                                <p>No activity logs found</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <% } else { %>
+                        <% activities.forEach(activity=> { %>
+                            <tr class="<%= activity.userId ? 'clickable-row' : '' %>">
+                                <td class="no-wrap">
+                                    <%= new Date(activity.createdAt).toLocaleString('en-GB') %>
+                                </td>
+                                <td class="no-wrap">
+                                    <% if (activity.userId) { %>
+                                        <a href="/admin/user/<%= activity.userId %>" class="user-link"><i
+                                                class="fa-regular fa-user"></i>
+                                            <%= activity.userId %>
+                                        </a>
+                                        <% } else { %>
+                                            <span class="guest-badge"><i class="fa-regular fa-circle-question"></i>
+                                                Guest</span>
+                                            <% } %>
+                                </td>
+                                <td><span class="method-badge method-<%= activity.method.toLowerCase() %>">
+                                        <%= activity.method %>
+                                    </span></td>
+                                <td class="route-cell"><code class="route-code"><%= activity.route %></code></td>
+                                <td><span class="status-badge status-<%= activity.responseStatus %>">
+                                        <%= activity.responseStatus %>
+                                    </span></td>
+                                <td class="no-wrap"><span
+                                        class="response-time <%= activity.responseTime > 1000 ? 'slow' : activity.responseTime > 500 ? 'medium' : 'fast' %>">
+                                        <%= activity.responseTime %>ms
+                                    </span></td>
+                                <td>
+                                    <% if (activity.entity) { %>
+                                        <span class="entity-badge"><i class="fa-solid fa-tag"></i>
+                                            <%= activity.entity %>
+                                        </span>
+                                        <% } else { %>
+                                            -
+                                            <% } %>
+                                </td>
+                                <td class="message-cell" title="<%= activity.message || '-' %>">
+                                    <%= activity.message ? activity.message.substring(0, 50) : '-' %>
+                                        <%= activity.message && activity.message.length> 50 ? '...' : '' %>
+                                </td>
+                            </tr>
+                            <% }) %>
+                                <% } %>
+            </tbody>
+        </table>
+    </div>
+
+    <%- include('../partials/pagination', {
+        pagination,
+        baseUrl: '/admin/activities',
+        query: {
+            userId: filters.userId,
+            method: filters.method,
+            route: filters.route,
+            status: filters.status,
+            entity: filters.entity,
+            startDate: filters.startDate,
+            endDate: filters.endDate,
+            limit: pagination.limit
+        }
+    }) %>
+</div>
+
+<script>
+    document.querySelectorAll('.admin-table tbody tr').forEach(row => {
+        row.addEventListener('click', (e) => {
+            if (e.target.closest('a, button')) return;
+            const userIdCell = row.cells[1];
+            const userIdLink = userIdCell?.querySelector('a');
+            if (userIdLink) window.location.href = userIdLink.href;
+        });
+    });
+</script>

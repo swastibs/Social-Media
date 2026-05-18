@@ -11,7 +11,7 @@ const flash = require("connect-flash");
 
 require("./src/config/passport");
 const indexRoute = require("./src/routes/api/index.route");
-const { globalErrorHandler, } = require("./src/middlewares/globalErrorHandeler");
+const { globalErrorHandler } = require("./src/middlewares/globalErrorHandeler");
 const { connectDB } = require("./src/config/db");
 const connectMongo = require("./src/config/mongo");
 const activityLogger = require("./src/middlewares/activityLogger.middleware");
@@ -27,10 +27,12 @@ app.set("views", path.join(__dirname, "src/views"));
 connectDB();
 connectMongo();
 
-app.use(express.static(path.join(__dirname, "src/public"), {
-  maxAge: "1d",
-  immutable: true,
-}));
+app.use(
+  express.static(path.join(__dirname, "src/public"), {
+    maxAge: "1d",
+    immutable: true,
+  }),
+);
 
 app.use(
   "/api-docs",

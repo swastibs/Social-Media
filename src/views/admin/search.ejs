@@ -1,0 +1,234 @@
+<div class="admin-container">
+    <div class="admin-header">
+        <h1><i class="fa-solid fa-magnifying-glass"></i> Admin Search</h1>
+        <p>Search users, posts, and comments across PostLoop.</p>
+    </div>
+    <form method="GET" class="search-form">
+        <div class="filter-group">
+            <label for="adminSearch"><i class="fa-solid fa-magnifying-glass"></i> Search</label>
+            <input id="adminSearch" type="text" name="q" value="<%= searchQuery %>"
+                placeholder="Search users, posts, comments...">
+            <input type="hidden" name="type" value="<%= activeTab || 'all' %>">
+        </div>
+        <button type="submit" class="btn-primary"><i class="fa-solid fa-search"></i> Search</button>
+    </form>
+
+    <% if (searchQuery && searchQuery.length>= 2) { %>
+        <div class="search-tabs">
+            <a href="?q=<%= encodeURIComponent(searchQuery) %>&type=all"
+                class="tab <%= activeTab === 'all' ? 'active' : '' %>">
+                All (<%= counts.users + counts.posts + counts.comments %>)
+            </a>
+            <a href="?q=<%= encodeURIComponent(searchQuery) %>&type=users"
+                class="tab <%= activeTab === 'users' ? 'active' : '' %>">
+                Users (<%= counts.users %>)
+            </a>
+            <a href="?q=<%= encodeURIComponent(searchQuery) %>&type=posts"
+                class="tab <%= activeTab === 'posts' ? 'active' : '' %>">
+                Posts (<%= counts.posts %>)
+            </a>
+            <a href="?q=<%= encodeURIComponent(searchQuery) %>&type=comments"
+                class="tab <%= activeTab === 'comments' ? 'active' : '' %>">
+                Comments (<%= counts.comments %>)
+            </a>
+        </div>
+
+        <% if (activeTab==='all' || activeTab==='users' ) { %>
+            <div class="search-section">
+                <h2>Users</h2>
+                <div class="users-grid">
+                    <% results.users.forEach(user=> { %>
+                        <div class="user-card" data-href="/admin/user/<%= user.id %>">
+                            <a href="/admin/user/<%= user.id %>" class="admin-card-link"
+                                aria-label="View admin profile for <%= user.name %>"></a>
+                            <div class="user-card-header">
+                                <div class="user-avatar">
+                                    <% if (user.thumbnailUrl || user.profilePictureUrl) { %>
+                                        <img src="<%= user.thumbnailUrl || user.profilePictureUrl %>"
+                                            alt="<%= user.name %>">
+                                        <% } else { %>
+                                            <div class="avatar-initials large">
+                                                <%= user.name.substring(0,2).toUpperCase() %>
+                                            </div>
+                                            <% } %>
+                                </div>
+                                <div class="user-info">
+                                    <h3>
+                                        <%= user.name %>
+                                    </h3>
+                                    <p>
+                                        <%= user.email %>
+                                    </p>
+                                    <p><i class="fa-regular fa-clock"></i> Joined: <%= new
+                                            Date(user.createdAt).toLocaleDateString() %>
+                                    </p>
+                                    <p>Role: <span
+                                            class="badge <%= user.role === 'admin' ? 'badge-admin' : 'badge-user' %>">
+                                            <%= user.role %>
+                                        </span></p>
+                                    <p>Status: <span
+                                            class="badge <%= user.isActive ? 'badge-active' : 'badge-inactive' %>">
+                                            <%= user.isActive ? 'Active' : 'Inactive' %>
+                                        </span></p>
+                                </div>
+                            </div>
+                            <div class="user-actions">
+                                <% if (user.role !=='admin' ) { %>
+                                    <form method="POST"
+                                        action="/admin/user/<%= user.id %>/<%= user.isActive ? 'deactivate' : 'activate' %>"
+                                        class="inline-action-form">
+                                        <button type="submit"
+                                            class="btn-admin <%= user.isActive ? 'btn-deactivate' : 'btn-activate' %>">
+                                            <i
+                                                class="fa-regular <%= user.isActive ? 'fa-circle-xmark' : 'fa-circle-check' %>"></i>
+                                            <%= user.isActive ? 'Deactivate' : 'Activate' %>
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="/admin/user/<%= user.id %>/promote"
+                                        class="inline-action-form">
+                                        <button type="submit" class="btn-admin btn-promote"><i
+                                                class="fa-solid fa-arrow-up"></i> Promote to Admin</button>
+                                    </form>
+                                    <form method="POST" action="/admin/user/<%= user.id %>/delete"
+                                        onsubmit="return confirm('Delete this user permanently?')"
+                                        class="inline-action-form">
+                                        <button type="submit" class="btn-admin btn-delete"><i
+                                                class="fa-regular fa-trash-can"></i> Delete</button>
+                                    </form>
+                                    <% } %>
+                            </div>
+                        </div>
+                        <% }) %>
+                            <% if (results.users.length===0 && activeTab==='users' ) { %>
+                                <div class="empty-state">No users found.</div>
+                                <% } %>
+                </div>
+            </div>
+            <% } %>
+
+                <% if (activeTab==='all' || activeTab==='posts' ) { %>
+                    <div class="search-section">
+                        <h2>Posts</h2>
+                        <div class="posts-grid">
+                            <% results.posts.forEach(post=> { %>
+                                <div class="post-card" data-href="/admin/post/<%= post.id %>">
+                                    <a href="/admin/post/<%= post.id %>" class="admin-card-link"
+                                        aria-label="View admin post details"></a>
+                                    <div class="post-header">
+                                        <div class="post-author">
+                                            <div class="post-author-avatar">
+                                                <% if (post.User?.thumbnailUrl || post.User?.profilePictureUrl) { %>
+                                                    <img src="<%= post.User.thumbnailUrl || post.User.profilePictureUrl %>"
+                                                        alt="<%= post.User.name %>">
+                                                    <% } else { %>
+                                                        <div class="avatar-initials small">
+                                                            <%= (post.User?.name || 'U' ).substring(0,2).toUpperCase()
+                                                                %>
+                                                        </div>
+                                                        <% } %>
+                                            </div>
+                                            <div class="post-author-info">
+                                                <strong>
+                                                    <%= post.User?.name || 'Unknown' %>
+                                                </strong>
+                                                <small>
+                                                    <%= new Date(post.createdAt).toLocaleString() %>
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="post-content">
+                                        <p>
+                                            <%= post.content.substring(0, 150) %>
+                                                <%= post.content.length> 150 ? '...' : '' %>
+                                        </p>
+                                        <% if (post.imageUrl) { %>
+                                            <img src="<%= post.thumbnailUrl || post.imageUrl %>" class="post-thumb"
+                                                alt="image">
+                                            <% } %>
+                                    </div>
+                                    <div class="post-stats">
+                                        <span><i class="fa-regular fa-heart"></i>
+                                            <%= post.likeCount || 0 %> likes
+                                        </span>
+                                        <span><i class="fa-regular fa-comment"></i>
+                                            <%= post.commentCount || 0 %> comments
+                                        </span>
+                                    </div>
+                                    <div class="post-actions">
+                                        <form method="POST" action="/admin/post/<%= post.id %>/delete"
+                                            onsubmit="return confirm('Delete this post? All comments will be deleted.')">
+                                            <button type="submit" class="btn-admin btn-delete"><i
+                                                    class="fa-regular fa-trash-can"></i> Delete Post</button>
+                                        </form>
+                                    </div>
+                                </div>
+                                <% }) %>
+                                    <% if (results.posts.length===0 && activeTab==='posts' ) { %>
+                                        <div class="empty-state">No posts found.</div>
+                                        <% } %>
+                        </div>
+                    </div>
+                    <% } %>
+
+                        <% if (activeTab==='all' || activeTab==='comments' ) { %>
+                            <div class="search-section">
+                                <h2>Comments</h2>
+                                <div class="comments-grid">
+                                    <% results.comments.forEach(comment=> { %>
+                                        <div class="comment-card"
+                                            data-href="<%= comment.Post ? `/admin/post/${comment.Post.id}` : '/admin/comments' %>">
+                                            <a href="<%= comment.Post ? `/admin/post/${comment.Post.id}` : '/admin/comments' %>"
+                                                class="admin-card-link" aria-label="View related admin post"></a>
+                                            <div class="comment-header">
+                                                <div class="comment-author-avatar">
+                                                    <% if (comment.User?.thumbnailUrl ||
+                                                        comment.User?.profilePictureUrl) { %>
+                                                        <img src="<%= comment.User.thumbnailUrl || comment.User.profilePictureUrl %>"
+                                                            alt="<%= comment.User.name %>">
+                                                        <% } else { %>
+                                                            <div class="avatar-initials small">
+                                                                <%= (comment.User?.name || 'U'
+                                                                    ).substring(0,2).toUpperCase() %>
+                                                            </div>
+                                                            <% } %>
+                                                </div>
+                                                <div class="comment-author-info">
+                                                    <strong>
+                                                        <%= comment.User?.name || 'Unknown' %>
+                                                    </strong>
+                                                    <small>on post: <%= comment.Post?.content
+                                                            ? `${comment.Post.content.substring(0, 60)}${comment.Post.content.length > 60 ? '...' : ''}`
+                                                            : 'Post deleted' %></small>
+                                                    <small>
+                                                        <%= new Date(comment.createdAt).toLocaleString() %>
+                                                    </small>
+                                                </div>
+                                            </div>
+                                            <div class="comment-body">
+                                                <p>
+                                                    <%= comment.content %>
+                                                </p>
+                                            </div>
+                                            <div class="comment-actions">
+                                                <form method="POST" action="/admin/comment/<%= comment.id %>/delete"
+                                                    onsubmit="return confirm('Delete this comment?')">
+                                                    <button type="submit" class="btn-admin btn-delete"><i
+                                                            class="fa-regular fa-trash-can"></i> Delete Comment</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                        <% }) %>
+                                            <% if (results.comments.length===0 && activeTab==='comments' ) { %>
+                                                <div class="empty-state">No comments found.</div>
+                                                <% } %>
+                                </div>
+                            </div>
+                            <% } %>
+
+                                <% } else if (searchQuery && searchQuery.length < 2) { %>
+                                    <div class="empty-state">Please enter at least 2 characters.</div>
+                                    <% } else { %>
+                                        <div class="empty-state">Enter a search term above.</div>
+                                        <% } %>
+</div>

@@ -1,0 +1,175 @@
+<div class="admin-container">
+    <div class="admin-header">
+        <h1>Manage Posts</h1>
+        <p>View and manage all user posts</p>
+    </div>
+
+    <div class="admin-filters">
+        <form method="GET" class="filter-form">
+            <div class="filter-group">
+                <label for="postSearch"><i class="fa-solid fa-magnifying-glass"></i> Search Posts</label>
+                <input id="postSearch" type="text" name="search" placeholder="Search by content..."
+                    value="<%= searchQuery %>" class="filter-input">
+            </div>
+            <details class="filter-group filter-group-full">
+                <summary><i class="fa-solid fa-sliders"></i> Filters</summary>
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label for="postCreatedFrom"><i class="fa-regular fa-calendar"></i> Created From</label>
+                        <input id="postCreatedFrom" type="date" name="createdFrom" value="<%= filters.createdFrom %>"
+                            class="filter-input">
+                    </div>
+                    <div class="filter-group">
+                        <label for="postCreatedTo"><i class="fa-regular fa-calendar"></i> Created To</label>
+                        <input id="postCreatedTo" type="date" name="createdTo" value="<%= filters.createdTo %>"
+                            class="filter-input">
+                    </div>
+                    <div class="filter-group">
+                        <label for="minLikes"><i class="fa-regular fa-heart"></i> Min Likes</label>
+                        <input id="minLikes" type="number" min="0" name="minLikes" value="<%= filters.minLikes %>"
+                            class="filter-input">
+                    </div>
+                    <div class="filter-group">
+                        <label for="maxLikes"><i class="fa-solid fa-heart"></i> Max Likes</label>
+                        <input id="maxLikes" type="number" min="0" name="maxLikes" value="<%= filters.maxLikes %>"
+                            class="filter-input">
+                    </div>
+                </div>
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label for="hasImage"><i class="fa-regular fa-image"></i> Has Image</label>
+                        <select id="hasImage" name="hasImage" class="filter-select">
+                            <option value="any" <%=filters.hasImage==='any' ? 'selected' : '' %>>Any</option>
+                            <option value="yes" <%=filters.hasImage==='yes' ? 'selected' : '' %>>Yes</option>
+                            <option value="no" <%=filters.hasImage==='no' ? 'selected' : '' %>>No</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="postDeleted"><i class="fa-solid fa-trash"></i> Deleted</label>
+                        <select id="postDeleted" name="deleted" class="filter-select">
+                            <option value="all" <%=filters.deleted==='all' ? 'selected' : '' %>>All</option>
+                            <option value="active" <%=filters.deleted==='active' ? 'selected' : '' %>>Only active
+                            </option>
+                            <option value="deleted" <%=filters.deleted==='deleted' ? 'selected' : '' %>>Only deleted
+                            </option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="postSortBy"><i class="fa-solid fa-arrow-down-wide-short"></i> Sort By</label>
+                        <select id="postSortBy" name="sortBy" class="filter-select">
+                            <option value="createdAt" <%=filters.sortBy==='createdAt' ? 'selected' : '' %>>Created
+                            </option>
+                            <option value="likeCount" <%=filters.sortBy==='likeCount' ? 'selected' : '' %>>Likes
+                            </option>
+                            <option value="commentCount" <%=filters.sortBy==='commentCount' ? 'selected' : '' %>>
+                                Comments</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="postOrder"><i class="fa-solid fa-arrow-up-a-z"></i> Order</label>
+                        <select id="postOrder" name="order" class="filter-select">
+                            <option value="DESC" <%=filters.order==='DESC' ? 'selected' : '' %>>DESC</option>
+                            <option value="ASC" <%=filters.order==='ASC' ? 'selected' : '' %>>ASC</option>
+                        </select>
+                    </div>
+                </div>
+            </details>
+            <div class="filter-actions">
+                <button type="submit" class="btn-primary"><i class="fa-solid fa-search"></i> Search</button>
+                <% if (searchQuery || filters.createdFrom || filters.createdTo || filters.minLikes || filters.maxLikes
+                    || filters.hasImage !=='any' || filters.deleted !=='all' || filters.sortBy !=='createdAt' ||
+                    filters.order !=='DESC' ) { %>
+                    <a href="/admin/posts" class="btn-secondary"><i class="fa-solid fa-times"></i> Clear</a>
+                    <% } %>
+            </div>
+        </form>
+    </div>
+
+    <div class="admin-grid">
+        <% if (posts.length===0) { %>
+            <div class="empty-state admin-grid-empty">
+                <i class="fa-regular fa-newspaper empty-icon"></i>
+                <p>No posts found</p>
+            </div>
+            <% } else { %>
+                <% posts.forEach(post=> { %>
+                    <div class="admin-card" data-href="/admin/post/<%= post.id %>">
+                        <a href="/admin/post/<%= post.id %>" class="admin-card-link" aria-label="View admin post"></a>
+                        <div class="card-content">
+                            <div class="card-header-row">
+                                <div class="avatar-sm">
+                                    <% if (post.User.thumbnailUrl || post.User.profilePictureUrl) { %>
+                                        <img src="<%= post.User.thumbnailUrl || post.User.profilePictureUrl %>"
+                                            alt="<%= post.User.name %>" class="avatar-sm">
+                                        <% } else { %>
+                                            <div class="avatar-initials small">
+                                                <%= post.User.name.substring(0,2).toUpperCase() %>
+                                            </div>
+                                            <% } %>
+                                </div>
+                                <div>
+                                    <div class="card-title-text">
+                                        <%= post.User.name %>
+                                    </div>
+                                    <div class="card-subtitle">
+                                        <%= new Date(post.createdAt).toLocaleString() %>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <p>
+                                    <%= post.content.substring(0, 120) %>
+                                        <%= post.content.length> 120 ? '...' : '' %>
+                                </p>
+                                <% if (post.imageUrl) { %>
+                                    <img src="<%= post.thumbnailUrl || post.imageUrl %>" class="admin-card-image"
+                                        alt="Post image">
+                                    <% } %>
+                            </div>
+                            <div class="card-stats">
+                                <span><i class="fa-regular fa-heart"></i>
+                                    <%= post.likeCount %> likes
+                                </span>
+                                <span><i class="fa-regular fa-comment"></i>
+                                    <%= post.commentCount || 0 %> comments
+                                </span>
+                                <% if (post.isDeleted) { %>
+                                    <span class="status-badge status-inactive">Deleted</span>
+                                    <% } %>
+                            </div>
+                            <div class="card-actions" onclick="event.stopPropagation();">
+                                <a href="/admin/post/<%= post.id %>" class="action-btn info" title="View Post"><i
+                                        class="fa-solid fa-eye"></i></a>
+                                <% if (post.isDeleted) { %>
+                                    <button type="button" class="action-btn danger" title="Already deleted" disabled><i
+                                            class="fa-solid fa-trash"></i></button>
+                                    <span class="card-subtitle">Already deleted</span>
+                                    <% } else { %>
+                                        <form method="POST" action="/admin/post/<%= post.id %>/delete"
+                                            class="inline-action-form" data-admin-confirm="delete-post">
+                                            <button type="submit" class="action-btn danger" title="Delete Post"><i
+                                                    class="fa-solid fa-trash"></i></button>
+                                        </form>
+                                        <% } %>
+                            </div>
+                        </div>
+                    </div>
+                    <% }) %>
+                        <% } %>
+    </div>
+
+    <%- include('../partials/pagination', { pagination, baseUrl: '/admin/posts' , query: { search: searchQuery,
+        createdFrom: filters.createdFrom, createdTo: filters.createdTo, minLikes: filters.minLikes, maxLikes:
+        filters.maxLikes, hasImage: filters.hasImage, deleted: filters.deleted, sortBy: filters.sortBy, order:
+        filters.order } }) %>
+</div>
+
+<script>
+    document.querySelectorAll('.admin-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            if (e.target.closest('.card-actions')) return;
+            const href = card.dataset.href;
+            if (href) window.location.href = href;
+        });
+    });
+</script>

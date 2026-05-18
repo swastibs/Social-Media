@@ -1,0 +1,194 @@
+<div class="admin-container">
+    <div class="admin-header">
+        <h1>Manage Users</h1>
+        <p>View and manage all registered users</p>
+    </div>
+
+    <div class="admin-filters">
+        <form method="GET" class="filter-form">
+            <div class="filter-group">
+                <label for="userSearch"><i class="fa-solid fa-magnifying-glass"></i> Search Users</label>
+                <input id="userSearch" type="text" name="search" placeholder="Search by name or email..."
+                    value="<%= searchQuery %>" class="filter-input">
+            </div>
+            <details class="filter-group filter-group-full">
+                <summary><i class="fa-solid fa-sliders"></i> Filters</summary>
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label for="roleFilter"><i class="fa-solid fa-user-shield"></i> Role</label>
+                        <select id="roleFilter" name="role" class="filter-select">
+                            <option value="">All roles</option>
+                            <option value="user" <%=filters.role==='user' ? 'selected' : '' %>>User</option>
+                            <option value="admin" <%=filters.role==='admin' ? 'selected' : '' %>>Admin</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="statusFilter"><i class="fa-solid fa-circle-check"></i> Status</label>
+                        <select id="statusFilter" name="status" class="filter-select">
+                            <option value="">All statuses</option>
+                            <option value="active" <%=filters.status==='active' ? 'selected' : '' %>>Active</option>
+                            <option value="inactive" <%=filters.status==='inactive' ? 'selected' : '' %>>Inactive
+                            </option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="deletedFilter"><i class="fa-solid fa-trash"></i> Deleted</label>
+                        <select id="deletedFilter" name="deleted" class="filter-select">
+                            <option value="all" <%=filters.deleted==='all' ? 'selected' : '' %>>All</option>
+                            <option value="active" <%=filters.deleted==='active' ? 'selected' : '' %>>Only active
+                            </option>
+                            <option value="deleted" <%=filters.deleted==='deleted' ? 'selected' : '' %>>Only deleted
+                            </option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="userSortBy"><i class="fa-solid fa-arrow-down-wide-short"></i> Sort By</label>
+                        <select id="userSortBy" name="sortBy" class="filter-select">
+                            <option value="createdAt" <%=filters.sortBy==='createdAt' ? 'selected' : '' %>>Created
+                            </option>
+                            <option value="postsCount" <%=filters.sortBy==='postsCount' ? 'selected' : '' %>>Posts
+                            </option>
+                            <option value="followersCount" <%=filters.sortBy==='followersCount' ? 'selected' : '' %>>
+                                Followers</option>
+                            <option value="name" <%=filters.sortBy==='name' ? 'selected' : '' %>>Name</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label for="createdFrom"><i class="fa-regular fa-calendar"></i> Created From</label>
+                        <input id="createdFrom" type="date" name="createdFrom" value="<%= filters.createdFrom %>"
+                            class="filter-input">
+                    </div>
+                    <div class="filter-group">
+                        <label for="createdTo"><i class="fa-regular fa-calendar"></i> Created To</label>
+                        <input id="createdTo" type="date" name="createdTo" value="<%= filters.createdTo %>"
+                            class="filter-input">
+                    </div>
+                    <div class="filter-group">
+                        <label for="userOrder"><i class="fa-solid fa-arrow-up-a-z"></i> Order</label>
+                        <select id="userOrder" name="order" class="filter-select">
+                            <option value="DESC" <%=filters.order==='DESC' ? 'selected' : '' %>>DESC</option>
+                            <option value="ASC" <%=filters.order==='ASC' ? 'selected' : '' %>>ASC</option>
+                        </select>
+                    </div>
+                </div>
+            </details>
+            <div class="filter-actions">
+                <button type="submit" class="btn-primary"><i class="fa-solid fa-search"></i> Search</button>
+                <% if (searchQuery || filters.role || filters.status || filters.deleted !=='all' || filters.createdFrom
+                    || filters.createdTo || filters.sortBy !=='createdAt' || filters.order !=='DESC' ) { %>
+                    <a href="/admin/users" class="btn-secondary"><i class="fa-solid fa-times"></i> Clear</a>
+                    <% } %>
+            </div>
+        </form>
+    </div>
+
+    <div class="admin-grid">
+        <% if (users.length===0) { %>
+            <div class="empty-state admin-grid-empty">
+                <i class="fa-regular fa-user empty-icon"></i>
+                <p>No users found</p>
+            </div>
+            <% } else { %>
+                <% users.forEach(user=> { %>
+                    <div class="admin-card" data-href="/admin/user/<%= user.id %>">
+                        <a href="/admin/user/<%= user.id %>" class="admin-card-link"
+                            aria-label="View admin profile for <%= user.name %>"></a>
+                        <div class="card-content">
+                            <div class="card-header-row">
+                                <div class="avatar-sm">
+                                    <% if (user.thumbnailUrl || user.profilePictureUrl) { %>
+                                        <img src="<%= user.thumbnailUrl || user.profilePictureUrl %>"
+                                            alt="<%= user.name %>" class="avatar-sm">
+                                        <% } else { %>
+                                            <div class="avatar-initials small">
+                                                <%= user.name.substring(0,2).toUpperCase() %>
+                                            </div>
+                                            <% } %>
+                                </div>
+                                <div>
+                                    <div class="card-title-text">
+                                        <%= user.name %>
+                                    </div>
+                                    <div class="card-subtitle">
+                                        <%= user.email %>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div><i class="fa-regular fa-calendar"></i> Joined: <%= new
+                                        Date(user.createdAt).toLocaleDateString('en-GB') %>
+                                </div>
+                                <div><span class="role-badge role-<%= user.role %>">
+                                        <%= user.role %>
+                                    </span>
+                                    <% if (user.isDeleted) { %>
+                                        <span class="status-badge status-inactive">Deleted</span>
+                                        <% } else { %>
+                                            <span
+                                                class="status-badge status-<%= user.isActive ? 'active' : 'inactive' %>">
+                                                <%= user.isActive ? 'Active' : 'Inactive' %>
+                                            </span>
+                                            <% } %>
+                                </div>
+                            </div>
+                            <div class="card-actions" onclick="event.stopPropagation();">
+                                <% if (user.isDeleted) { %>
+                                    <button type="button" class="action-btn warning" title="Deleted user" disabled>
+                                        <i class="fa-solid fa-ban"></i>
+                                    </button>
+                                    <button type="button" class="action-btn primary" title="Deleted user" disabled>
+                                        <i class="fa-solid fa-user-shield"></i>
+                                    </button>
+                                    <button type="button" class="action-btn danger" title="Deleted user" disabled>
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                    <% } else if (user.role !=='admin' ) { %>
+                                        <form method="POST"
+                                            action="/admin/user/<%= user.id %>/<%= user.isActive ? 'deactivate' : 'activate' %>"
+                                            class="inline-action-form" data-admin-confirm="toggle">
+                                            <button type="submit"
+                                                class="action-btn <%= user.isActive ? 'warning' : 'success' %>"
+                                                title="<%= user.isActive ? 'Deactivate' : 'Activate' %>">
+                                                <i class="fa-solid <%= user.isActive ? 'fa-ban' : 'fa-check' %>"></i>
+                                            </button>
+                                        </form>
+                                        <form method="POST" action="/admin/user/<%= user.id %>/promote"
+                                            class="inline-action-form" data-admin-confirm="promote">
+                                            <button type="submit" class="action-btn primary" title="Promote to Admin">
+                                                <i class="fa-solid fa-user-shield"></i>
+                                            </button>
+                                        </form>
+                                        <form method="POST" action="/admin/user/<%= user.id %>/delete"
+                                            class="inline-action-form" data-admin-confirm="delete">
+                                            <button type="submit" class="action-btn danger" title="Delete User">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        </form>
+                                        <% } %>
+                                            <a href="/admin/user/<%= user.id %>" class="action-btn info"
+                                                title="View Admin Profile" onclick="event.stopPropagation();">
+                                                <i class="fa-solid fa-eye"></i>
+                                            </a>
+                            </div>
+                        </div>
+                    </div>
+                    <% }) %>
+                        <% } %>
+    </div>
+
+    <%- include('../partials/pagination', { pagination, baseUrl: '/admin/users' , query: { search: searchQuery, role:
+        filters.role, status: filters.status, deleted: filters.deleted, createdFrom: filters.createdFrom, createdTo:
+        filters.createdTo, sortBy: filters.sortBy, order: filters.order } }) %>
+</div>
+
+<script>
+    document.querySelectorAll('.admin-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            if (e.target.closest('.card-actions')) return;
+            const href = card.dataset.href;
+            if (href) window.location.href = href;
+        });
+    });
+</script>
