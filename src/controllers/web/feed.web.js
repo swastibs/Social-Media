@@ -71,7 +71,7 @@ exports.renderFeed = async (req, res, next) => {
   try {
     const currentUser = req.user;
     const page = Math.max(1, parseInt(req.query.page) || 1);
-    const limit = 16;
+    const limit = 12;
     const offset = (page - 1) * limit;
 
     const followingIds = await getFollowingIds(currentUser.id);

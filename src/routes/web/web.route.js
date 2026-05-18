@@ -33,7 +33,7 @@ router.post("/logout", isAuthenticated, invalidateWebCache, logout);
 router.get("/change-password", isAuthenticated, changePasswordForm);
 router.post("/change-password", isAuthenticated, validate(changePasswordSchema), invalidateWebCache, changePassword);
 
-router.get("/feed", isAuthenticated, webCacheMiddleware(60 * 60), renderFeed);
+router.get("/feed", isAuthenticated, webCacheMiddleware(60 * 5), renderFeed);
 
 
 router.get("/profile/edit", isAuthenticated, renderEditProfile);
