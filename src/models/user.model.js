@@ -35,6 +35,10 @@ const User = sequelize.define(
 
     followingCount: { type: DataTypes.INTEGER, defaultValue: 0 },
 
+    resetPasswordToken: { type: DataTypes.STRING, allowNull: true },
+
+    resetPasswordExpires: { type: DataTypes.DATE, allowNull: true },
+
     isActive: { type: DataTypes.BOOLEAN, defaultValue: true },
 
     isDeleted: { type: DataTypes.BOOLEAN, defaultValue: false },

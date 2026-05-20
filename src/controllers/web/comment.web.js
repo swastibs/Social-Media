@@ -8,7 +8,7 @@ const isEditable = (commentCreatedAt) => {
     const now = new Date();
     const createdAt = new Date(commentCreatedAt);
     const diffMinutes = (now - createdAt) / (1000 * 60);
-    return diffMinutes <= 1;
+    return diffMinutes <= 15;
 };
 
 // CREATE COMMENT (AJAX)

@@ -72,7 +72,14 @@ const {
   commentIdParamSchema,
 } = require("../../validations/web/comment.validation");
 
+const {
+  forgotPasswordSchema,
+  resetPasswordSchema,
+} = require("../../validations/web/forgotPassword.validation");
+
 const { searchPage } = require("../../controllers/web/search.web");
+
+const forgotController = require("../../controllers/web/forgotPassword.controller");
 
 // Import admin router
 const adminRouter = require("./admin.route");
@@ -291,6 +298,25 @@ router.get(
   blockAdminFromUserRoutes,
   webCacheMiddleware(60 * 30),
   searchPage,
+);
+
+// Forgot Password routes
+router.get("/forgot-password", forgotController.showForgotForm);
+
+router.post(
+  "/forgot-password",
+  rateLimiter(60, 3, "forgot-pw"),
+  validate(forgotPasswordSchema),
+  forgotController.requestReset,
+);
+
+router.get("/reset-password", forgotController.showResetForm);
+
+router.post(
+  "/reset-password",
+  rateLimiter(60, 5, "reset-pw"),
+  validate(resetPasswordSchema),
+  forgotController.resetPassword,
 );
 
 // Mount admin routes (no admin blocking here – admin routes are already protected by authorize)

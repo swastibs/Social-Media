@@ -20,6 +20,7 @@ exports.createPost = async (req, res, next) => {
     const { content } = req.body;
     const file = req.file;
     let imageUrl = null;
+    let thumbnailUrl = null;
 
     if (file) {
       const result = await uploadToMinio(
@@ -36,6 +37,7 @@ exports.createPost = async (req, res, next) => {
       {
         content,
         imageUrl,
+        thumbnailUrl,
         userId: req.user.id,
         likeCount: 0,
         isDeleted: false,
