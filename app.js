@@ -17,6 +17,8 @@ const connectMongo = require("./src/config/mongo");
 const activityLogger = require("./src/middlewares/activityLogger.middleware");
 const webRouter = require("./src/routes/web/web.route");
 
+require("./src/jobs/cleanupActivities");
+
 const app = express();
 app.use(compression());
 
