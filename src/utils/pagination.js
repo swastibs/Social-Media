@@ -1,14 +1,3 @@
-/**
- * Generic pagination utility for Sequelize models.
- * @param {Object} params
- * @param {Model} params.model - Sequelize model
- * @param {Object} params.where - Sequelize where clause
- * @param {number} params.page - Current page (default 1)
- * @param {number} params.limit - Items per page (default 10, max 50)
- * @param {Array} params.include - Sequelize include array
- * @param {Array} params.order - Sort order (default [["createdAt", "DESC"]])
- * @returns {Promise<{data: Array, pagination: Object}>}
- */
 exports.paginate = async ({
   model,
   where = {},

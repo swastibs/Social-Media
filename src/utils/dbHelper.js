@@ -2,15 +2,6 @@ const ApiError = require("./ApiError");
 const { User, Post, Comment } = require("../models");
 const { ROLES } = require("../constant/role");
 
-/**
- * Returns a Sequelize include object for the User model that automatically
- * excludes admin users from public responses (API and non‑admin views).
- * Admin controllers may override this by not using this helper.
- *
- * @param {Object} options
- * @param {string[]} options.attributes - Attributes to include (default: ["id", "name", "profilePictureUrl"])
- * @returns {Object} Sequelize include object
- */
 const getSafeUserInclude = (options = {}) => {
   const { attributes = ["id", "name", "profilePictureUrl"] } = options;
   return {
