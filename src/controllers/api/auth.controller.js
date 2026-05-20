@@ -10,6 +10,7 @@ const {
   storeToken,
   deleteToken,
   deleteAllUserTokens,
+  removeTokenFromUser,
 } = require("../../utils/authCache");
 const { uploadToMinio } = require("../../config/minio");
 
@@ -133,7 +134,7 @@ exports.changePassword = async (req, res, next) => {
   }
 };
 
-// LOGOUT
+// Then inside logOut:
 exports.logOut = async (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
@@ -141,12 +142,10 @@ exports.logOut = async (req, res, next) => {
 
     if (token) {
       await deleteToken(token);
-      await exports.removeTokenFromUser?.(userId, token);
+      if (userId) await removeTokenFromUser(userId, token); // ✅ use imported function
     }
 
-    return successResponse(res, {
-      message: "Logout successful",
-    });
+    return successResponse(res, { message: "Logout successful" });
   } catch (err) {
     next(err);
   }
