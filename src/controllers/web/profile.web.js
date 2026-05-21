@@ -39,6 +39,7 @@ exports.renderProfile = async (req, res, next) => {
         "postsCount",
         "followersCount",
         "followingCount",
+        "isVerified",
         "isActive",
         "role",
       ],

@@ -18,6 +18,9 @@
       <div class="profile-info">
         <div class="profile-name">
           <%= user.name %>
+            <% if (user.isVerified) { %>
+              <span class="verified-badge-small" title="Verified User">✓</span>
+              <% } %>
         </div>
         <div class="profile-bio">
           <%= user.bio ? user.bio.substring(0,45) : '' %>
@@ -65,4 +68,3 @@
     </form>
   </div>
 </aside>
-

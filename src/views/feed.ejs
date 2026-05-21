@@ -19,6 +19,9 @@
                         </div>
                         <span class="suggestion-horizontal-name">
                             <%= user.name %>
+                                <% if (user.isVerified) { %>
+                                    <span class="verified-badge-small" title="Verified User">✓</span>
+                                    <% } %>
                         </span>
                         <button class="suggestion-horizontal-follow-btn" data-user-id="<%= user.id %>">Follow</button>
                     </div>

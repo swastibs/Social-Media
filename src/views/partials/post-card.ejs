@@ -17,6 +17,9 @@
             <div class="post-author-details">
                 <a href="/profile/<%= post.User?.id %>" class="post-author-name">
                     <%= post.User?.name || 'Unknown User' %>
+                        <% if (post.User?.isVerified) { %>
+                            <span class="verified-badge-small" title="Verified User">✓</span>
+                            <% } %>
                 </a>
                 <span class="post-time">
                     <%= new Date(post.createdAt).toLocaleDateString('en-GB') %>

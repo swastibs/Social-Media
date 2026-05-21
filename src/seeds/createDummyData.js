@@ -25,13 +25,13 @@ const { ROLES } = require("../constant/role");
 const CONFIG = {
   ADMIN_EMAIL: "admin@gmail.com",
   ADMIN_NAME: "Admin",
-  REGULAR_USERS: 20,
+  REGULAR_USERS: 10,
   POSTS_PER_USER: 10,
   COMMENTS_PER_POST: 3,
   LIKES_RATIO: 0.2,
   MIN_FOLLOWING: 2,
   MAX_FOLLOWING: 5,
-  PROFILE_IMAGES_TO_UPLOAD: 30, // enough for all users (admin + regular)
+  PROFILE_IMAGES_TO_UPLOAD: 10, // enough for all users (admin + regular)
   POST_IMAGES_TO_UPLOAD: 50, // many so alternation can pick unique ones
 };
 

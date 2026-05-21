@@ -125,6 +125,7 @@ exports.renderFeed = async (req, res, next) => {
         "name",
         "email",
         "bio",
+        "isVerified",
         "profilePictureUrl",
         "postsCount",
         "followersCount",

@@ -20,6 +20,8 @@ const User = sequelize.define(
 
     bio: { type: DataTypes.TEXT, allowNull: true, defaultValue: null },
 
+    isVerified: { type: DataTypes.BOOLEAN, defaultValue: false },
+
     githubId: { type: DataTypes.STRING, allowNull: true, unique: true },
 
     profilePictureUrl: { type: DataTypes.STRING, allowNull: true },

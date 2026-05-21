@@ -16,6 +16,7 @@ const { connectDB } = require("./src/config/db");
 const connectMongo = require("./src/config/mongo");
 const activityLogger = require("./src/middlewares/activityLogger.middleware");
 const webRouter = require("./src/routes/web/web.route");
+const { razorpayWebhook } = require("./src/controllers/api/payment.controller");
 
 require("./src/jobs/cleanupActivities");
 
@@ -62,22 +63,27 @@ app.use((req, res, next) => {
   next();
 });
 
+// ✅ Razorpay webhook – must be placed BEFORE express.json()
+app.post(
+  "/api/payments/webhook",
+  express.raw({ type: "application/json" }),
+  razorpayWebhook,
+);
+
+// Global JSON parser (after webhook)
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(expressLayouts);
-
 app.set("layout", "layouts/main");
 
 app.use(passport.initialize());
 app.use(passport.session());
 
 app.use(cookieParser());
-
 app.use(activityLogger);
 
 app.use("/", webRouter);
-
 app.use("/api", indexRoute);
 
 app.use((req, res) => {
