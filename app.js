@@ -70,6 +70,7 @@ app.use(expressLayouts);
 app.set("layout", "layouts/main");
 
 app.use(passport.initialize());
+app.use(passport.session());
 
 app.use(cookieParser());
 

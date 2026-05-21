@@ -76,11 +76,18 @@ exports.logIn = async (req, res, next) => {
       where: { email, isDeleted: false },
     });
 
+    // After finding user
     if (!user) throw new ApiError(404, "User not exist");
     if (!user.isActive) throw new ApiError(403, "User is inactive");
 
-    const isPasswordMatch = await compare(password, user.password);
+    // ❌ Reject if password is null (GitHub-only user)
+    if (!user.password)
+      throw new ApiError(
+        401,
+        "This account uses GitHub login. Please sign in with GitHub.",
+      );
 
+    const isPasswordMatch = await compare(password, user.password);
     if (!isPasswordMatch) throw new ApiError(401, "Invalid credentials");
 
     const jwtToken = jwt.sign(

@@ -1,4 +1,5 @@
 const express = require("express");
+const jwt = require("jsonwebtoken");
 const router = express.Router();
 
 const { validate } = require("express-validation");
@@ -83,6 +84,7 @@ const forgotController = require("../../controllers/web/forgotPassword.controlle
 
 // Import admin router
 const adminRouter = require("./admin.route");
+const passport = require("passport");
 
 const invalidateWebCache = invalidateCache(["web:*"]);
 
@@ -319,7 +321,37 @@ router.post(
   forgotController.resetPassword,
 );
 
-// Mount admin routes (no admin blocking here – admin routes are already protected by authorize)
+// GitHub OAuth routes
+router.get("/auth/github", passport.authenticate("github"));
+router.get(
+  "/auth/github/callback",
+  passport.authenticate("github", {
+    failureRedirect: "/login",
+    failureFlash: true,
+  }),
+  (req, res) => {
+    // Success – generate JWT token and set cookie
+    const token = jwt.sign(
+      { userId: req.user.id, email: req.user.email, role: req.user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" },
+    );
+    // Store token in Redis (required by your authCache)
+    const { storeToken } = require("../../utils/authCache");
+    storeToken(token, req.user.id)
+      .then(() => {
+        res.cookie("postloop_token", token, {
+          httpOnly: true,
+          maxAge: 24 * 60 * 60 * 1000,
+        });
+        // Redirect based on role
+        if (req.user.role === "admin") return res.redirect("/admin/dashboard");
+        res.redirect("/feed");
+      })
+      .catch(() => res.redirect("/feed"));
+  },
+);
+
 router.use("/admin", adminRouter);
 
 module.exports = router;

@@ -156,6 +156,10 @@
 
               </form>
 
+              <a href="/auth/github" class="github-login-btn">
+                <i class="fab fa-github"></i> Continue with GitHub
+              </a>
+
             </div>
 
           </div>
@@ -257,6 +261,11 @@
 
               </form>
 
+              <hr style="margin: 1rem 0;">
+              <a href="/auth/github" class="github-login-btn">
+                <i class="fab fa-github"></i> Sign up with GitHub
+              </a>
+
             </div>
 
           </div>
@@ -273,38 +282,36 @@
   </section>
 
   <script>
-    if (document.cookie.split("; ").find(row => row.startsWith("token="))) {
+    if (document.cookie.split("; ").find(row => row.startsWith("postloop_token="))) {
       window.location.href = "/feed";
     }
 
-    const loginTab = document.getElementById("loginTab");
-    const signupTab = document.getElementById("signupTab");
-    const loginPanel = document.getElementById("loginPanel");
-    const signupPanel = document.getElementById("signupPanel");
+    // Get tabs by their actual elements
+    const tabs = document.querySelectorAll('.auth-tab');
+    const loginPanel = document.getElementById('loginPanel');
+    const signupPanel = document.getElementById('signupPanel');
 
-    function showLogin() {
-      loginTab.classList.add("active");
-      signupTab.classList.remove("active");
-      loginPanel.classList.add("active");
-      signupPanel.classList.remove("active");
+    if (tabs.length === 2) {
+      const loginTab = tabs[0]; // first tab is Login
+      const signupTab = tabs[1]; // second tab is Sign Up
+
+      function showLogin() {
+        loginTab.classList.add('active');
+        signupTab.classList.remove('active');
+        loginPanel.classList.add('active');
+        signupPanel.classList.remove('active');
+      }
+
+      function showSignup() {
+        signupTab.classList.add('active');
+        loginTab.classList.remove('active');
+        signupPanel.classList.add('active');
+        loginPanel.classList.remove('active');
+      }
+
+      loginTab.addEventListener('click', showLogin);
+      signupTab.addEventListener('click', showSignup);
     }
-
-    function showSignup() {
-      signupTab.classList.add("active");
-      loginTab.classList.remove("active");
-      signupPanel.classList.add("active");
-      loginPanel.classList.remove("active");
-    }
-
-    loginTab.addEventListener("click", showLogin);
-    signupTab.addEventListener("click", showSignup);
-
-    window.loginTab = null;
-    window.signupTab = null;
-    window.loginPanel = null;
-    window.signupPanel = null;
-    window.showLogin = null;
-    window.showSignup = null;
   </script>
 
 </body>

@@ -16,9 +16,11 @@ const User = sequelize.define(
       validate: { isEmail: true },
     },
 
-    password: { type: DataTypes.STRING, allowNull: false },
+    password: { type: DataTypes.STRING, allowNull: true },
 
     bio: { type: DataTypes.TEXT, allowNull: true, defaultValue: null },
+
+    githubId: { type: DataTypes.STRING, allowNull: true, unique: true },
 
     profilePictureUrl: { type: DataTypes.STRING, allowNull: true },
 
