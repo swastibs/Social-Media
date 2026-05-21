@@ -10,7 +10,10 @@ const {
 const { uploadToMinio } = require("../../config/minio");
 
 exports.landing = (req, res) => {
-  if (req.user) return res.redirect(req.user.role === "admin" ? "/admin/dashboard" : "/feed");
+  if (req.user)
+    return res.redirect(
+      req.user.role === "admin" ? "/admin/dashboard" : "/feed",
+    );
   res.render("landing", {
     mode: "login",
     oldInput: {},
@@ -19,7 +22,10 @@ exports.landing = (req, res) => {
 };
 
 exports.loginForm = (req, res) => {
-  if (req.user) return res.redirect(req.user.role === "admin" ? "/admin/dashboard" : "/feed");
+  if (req.user)
+    return res.redirect(
+      req.user.role === "admin" ? "/admin/dashboard" : "/feed",
+    );
   res.render("landing", {
     mode: "login",
     oldInput: req.flash("oldInput")[0] || {},
@@ -31,11 +37,30 @@ exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ where: { email, isDeleted: false } });
-    if (!user || !(await compare(password, user.password)) || !user.isActive) {
+
+    if (!user || !user.isActive) {
       req.flash("error_msg", "Invalid credentials");
       req.flash("oldInput", { email });
       return res.redirect("/login");
     }
+
+    // GitHub-only account (password = null) cannot use email/password
+    if (!user.password) {
+      req.flash(
+        "error_msg",
+        "This account uses GitHub login. Please sign in with GitHub.",
+      );
+      req.flash("oldInput", { email });
+      return res.redirect("/login");
+    }
+
+    const isMatch = await compare(password, user.password);
+    if (!isMatch) {
+      req.flash("error_msg", "Invalid credentials");
+      req.flash("oldInput", { email });
+      return res.redirect("/login");
+    }
+
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: user.role },
       process.env.JWT_SECRET,
@@ -47,9 +72,7 @@ exports.login = async (req, res, next) => {
       maxAge: 24 * 60 * 60 * 1000,
     });
 
-    // 🔥 IMPORTANT: Use `return` to stop further execution
     if (user.role === "admin") return res.redirect("/admin/dashboard");
-
     return res.redirect("/feed");
   } catch (err) {
     next(err);
@@ -57,7 +80,10 @@ exports.login = async (req, res, next) => {
 };
 
 exports.signupForm = (req, res) => {
-  if (req.user) return res.redirect(req.user.role === "admin" ? "/admin/dashboard" : "/feed");
+  if (req.user)
+    return res.redirect(
+      req.user.role === "admin" ? "/admin/dashboard" : "/feed",
+    );
   res.render("landing", {
     mode: "signup",
     oldInput: req.flash("oldInput")[0] || {},
@@ -108,7 +134,7 @@ exports.signup = async (req, res, next) => {
 };
 
 exports.logout = async (req, res) => {
-  const token = req.cookies.token;
+  const token = req.cookies.postloop_token;
   const userId = req.user?.id;
 
   if (token) {
@@ -116,9 +142,14 @@ exports.logout = async (req, res) => {
     if (userId) await removeTokenFromUser(userId, token);
   }
 
-  res.clearCookie("postloop_token");
-  req.flash("success_msg", "You have been logged out.");
-  res.redirect("/");
+  res.clearCookie("postloop_token", { path: "/" });
+
+  // ✅ Use Passport logout – removes user from session without destroying the session
+  req.logout((err) => {
+    if (err) console.error("Logout error:", err);
+    req.flash("success_msg", "You have been logged out.");
+    res.redirect("/");
+  });
 };
 
 exports.changePasswordForm = (req, res) => {
@@ -139,6 +170,14 @@ exports.changePassword = async (req, res, next) => {
     const user = await User.findByPk(userId);
     if (!user) {
       req.flash("error_msg", "User not found");
+      return res.redirect("/change-password");
+    }
+
+    if (!user.password) {
+      req.flash(
+        "error_msg",
+        "GitHub‑linked accounts cannot change password. Please use GitHub login.",
+      );
       return res.redirect("/change-password");
     }
 
