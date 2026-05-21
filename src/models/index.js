@@ -5,6 +5,7 @@ const Post = require("./post.model");
 const Comment = require("./comment.model");
 const PostLike = require("./postLike.model");
 const UserFollow = require("./userFollow.model");
+const Payment = require("./payment.model");
 
 // User → Post
 User.hasMany(Post, { foreignKey: "userId" });
@@ -18,14 +19,26 @@ Comment.belongsTo(User, { foreignKey: "userId" });
 Post.hasMany(Comment, { foreignKey: "postId" });
 Comment.belongsTo(Post, { foreignKey: "postId" });
 
-// Post → DeletedBy
-Post.belongsTo(User, { foreignKey: "deletedBy", as: "deletedByUser" });
+// Post → DeletedBy (index disabled)
+Post.belongsTo(User, {
+  foreignKey: "deletedBy",
+  as: "deletedByUser",
+  index: false,
+});
 
-// Comment → DeletedBy
-Comment.belongsTo(User, { foreignKey: "deletedBy", as: "deletedByUser" });
+// Comment → DeletedBy (index disabled)
+Comment.belongsTo(User, {
+  foreignKey: "deletedBy",
+  as: "deletedByUser",
+  index: false,
+});
 
-// User self-reference (deletedBy in User model)
-User.belongsTo(User, { foreignKey: "deletedBy", as: "deletedByUser" });
+// User self‑reference (index disabled)
+User.belongsTo(User, {
+  foreignKey: "deletedBy",
+  as: "deletedByUser",
+  index: false,
+});
 
 // Many-to-Many (likes)
 User.belongsToMany(Post, {
@@ -55,4 +68,15 @@ User.belongsToMany(User, {
   otherKey: "followingId",
 });
 
-module.exports = { sequelize, User, Post, Comment, PostLike, UserFollow };
+User.hasMany(Payment, { foreignKey: "userId" });
+Payment.belongsTo(User, { foreignKey: "userId" });
+
+module.exports = {
+  sequelize,
+  User,
+  Post,
+  Comment,
+  PostLike,
+  UserFollow,
+  Payment,
+};

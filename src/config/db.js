@@ -15,7 +15,8 @@ const connectDB = async () => {
   try {
     await sequelize.authenticate();
     console.log("MySQL Connected");
-    await sequelize.sync({ alter: true });
+    // ✅ Remove sync() – use migrations for schema changes
+    await sequelize.sync();
   } catch (error) {
     console.error("DB Connection Failed:", error.message);
     process.exit(1);

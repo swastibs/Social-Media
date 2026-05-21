@@ -22,6 +22,7 @@ async function searchUsers(searchTerm, limit, offset) {
       "id",
       "name",
       "email",
+      "isVerified",
       "bio",
       "profilePictureUrl",
       "postsCount",

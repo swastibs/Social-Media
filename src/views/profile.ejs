@@ -15,16 +15,22 @@
             <div class="profile-name-row">
                 <h2 class="profile-name">
                     <%= profileUser.name %>
+                        <% if (profileUser.isVerified) { %>
+                            <span class="verified-badge" title="Verified User">✓</span>
+                            <% } %>
                 </h2>
                 <% if (currentUser && currentUser.id===profileUser.id) { %>
                     <a href="/profile/edit" class="edit-profile-btn">Edit Profile</a>
                     <a href="/change-password" class="edit-profile-btn">Change Password</a>
-                    <% } else if (currentUser && currentUser.id !==profileUser.id) { %>
-                        <button class="follow-profile-btn <%= follows ? 'unfollow' : '' %>"
-                            data-user-id="<%= profileUser.id %>">
-                            <%= follows ? 'Unfollow' : 'Follow' %>
-                        </button>
+                    <% if (!profileUser.isVerified) { %>
+                        <button id="rzp-button" class="edit-profile-btn">Get Verified (₹500)</button>
                         <% } %>
+                            <% } else if (currentUser && currentUser.id !==profileUser.id) { %>
+                                <button class="follow-profile-btn <%= follows ? 'unfollow' : '' %>"
+                                    data-user-id="<%= profileUser.id %>">
+                                    <%= follows ? 'Unfollow' : 'Follow' %>
+                                </button>
+                                <% } %>
             </div>
             <p class="profile-bio">
                 <%= profileUser.bio || '' %>
@@ -124,7 +130,11 @@
     </div>
 </div>
 
+<!-- Razorpay script loaded only once -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
 <script>
+    // Follow button handler
     const followBtn = document.querySelector('.follow-profile-btn');
     if (followBtn) {
         followBtn.addEventListener('click', async () => {
@@ -150,6 +160,7 @@
         });
     }
 
+    // Profile stat navigation
     const statElements = document.querySelectorAll('.profile-stat[data-modal-list]');
     statElements.forEach(stat => {
         stat.addEventListener('click', () => {
@@ -158,8 +169,8 @@
             window.location.href = `/profile/${userId}/${listType}`;
         });
     });
-    statElements.length = 0;
 
+    // Like button handlers
     const likeBtns = document.querySelectorAll('.like-action');
     likeBtns.forEach(btn => {
         btn.addEventListener('click', async (e) => {
@@ -181,8 +192,64 @@
             }
         });
     });
-    likeBtns.length = 0;
 
+    // Razorpay payment handler (only if button exists)
+    const rzpButton = document.getElementById('rzp-button');
+    if (rzpButton) {
+        rzpButton.addEventListener('click', async function (e) {
+            try {
+                const orderResponse = await fetch('/api/payments/create-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const orderData = await orderResponse.json();
+
+                if (!orderData.success) throw new Error(orderData.message);
+
+                const { orderId, amount, currency, key } = orderData.data;
+
+                const options = {
+                    key: key,
+                    amount: amount,
+                    currency: currency,
+                    name: 'PostLoop',
+                    description: 'Verified User Account',
+                    order_id: orderId,
+                    handler: async function (response) {
+                        const verifyResponse = await fetch('/api/payments/verify-payment', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature
+                            })
+                        });
+                        const verifyData = await verifyResponse.json();
+                        if (verifyData.success) {
+                            alert(verifyData.message);
+                            window.location.reload();
+                        } else {
+                            alert('Verification failed: ' + verifyData.message);
+                        }
+                    },
+                    prefill: {
+                        name: '<%= currentUser.name %>',
+                        email: '<%= currentUser.email %>'
+                    },
+                    theme: { color: '#38bdf8' }
+                };
+
+                const rzp = new Razorpay(options);
+                rzp.open();
+            } catch (error) {
+                console.error('Payment error:', error);
+                alert('Something went wrong: ' + error.message);
+            }
+        });
+    }
+
+    // Cleanup function for SPA navigation (if any)
     (function () {
         let followBtnRef = null;
         let statElementsRef = null;

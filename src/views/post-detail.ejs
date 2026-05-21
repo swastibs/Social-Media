@@ -19,6 +19,9 @@
                         <div class="post-author-details-detailed">
                             <a href="/profile/<%= post.User.id %>" class="post-author-name-detailed">
                                 <%= post.User.name %>
+                                    <% if (post.User.isVerified) { %>
+                                        <span class="verified-badge-small" title="Verified User">✓</span>
+                                        <% } %>
                             </a>
                             <div class="post-time-detailed"><i class="fa-regular fa-calendar"></i>
                                 <%= new Date(post.createdAt).toLocaleString() %>
@@ -111,6 +114,10 @@
                                             <a href="/profile/<%= comment.User.id %>"
                                                 class="comment-author-name-detailed">
                                                 <%= comment.User.name %>
+                                                    <% if (comment.User.isVerified) { %>
+                                                        <span class="verified-badge-small"
+                                                            title="Verified User">✓</span>
+                                                        <% } %>
                                             </a>
                                             <span class="comment-time-detailed"><i class="fa-regular fa-clock"></i>
                                                 <%= new Date(comment.createdAt).toLocaleString() %>

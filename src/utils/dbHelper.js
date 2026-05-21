@@ -3,16 +3,17 @@ const { User, Post, Comment } = require("../models");
 const { ROLES } = require("../constant/role");
 
 const getSafeUserInclude = (options = {}) => {
-  const { attributes = ["id", "name", "profilePictureUrl"] } = options;
+  const { attributes = ["id", "name", "profilePictureUrl", "isVerified"] } =
+    options;
   return {
     model: User,
     attributes,
     where: {
-      role: ROLES.USER, // Exclude admin users
+      role: ROLES.USER,
       isDeleted: false,
       isActive: true,
     },
-    required: true, // Only return records that have a valid user
+    required: true,
   };
 };
 

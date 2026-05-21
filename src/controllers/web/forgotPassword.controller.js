@@ -14,15 +14,11 @@ exports.requestReset = async (req, res, next) => {
     const user = await User.findOne({ where: { email, isDeleted: false } });
 
     if (user) {
-      // Generate secure random token
       const token = crypto.randomBytes(32).toString("hex");
-      // Hash the token before storing (for extra security)
       const hashedToken = crypto
         .createHash("sha256")
         .update(token)
         .digest("hex");
-
-      // Set expiration (1 hour from now)
       const expires = new Date(Date.now() + 60 * 60 * 1000);
 
       await user.update({
@@ -30,27 +26,23 @@ exports.requestReset = async (req, res, next) => {
         resetPasswordExpires: expires,
       });
 
-      // Build reset link
       const resetUrl = `${process.env.APP_URL}/reset-password?token=${token}`;
 
-      // Send email with modern design
       await transporter.sendMail({
         from: `"PostLoop Support" <${process.env.EMAIL_USER}>`,
         to: user.email,
         subject: "Reset your PostLoop password",
-        html: `
-<!DOCTYPE html>
+        html: `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Reset your PostLoop password</title>
   <style>
-    /* General styles */
     body {
       margin: 0;
       padding: 0;
-      background-color: #f4f7fb;
+      background-color: #0f172a;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     }
     table {
@@ -64,13 +56,13 @@ exports.requestReset = async (req, res, next) => {
     .container {
       max-width: 560px;
       margin: 0 auto;
-      background-color: #ffffff;
+      background-color: #1e293b;
       border-radius: 24px;
       overflow: hidden;
-      box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.3);
     }
     .header {
-      background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
+      background: linear-gradient(135deg, #38bdf8, #0ea5e9);
       padding: 32px 24px;
       text-align: center;
     }
@@ -93,23 +85,23 @@ exports.requestReset = async (req, res, next) => {
       font-size: 26px;
       font-weight: 700;
       margin: 0 0 12px;
-      color: #0f172a;
+      color: #e2e8f0;
     }
     .greeting {
       font-size: 18px;
-      color: #1e293b;
+      color: #94a3b8;
       margin-bottom: 20px;
       font-weight: 500;
     }
     .message {
       font-size: 16px;
       line-height: 1.5;
-      color: #334155;
+      color: #cbd5e1;
       margin-bottom: 28px;
     }
     .button {
       display: inline-block;
-      background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      background: linear-gradient(135deg, #38bdf8, #0ea5e9);
       color: white !important;
       text-decoration: none;
       font-weight: 600;
@@ -117,31 +109,31 @@ exports.requestReset = async (req, res, next) => {
       padding: 14px 32px;
       border-radius: 40px;
       margin: 8px 0 24px;
-      box-shadow: 0 8px 18px rgba(14,165,233,0.25);
+      box-shadow: 0 8px 18px rgba(56,189,248,0.25);
       transition: all 0.2s ease;
     }
     .button:hover {
-      background: linear-gradient(135deg, #0284c7, #4f46e5);
-      box-shadow: 0 12px 24px rgba(14,165,233,0.35);
+      background: linear-gradient(135deg, #0ea5e9, #0284c7);
+      box-shadow: 0 12px 24px rgba(56,189,248,0.35);
       transform: translateY(-1px);
     }
     .expiry-note {
       font-size: 13px;
-      color: #64748b;
+      color: #94a3b8;
       margin: 20px 0 0;
-      border-top: 1px solid #e2e8f0;
+      border-top: 1px solid #334155;
       padding-top: 20px;
     }
     .footer {
-      background-color: #f8fafc;
+      background-color: #0f172a;
       padding: 24px 32px;
       text-align: center;
       font-size: 12px;
-      color: #64748b;
-      border-top: 1px solid #e2e8f0;
+      color: #94a3b8;
+      border-top: 1px solid #334155;
     }
     .footer a {
-      color: #0ea5e9;
+      color: #38bdf8;
       text-decoration: none;
     }
     @media only screen and (max-width: 560px) {
@@ -155,19 +147,16 @@ exports.requestReset = async (req, res, next) => {
     }
   </style>
 </head>
-<body style="margin:0; padding:24px 16px; background-color:#f4f7fb;">
+<body style="margin:0; padding:24px 16px; background-color:#0f172a;">
   <table width="100%" cellpadding="0" cellspacing="0" border="0" align="center">
     <tr>
       <td align="center">
         <div class="container">
-          <!-- Header with gradient -->
           <div class="header">
             <a href="${process.env.APP_URL}" class="logo" style="color:white; text-decoration:none;">
               <span>PostLoop</span>
             </a>
           </div>
-
-          <!-- Main content -->
           <div class="content">
             <h1>Reset your password</h1>
             <div class="greeting">Hello ${user.name},</div>
@@ -175,17 +164,13 @@ exports.requestReset = async (req, res, next) => {
               We received a request to reset the password for your PostLoop account.<br><br>
               Click the button below to choose a new password. This link is valid for <strong>1 hour</strong>.
             </div>
-
             <div style="text-align:center;">
               <a href="${resetUrl}" class="button">Reset password</a>
             </div>
-
             <div class="expiry-note">
               If you didn't request this, please ignore this email. Your password won't change until you create a new one.
             </div>
           </div>
-
-          <!-- Footer -->
           <div class="footer">
             &copy; 2025 PostLoop. All rights reserved.<br>
             <a href="${process.env.APP_URL}">Visit PostLoop</a> • 
@@ -196,12 +181,10 @@ exports.requestReset = async (req, res, next) => {
     </tr>
   </table>
 </body>
-</html>
-        `,
+</html>`,
       });
     }
 
-    // Always show the same message (prevents email enumeration)
     req.flash("success_msg", genericMessage);
     res.redirect("/login");
   } catch (error) {
@@ -222,10 +205,8 @@ exports.resetPassword = async (req, res, next) => {
   }
 
   try {
-    // Hash the provided token to compare with stored hash
     const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
-    // Find user with valid token (not expired)
     const user = await User.findOne({
       where: {
         resetPasswordToken: hashedToken,
@@ -238,23 +219,19 @@ exports.resetPassword = async (req, res, next) => {
       return res.redirect("/forgot-password");
     }
 
-    // Hash the new password using bcrypt (as you already do)
     const hashedPassword = await hash(password, 10);
 
-    // Update user and clear reset token fields
     await user.update({
       password: hashedPassword,
       resetPasswordToken: null,
       resetPasswordExpires: null,
     });
 
-    // Optional: send confirmation email with matching design
     await transporter
       .sendMail({
         to: user.email,
         subject: "Your password has been changed",
-        html: `
-<!DOCTYPE html>
+        html: `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
@@ -264,19 +241,19 @@ exports.resetPassword = async (req, res, next) => {
     body {
       margin: 0;
       padding: 0;
-      background-color: #f4f7fb;
+      background-color: #0f172a;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     }
     .container {
       max-width: 560px;
       margin: 0 auto;
-      background-color: #ffffff;
+      background-color: #1e293b;
       border-radius: 24px;
       overflow: hidden;
-      box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.3);
     }
     .header {
-      background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
+      background: linear-gradient(135deg, #38bdf8, #0ea5e9);
       padding: 32px 24px;
       text-align: center;
     }
@@ -300,29 +277,29 @@ exports.resetPassword = async (req, res, next) => {
       font-size: 24px;
       font-weight: 700;
       margin: 0 0 16px;
-      color: #0f172a;
+      color: #e2e8f0;
     }
     p {
       font-size: 16px;
       line-height: 1.5;
-      color: #334155;
+      color: #cbd5e1;
       margin-bottom: 24px;
     }
     .footer {
-      background-color: #f8fafc;
+      background-color: #0f172a;
       padding: 24px 32px;
       text-align: center;
       font-size: 12px;
-      color: #64748b;
-      border-top: 1px solid #e2e8f0;
+      color: #94a3b8;
+      border-top: 1px solid #334155;
     }
     .footer a {
-      color: #0ea5e9;
+      color: #38bdf8;
       text-decoration: none;
     }
   </style>
 </head>
-<body style="margin:0; padding:24px 16px; background-color:#f4f7fb;">
+<body style="margin:0; padding:24px 16px; background-color:#0f172a;">
   <table width="100%" cellpadding="0" cellspacing="0" border="0" align="center">
     <tr><td align="center">
       <div class="container">
@@ -333,7 +310,7 @@ exports.resetPassword = async (req, res, next) => {
           <h2>Password changed</h2>
           <p>Hello ${user.name},</p>
           <p>Your PostLoop password was successfully changed. If this wasn't you, please contact support immediately.</p>
-          <p> </p>
+          <p> </p>
           <p>Thanks,<br>The PostLoop Team</p>
         </div>
         <div class="footer">
@@ -342,13 +319,12 @@ exports.resetPassword = async (req, res, next) => {
           <a href="mailto:support@postloop.com">Contact support</a>
         </div>
       </div>
-    </td></td>
+    </td></tr>
   </table>
 </body>
-</html>
-        `,
+</html>`,
       })
-      .catch(console.error); // Don't let email failure break the flow
+      .catch(console.error);
 
     req.flash(
       "success_msg",
