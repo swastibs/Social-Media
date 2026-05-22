@@ -177,7 +177,7 @@ exports.requestReset = async (req, res, next) => {
             <a href="mailto:support@postloop.com">Contact support</a>
           </div>
         </div>
-      </td>
+      </tr>
     </tr>
   </table>
 </body>

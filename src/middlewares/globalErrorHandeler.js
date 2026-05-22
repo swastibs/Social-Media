@@ -1,16 +1,24 @@
 const ApiError = require("../utils/ApiError");
 
+/**
+ * Global error handler – one handler for all errors (API & web)
+ */
 exports.globalErrorHandler = (err, req, res, next) => {
-  console.dir(err, { depth: null });
-
-  // Determine if this is an API request
+  // Determine if the client expects JSON
+  // For web: we treat only explicit API routes or XHR as JSON.
+  // Also if the request has a specific header "X-Requested-With" or "Accept: application/json"
+  // But to avoid false positives for normal form POSTs, we be strict.
   const isApi =
     req.originalUrl.startsWith("/api") ||
-    req.xhr ||
-    req.accepts("json") === "json";
+    req.xhr === true ||
+    req.get("Accept")?.includes("application/json") === true;
 
-  // Helper to render error page with main layout (for web)
-  const renderErrorPage = (statusCode, title, message) => {
+  // Helper: render web error page with a layout
+  const renderWebError = (statusCode, title, message, redirectBack = false) => {
+    if (redirectBack && req.headers.referer) {
+      req.flash("error_msg", message);
+      return res.redirect("back");
+    }
     res.status(statusCode).render("error", {
       title,
       message,
@@ -19,24 +27,33 @@ exports.globalErrorHandler = (err, req, res, next) => {
     });
   };
 
-  // 1) Express Validation errors
+  // 1) Validation errors from express-validation
   if (err.name === "ValidationError") {
-    const message =
-      err.details?.body?.[0]?.message ||
-      err.details?.params?.[0]?.message ||
-      err.details?.query?.[0]?.message ||
+    // Extract first meaningful error message
+    const details = err.details || {};
+    const firstError =
+      details.body?.[0]?.message ||
+      details.params?.[0]?.message ||
+      details.query?.[0]?.message ||
       "Validation failed";
 
     if (isApi) {
-      return res.status(err.statusCode || 400).json({
+      return res.status(400).json({
         success: false,
-        message,
+        message: firstError,
         errors: err.details || null,
       });
     }
 
-    // Web: render error page with layout
-    return renderErrorPage(400, "Validation Error", message);
+    // Web: flash the error and redirect back to the form (if possible)
+    if (req.headers.referer) {
+      req.flash("error_msg", firstError);
+      // Preserve old input if needed (the validation middleware already does not populate, but we can add)
+      if (req.body) req.flash("oldInput", req.body);
+      return res.redirect("back");
+    }
+    // Fallback – render error page
+    return renderWebError(400, "Validation Error", firstError);
   }
 
   // 2) Custom ApiError
@@ -48,12 +65,17 @@ exports.globalErrorHandler = (err, req, res, next) => {
         errors: err.errors || null,
       });
     }
-
-    // Web: render error page with layout
-    return renderErrorPage(err.statusCode, "Error", err.message);
+    // For web, if it's a client error (4xx), flash and redirect back
+    if (err.statusCode >= 400 && err.statusCode < 500 && req.headers.referer) {
+      req.flash("error_msg", err.message);
+      return res.redirect("back");
+    }
+    // Otherwise show error page
+    return renderWebError(err.statusCode, "Error", err.message);
   }
 
-  // 3) Any other error (500)
+  // 3) Any other unexpected error (500)
+  console.error("Unhandled error:", err);
   if (isApi) {
     return res.status(500).json({
       success: false,
@@ -61,8 +83,12 @@ exports.globalErrorHandler = (err, req, res, next) => {
     });
   }
 
-  // Web: render generic error page with layout
-  return renderErrorPage(
+  // Web: redirect to a generic error page or back with flash
+  if (req.headers.referer) {
+    req.flash("error_msg", "Something went wrong. Please try again.");
+    return res.redirect("back");
+  }
+  return renderWebError(
     500,
     "Server Error",
     "Something went wrong. Please try again later.",

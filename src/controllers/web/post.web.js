@@ -3,6 +3,7 @@ const { getSafeUserInclude } = require("../../utils/dbHelper");
 const { Op } = require("sequelize");
 const { paginate } = require("../../utils/pagination");
 const { uploadToMinio, deleteFromMinioByUrl } = require("../../config/minio");
+const redirectBack = require("../../utils/redirectBack");
 
 // ========== CREATE POST ==========
 exports.createPostForm = (req, res) => {
@@ -63,7 +64,6 @@ exports.postDetail = async (req, res, next) => {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = 10;
 
-    // ✅ Use default getSafeUserInclude (includes isVerified)
     const post = await Post.findOne({
       where: { id: postId, isDeleted: false },
       include: [getSafeUserInclude()],
@@ -71,10 +71,9 @@ exports.postDetail = async (req, res, next) => {
 
     if (!post) {
       req.flash("error_msg", "Post not found");
-      return res.redirect("/feed");
+      return redirectBack(req, res, "/feed");
     }
 
-    // Check if current user liked this post
     let liked = false;
     if (req.user) {
       const like = await PostLike.findOne({
@@ -83,7 +82,6 @@ exports.postDetail = async (req, res, next) => {
       liked = !!like;
     }
 
-    // Get comments with pagination – ✅ use default getSafeUserInclude
     let { data: comments, pagination } = await paginate({
       model: Comment,
       where: { postId: post.id, isDeleted: false },
@@ -93,14 +91,12 @@ exports.postDetail = async (req, res, next) => {
       limit,
     });
 
-    // Calculate isEditable for each comment (within 15 minutes)
     const now = new Date();
     comments = comments.map((comment) => ({
       ...comment.toJSON(),
       isEditable: now - new Date(comment.createdAt) <= 15 * 60 * 1000,
     }));
 
-    // Count total comments
     const totalComments = await Comment.count({
       where: { postId: post.id, isDeleted: false },
     });
@@ -140,10 +136,9 @@ exports.editPostForm = async (req, res, next) => {
 
     if (!post) {
       req.flash("error_msg", "Post not found");
-      return res.redirect("/feed");
+      return redirectBack(req, res, "/feed");
     }
 
-    // Check authorization: only owner or admin
     if (post.userId !== req.user.id && req.user.role !== "admin") {
       req.flash("error_msg", "You are not authorized to edit this post");
       return res.redirect(`/post/${postId}`);
@@ -176,7 +171,7 @@ exports.updatePost = async (req, res, next) => {
     if (!post) {
       await transaction.rollback();
       req.flash("error_msg", "Post not found");
-      return res.redirect("/feed");
+      return redirectBack(req, res, "/feed");
     }
 
     if (post.userId !== req.user.id && req.user.role !== "admin") {
@@ -185,16 +180,12 @@ exports.updatePost = async (req, res, next) => {
       return res.redirect(`/post/${postId}`);
     }
 
-    // Update content
     post.content = content;
 
-    // Handle new image upload (replaces old one)
     if (file) {
-      // Delete old image (original + thumbnail)
       if (post.imageUrl) {
         await deleteFromMinioByUrl(post.imageUrl);
       }
-      // Upload new image with thumbnail
       const { url, thumbnailUrl } = await uploadToMinio(
         file.buffer,
         file.originalname,
@@ -205,7 +196,6 @@ exports.updatePost = async (req, res, next) => {
       post.thumbnailUrl = thumbnailUrl;
     }
 
-    // Handle removal of existing image via checkbox
     if (removeImage === "true" && post.imageUrl) {
       await deleteFromMinioByUrl(post.imageUrl);
       post.imageUrl = null;
@@ -236,7 +226,7 @@ exports.deletePost = async (req, res, next) => {
     if (!post) {
       await transaction.rollback();
       req.flash("error_msg", "Post not found");
-      return res.redirect("/feed");
+      return redirectBack(req, res, "/feed");
     }
 
     if (post.userId !== req.user.id && req.user.role !== "admin") {
@@ -245,19 +235,16 @@ exports.deletePost = async (req, res, next) => {
       return res.redirect(`/post/${postId}`);
     }
 
-    // Soft delete post
     await post.update(
       { isDeleted: true, deletedBy: req.user.id },
       { transaction },
     );
 
-    // Soft delete all comments of this post
     await Comment.update(
       { isDeleted: true, deletedBy: req.user.id },
       { where: { postId, isDeleted: false }, transaction },
     );
 
-    // Decrement user's post count
     await req.user.decrement("postsCount", { transaction });
 
     await transaction.commit();
