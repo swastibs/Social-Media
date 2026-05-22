@@ -17,6 +17,7 @@ const {
   BUCKET,
 } = require("../config/minio");
 const { ROLES } = require("../constant/role");
+const flushAuthCache = require("../utils/flushAuthCache"); // 👈 import
 
 /* =========================
    CONFIG
@@ -31,8 +32,8 @@ const CONFIG = {
   LIKES_RATIO: 0.2,
   MIN_FOLLOWING: 2,
   MAX_FOLLOWING: 5,
-  PROFILE_IMAGES_TO_UPLOAD: 10, // enough for all users (admin + regular)
-  POST_IMAGES_TO_UPLOAD: 50, // many so alternation can pick unique ones
+  PROFILE_IMAGES_TO_UPLOAD: 10,
+  POST_IMAGES_TO_UPLOAD: 50,
 };
 
 /* =========================
@@ -119,7 +120,7 @@ const getRandomDate = () => {
 };
 
 /* =========================
-   MINIO CLEANUP – delete all objects in the bucket
+   MINIO CLEANUP
 ========================= */
 
 async function cleanMinioBucket() {
@@ -145,7 +146,7 @@ async function cleanMinioBucket() {
 }
 
 /* =========================
-   FETCH PICSIM IMAGES (RAW BUFFERS)
+   FETCH PICSIM IMAGES
 ========================= */
 
 async function fetchPicsumImageBuffer(url) {
@@ -170,7 +171,7 @@ async function fetchPicsumImages(limit) {
       `   Page ${page}: ${urls.length} images (total ${allUrls.length})`,
     );
     page++;
-    if (page > 10) break; // safety
+    if (page > 10) break;
   }
   const result = allUrls.slice(0, limit);
   console.log(`✅ Total fetched URLs: ${result.length}`);
@@ -178,7 +179,7 @@ async function fetchPicsumImages(limit) {
 }
 
 /* =========================
-   UPLOAD TO MINIO (with folder)
+   UPLOAD TO MINIO
 ========================= */
 
 async function uploadImageToMinio(imageBuffer, originalName, folder) {
@@ -211,13 +212,16 @@ const seed = async () => {
     await sequelize.query("SET FOREIGN_KEY_CHECKS = 1");
     console.log("✅ Database cleaned");
 
+    // 👇 CRITICAL: Invalidate all existing sessions
+    await flushAuthCache();
+
     // ----- FETCH PROFILE IMAGES -----
     const profileImageUrls = await fetchPicsumImages(
       CONFIG.PROFILE_IMAGES_TO_UPLOAD,
     );
     if (!profileImageUrls.length) throw new Error("No profile images fetched");
 
-    // ----- UPLOAD PROFILE IMAGES TO MINIO (folder "profiles") -----
+    // ----- UPLOAD PROFILE IMAGES -----
     console.log("\n🖼️ Uploading profile images to MinIO...");
     const uploadedProfileUrls = [];
     for (let i = 0; i < profileImageUrls.length; i++) {
@@ -241,7 +245,7 @@ const seed = async () => {
     const postImageUrls = await fetchPicsumImages(CONFIG.POST_IMAGES_TO_UPLOAD);
     if (!postImageUrls.length) throw new Error("No post images fetched");
 
-    // ----- UPLOAD POST IMAGES TO MINIO (folder "posts") -----
+    // ----- UPLOAD POST IMAGES -----
     console.log("\n🖼️ Uploading post images to MinIO...");
     const uploadedPostUrls = [];
     for (let i = 0; i < postImageUrls.length; i++) {
@@ -264,9 +268,9 @@ const seed = async () => {
     const hashedPassword = await bcrypt.hash("9898", 10);
     const userIds = [];
 
-    // ----- CREATE ADMIN (with profile picture) -----
+    // ----- CREATE ADMIN -----
     console.log("\n👑 Creating admin user...");
-    const adminProfilePic = uploadedProfileUrls[0]; // first image for admin
+    const adminProfilePic = uploadedProfileUrls[0];
     const admin = await User.create(
       {
         name: CONFIG.ADMIN_NAME,
@@ -288,12 +292,12 @@ const seed = async () => {
     userIds.push(admin.id);
     console.log(`   Admin created: ${admin.name} (${admin.email})`);
 
-    // ----- CREATE REGULAR USERS (each with a unique profile picture) -----
+    // ----- CREATE REGULAR USERS -----
     console.log("\n👥 Creating regular users...");
     for (let i = 0; i < CONFIG.REGULAR_USERS; i++) {
       const name = generateRandomName();
       const profilePicUrl =
-        uploadedProfileUrls[i + 1] || uploadedProfileUrls[0]; // fallback
+        uploadedProfileUrls[i + 1] || uploadedProfileUrls[0];
       const user = await User.create(
         {
           name,
@@ -317,15 +321,13 @@ const seed = async () => {
     }
     console.log(`✅ Total users: ${userIds.length}`);
 
-    // ----- POSTS: alternate with/without image -----
+    // ----- POSTS -----
     console.log("\n📝 Creating posts (alternating image)...");
     const createdPosts = [];
     for (const userId of userIds) {
       for (let i = 0; i < CONFIG.POSTS_PER_USER; i++) {
         let imageUrl = null;
-        // Alternate: i=0 → with image, i=1 → without, i=2 → with, ...
         if (i % 2 === 0) {
-          // pick a random post image
           imageUrl =
             uploadedPostUrls[randomInt(0, uploadedPostUrls.length - 1)];
         }
