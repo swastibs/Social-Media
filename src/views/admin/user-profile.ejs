@@ -13,6 +13,9 @@
         <div class="profile-info">
             <h1>
                 <%= profileUser.name %>
+                    <% if (profileUser.isVerified) { %>
+                        <span class="verified-badge" title="Verified User">✓</span>
+                        <% } %>
             </h1>
             <p>
                 <%= profileUser.email %>
@@ -29,30 +32,34 @@
                             <a href="/change-password" class="btn-admin btn-activate">Change Password</a>
                         </div>
                         <% } else { %>
-            <div class="user-actions">
-                <% if (profileUser.isDeleted) { %>
-                    <button type="button" class="btn-admin btn-deactivate" disabled>Deleted</button>
-                    <button type="button" class="btn-admin btn-promote" disabled>Promote to Admin</button>
-                    <button type="button" class="btn-admin btn-delete" disabled>Delete User</button>
-                    <% } else if (profileUser.role !=='admin' ) { %>
-                    <form method="POST"
-                        action="/admin/user/<%= profileUser.id %>/<%= profileUser.isActive ? 'deactivate' : 'activate' %>"
-                        class="inline-action-form">
-                        <button type="submit"
-                            class="btn-admin <%= profileUser.isActive ? 'btn-deactivate' : 'btn-activate' %>">
-                            <%= profileUser.isActive ? 'Deactivate' : 'Activate' %>
-                        </button>
-                    </form>
-                    <form method="POST" action="/admin/user/<%= profileUser.id %>/promote" class="inline-action-form">
-                        <button type="submit" class="btn-admin btn-promote">Promote to Admin</button>
-                    </form>
-                    <form method="POST" action="/admin/user/<%= profileUser.id %>/delete"
-                        onsubmit="return confirm('Delete this user permanently?')" class="inline-action-form">
-                        <button type="submit" class="btn-admin btn-delete">Delete User</button>
-                    </form>
-                    <% } %>
-            </div>
-            <% } %>
+                            <div class="user-actions">
+                                <% if (profileUser.isDeleted) { %>
+                                    <button type="button" class="btn-admin btn-deactivate" disabled>Deleted</button>
+                                    <button type="button" class="btn-admin btn-promote" disabled>Promote to
+                                        Admin</button>
+                                    <button type="button" class="btn-admin btn-delete" disabled>Delete User</button>
+                                    <% } else if (profileUser.role !=='admin' ) { %>
+                                        <form method="POST"
+                                            action="/admin/user/<%= profileUser.id %>/<%= profileUser.isActive ? 'deactivate' : 'activate' %>"
+                                            class="inline-action-form">
+                                            <button type="submit"
+                                                class="btn-admin <%= profileUser.isActive ? 'btn-deactivate' : 'btn-activate' %>">
+                                                <%= profileUser.isActive ? 'Deactivate' : 'Activate' %>
+                                            </button>
+                                        </form>
+                                        <form method="POST" action="/admin/user/<%= profileUser.id %>/promote"
+                                            class="inline-action-form">
+                                            <button type="submit" class="btn-admin btn-promote">Promote to
+                                                Admin</button>
+                                        </form>
+                                        <form method="POST" action="/admin/user/<%= profileUser.id %>/delete"
+                                            onsubmit="return confirm('Delete this user permanently?')"
+                                            class="inline-action-form">
+                                            <button type="submit" class="btn-admin btn-delete">Delete User</button>
+                                        </form>
+                                        <% } %>
+                            </div>
+                            <% } %>
         </div>
     </div>
 
