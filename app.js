@@ -16,6 +16,7 @@ const { connectDB } = require("./src/config/db");
 const connectMongo = require("./src/config/mongo");
 const activityLogger = require("./src/middlewares/activityLogger.middleware");
 const webRouter = require("./src/routes/web/web.route");
+const attachUserIfLoggedIn = require("./src/middlewares/attachUser.middleware");
 const { razorpayWebhook } = require("./src/controllers/api/payment.controller");
 
 require("./src/jobs/cleanupActivities");
@@ -63,7 +64,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// ✅ Razorpay webhook – must be placed BEFORE express.json()
+// Razorpay webhook – must be placed BEFORE express.json()
 app.post(
   "/api/payments/webhook",
   express.raw({ type: "application/json" }),
@@ -81,18 +82,33 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.use(cookieParser());
+app.use(attachUserIfLoggedIn); // 👈 add this line
 app.use(activityLogger);
 
 app.use("/", webRouter);
 app.use("/api", indexRoute);
 
+// 404 handler – HTML for web (with layout), JSON for API
 app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: "Resource not found",
+  const isApi = req.originalUrl.startsWith("/api");
+
+  if (isApi) {
+    return res.status(404).json({
+      success: false,
+      message: "Resource not found",
+    });
+  }
+
+  // Render error page WITH the main layout (sidebar will appear if user logged in)
+  res.status(404).render("error", {
+    title: "Page Not Found",
+    message: "The page you are looking for does not exist.",
+    user: req.user || null,
+    layout: "layouts/main", // Force layout
   });
 });
 
+// Global error handler (must be LAST)
 app.use(globalErrorHandler);
 
 module.exports = app;

@@ -3,12 +3,23 @@ const ApiError = require("../utils/ApiError");
 exports.globalErrorHandler = (err, req, res, next) => {
   console.dir(err, { depth: null });
 
+  // Determine if this is an API request
   const isApi =
     req.originalUrl.startsWith("/api") ||
     req.xhr ||
     req.accepts("json") === "json";
 
-  // Handle express-validation errors
+  // Helper to render error page with main layout (for web)
+  const renderErrorPage = (statusCode, title, message) => {
+    res.status(statusCode).render("error", {
+      title,
+      message,
+      user: req.user || null,
+      layout: "layouts/main",
+    });
+  };
+
+  // 1) Express Validation errors
   if (err.name === "ValidationError") {
     const message =
       err.details?.body?.[0]?.message ||
@@ -22,18 +33,13 @@ exports.globalErrorHandler = (err, req, res, next) => {
         message,
         errors: err.details || null,
       });
-    } else {
-      // Store the error in flash and redirect back
-      req.flash("error_msg", message);
-      // Also store the old input if it's a POST request (body data)
-      if (req.method === "POST" && req.body) {
-        req.flash("oldInput", req.body);
-      }
-      return res.redirect("back");
     }
+
+    // Web: render error page with layout
+    return renderErrorPage(400, "Validation Error", message);
   }
 
-  // Handle custom ApiError
+  // 2) Custom ApiError
   if (err instanceof ApiError) {
     if (isApi) {
       return res.status(err.statusCode).json({
@@ -41,20 +47,24 @@ exports.globalErrorHandler = (err, req, res, next) => {
         message: err.message,
         errors: err.errors || null,
       });
-    } else {
-      req.flash("error_msg", err.message);
-      return res.redirect("back");
     }
+
+    // Web: render error page with layout
+    return renderErrorPage(err.statusCode, "Error", err.message);
   }
 
-  // Handle all other errors (500)
+  // 3) Any other error (500)
   if (isApi) {
     return res.status(500).json({
       success: false,
       message: "Internal server error",
     });
-  } else {
-    req.flash("error_msg", "Something went wrong. Please try again later.");
-    return res.redirect("/");
   }
+
+  // Web: render generic error page with layout
+  return renderErrorPage(
+    500,
+    "Server Error",
+    "Something went wrong. Please try again later.",
+  );
 };
