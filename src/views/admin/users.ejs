@@ -110,6 +110,9 @@
                                 <div>
                                     <div class="card-title-text">
                                         <%= user.name %>
+                                            <% if (user.isVerified) { %>
+                                                <span class="verified-badge-small" title="Verified User">✓</span>
+                                                <% } %>
                                     </div>
                                     <div class="card-subtitle">
                                         <%= user.email %>

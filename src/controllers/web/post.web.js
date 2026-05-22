@@ -62,13 +62,11 @@ exports.postDetail = async (req, res, next) => {
     const postId = req.params.postId;
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = 10;
-    const offset = (page - 1) * limit;
 
+    // ✅ Use default getSafeUserInclude (includes isVerified)
     const post = await Post.findOne({
       where: { id: postId, isDeleted: false },
-      include: [
-        getSafeUserInclude({ attributes: ["id", "name", "profilePictureUrl"] }),
-      ],
+      include: [getSafeUserInclude()],
     });
 
     if (!post) {
@@ -85,19 +83,17 @@ exports.postDetail = async (req, res, next) => {
       liked = !!like;
     }
 
-    // Get comments with pagination
+    // Get comments with pagination – ✅ use default getSafeUserInclude
     let { data: comments, pagination } = await paginate({
       model: Comment,
       where: { postId: post.id, isDeleted: false },
-      include: [
-        getSafeUserInclude({ attributes: ["id", "name", "profilePictureUrl"] }),
-      ],
+      include: [getSafeUserInclude()],
       order: [["createdAt", "DESC"]],
       page,
       limit,
     });
 
-    // ✅ Calculate isEditable for each comment (within 15 minutes)
+    // Calculate isEditable for each comment (within 15 minutes)
     const now = new Date();
     comments = comments.map((comment) => ({
       ...comment.toJSON(),
@@ -203,7 +199,7 @@ exports.updatePost = async (req, res, next) => {
         file.buffer,
         file.originalname,
         "posts",
-        { thumbnailSize: 400 }, // 400x400 thumbnail for feed
+        { thumbnailSize: 400 },
       );
       post.imageUrl = url;
       post.thumbnailUrl = thumbnailUrl;

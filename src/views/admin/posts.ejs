@@ -110,6 +110,9 @@
                                 <div>
                                     <div class="card-title-text">
                                         <%= post.User.name %>
+                                            <% if (post.User.isVerified) { %>
+                                                <span class="verified-badge-small" title="Verified User">✓</span>
+                                                <% } %>
                                     </div>
                                     <div class="card-subtitle">
                                         <%= new Date(post.createdAt).toLocaleString() %>

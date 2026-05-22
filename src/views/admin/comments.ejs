@@ -89,6 +89,9 @@
                                 <div>
                                     <div class="card-title-text">
                                         <%= comment.User.name %>
+                                            <% if (comment.User.isVerified) { %>
+                                                <span class="verified-badge-small" title="Verified User">✓</span>
+                                                <% } %>
                                     </div>
                                     <div class="card-subtitle">
                                         <%= new Date(comment.createdAt).toLocaleString() %>

@@ -7,7 +7,7 @@ const { ROLES } = require("../../constant/role");
 
 const adminUserInclude = {
   model: User,
-  attributes: ["id", "name", "thumbnailUrl", "profilePictureUrl"],
+  attributes: ["id", "name", "thumbnailUrl", "profilePictureUrl", "isVerified"],
   required: false,
 };
 
@@ -573,7 +573,10 @@ exports.activateUser = async (req, res, next) => {
     if (!user) throw new ApiError(404, "User not found");
     blockDeletedEntity(user);
     if (user.role === ROLES.ADMIN && user.id !== req.user.id) {
-      throw new ApiError(403, "Admin accounts cannot be changed from this action");
+      throw new ApiError(
+        403,
+        "Admin accounts cannot be changed from this action",
+      );
     }
 
     user.isActive = true;
@@ -720,6 +723,12 @@ exports.deleteComment = async (req, res, next) => {
     req.flash("success_msg", "Comment deleted");
     return redirectBack(req, res, "/admin/comments");
   } catch (err) {
-    return handleAdminActionError(err, transaction, req, res, "/admin/comments");
+    return handleAdminActionError(
+      err,
+      transaction,
+      req,
+      res,
+      "/admin/comments",
+    );
   }
 };
