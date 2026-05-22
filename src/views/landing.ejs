@@ -8,7 +8,8 @@
 
   <title>PostLoop</title>
 
-  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/landing.css" />
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 </head>
@@ -285,14 +286,13 @@
       window.location.href = "/feed";
     }
 
-    // Get tabs by their actual elements
     const tabs = document.querySelectorAll('.auth-tab');
     const loginPanel = document.getElementById('loginPanel');
     const signupPanel = document.getElementById('signupPanel');
 
     if (tabs.length === 2) {
-      const loginTab = tabs[0]; // first tab is Login
-      const signupTab = tabs[1]; // second tab is Sign Up
+      const loginTab = tabs[0];
+      const signupTab = tabs[1];
 
       function showLogin() {
         loginTab.classList.add('active');
@@ -311,6 +311,23 @@
       loginTab.addEventListener('click', showLogin);
       signupTab.addEventListener('click', showSignup);
     }
+
+    // Cleanup for potential SPA navigation
+    function cleanupLanding() {
+      if (tabs.length === 2) {
+        const loginTab = tabs[0];
+        const signupTab = tabs[1];
+        loginTab.removeEventListener('click', showLogin);
+        signupTab.removeEventListener('click', showSignup);
+      }
+      // Nullify all references
+      window.tabsRef = null;
+      window.loginPanelRef = null;
+      window.signupPanelRef = null;
+      window.loginTabRef = null;
+      window.signupTabRef = null;
+    }
+    window.cleanupLanding = cleanupLanding;
   </script>
 
 </body>
