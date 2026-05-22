@@ -54,15 +54,16 @@
 </div>
 
 <script>
-    // Preview new profile picture before upload
-    document.getElementById('profilePicture').addEventListener('change', function (e) {
+    const profilePictureInput = document.getElementById('profilePicture');
+    const profilePreview = document.getElementById('profilePreview');
+
+    function handleFileChange(e) {
         const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
             reader.onload = function (event) {
-                const preview = document.getElementById('profilePreview');
-                if (preview.tagName === 'IMG') {
-                    preview.src = event.target.result;
+                if (profilePreview.tagName === 'IMG') {
+                    profilePreview.src = event.target.result;
                 } else {
                     const img = document.createElement('img');
                     img.id = 'profilePreview';
@@ -70,10 +71,23 @@
                     img.style.width = '100%';
                     img.style.height = '100%';
                     img.style.objectFit = 'cover';
-                    preview.parentNode.replaceChild(img, preview);
+                    profilePreview.parentNode.replaceChild(img, profilePreview);
                 }
             };
             reader.readAsDataURL(file);
         }
-    });
+    }
+
+    if (profilePictureInput) {
+        profilePictureInput.addEventListener('change', handleFileChange);
+    }
+
+    function cleanupProfileEdit() {
+        if (profilePictureInput) {
+            profilePictureInput.removeEventListener('change', handleFileChange);
+        }
+        window.profilePictureInputRef = null;
+        window.profilePreviewRef = null;
+    }
+    window.cleanupProfileEdit = cleanupProfileEdit;
 </script>

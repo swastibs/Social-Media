@@ -4,15 +4,15 @@
             <div class="suggestions-horizontal-header">
                 <h3>Suggested for you</h3>
             </div>
-            <div class="suggestions-horizontal-list">
+            <div class="suggestions-horizontal-list" id="suggestionsList">
                 <% suggestedUsers.forEach(user=> { %>
                     <div class="suggestion-horizontal-item" data-href="/profile/<%= user.id %>">
                         <div class="suggestion-horizontal-avatar">
                             <% if (user.thumbnailUrl || user.profilePictureUrl) { %>
                                 <img src="<%= user.thumbnailUrl || user.profilePictureUrl %>" alt="<%= user.name %>"
-                                    loading="lazy" class="img-cover">
+                                    loading="lazy" decoding="async" width="72" height="72" class="img-cover">
                                 <% } else { %>
-                                    <div class="avatar-initials">
+                                    <div class="avatar-initials" style="width:72px; height:72px;">
                                         <%= user.name.substring(0,2).toUpperCase() %>
                                     </div>
                                     <% } %>
@@ -104,95 +104,164 @@
 
 <script>
     (function () {
-        let suggestionCards = null;
-        let followBtns = null;
-        let postFollowBtns = null;
-        let likeBtns = null;
+        // ----- DOM references -----
+        const suggestionsContainer = document.getElementById('suggestionsList');
+        const postsContainer = document.getElementById('postsGrid');
+        const sidebarFollowingSpan = document.getElementById('sidebar-following-count');
 
-        function handleSuggestionClick(e) {
+        // Helper: update following count in sidebar (optimistic)
+        function updateFollowingCount(delta) {
+            if (sidebarFollowingSpan) {
+                const newVal = parseInt(sidebarFollowingSpan.innerText) + delta;
+                sidebarFollowingSpan.innerText = newVal;
+            }
+        }
+
+        // ----- Optimistic Follow handler -----
+        async function followClickHandler(e) {
+            const followBtn = e.target.closest('.suggestion-horizontal-follow-btn, .post-follow-btn');
+            if (!followBtn) return;
+            e.stopPropagation();
+
+            const userId = followBtn.dataset.userId;
+            if (!userId) return;
+
+            // --- Optimistic update ---
+            const wasFollowing = followBtn.classList.contains('following');
+            const newFollowing = !wasFollowing;
+            // Store original text for potential revert
+            const originalText = followBtn.textContent;
+            // Update UI immediately
+            followBtn.textContent = newFollowing ? 'Unfollow' : 'Follow';
+            if (newFollowing) {
+                followBtn.classList.add('following');
+                updateFollowingCount(1);
+            } else {
+                followBtn.classList.remove('following');
+                updateFollowingCount(-1);
+            }
+            // Disable button to prevent double clicks (optional)
+            followBtn.disabled = true;
+
+            try {
+                const res = await axios.post(`/follow/${userId}`);
+                const isNowFollowing = res.data.following;
+                // If server disagrees, revert
+                if (isNowFollowing !== newFollowing) {
+                    // Revert optimistic change
+                    followBtn.textContent = isNowFollowing ? 'Unfollow' : 'Follow';
+                    if (isNowFollowing) {
+                        followBtn.classList.add('following');
+                        updateFollowingCount(1);
+                    } else {
+                        followBtn.classList.remove('following');
+                        updateFollowingCount(-1);
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+                // Revert on error
+                followBtn.textContent = originalText;
+                if (wasFollowing) {
+                    followBtn.classList.add('following');
+                    updateFollowingCount(1);
+                } else {
+                    followBtn.classList.remove('following');
+                    updateFollowingCount(-1);
+                }
+            } finally {
+                followBtn.disabled = false;
+            }
+        }
+
+        // ----- Optimistic Like handler -----
+        async function likeClickHandler(e) {
+            const likeBtn = e.target.closest('.like-action');
+            if (!likeBtn) return;
+            e.stopPropagation();
+
+            const postId = likeBtn.dataset.postId;
+            if (!postId) return;
+
+            // --- Optimistic update ---
+            const wasLiked = likeBtn.classList.contains('liked');
+            const likeCountSpan = likeBtn.querySelector('.like-count-display');
+            let currentLikes = parseInt(likeCountSpan.innerText);
+            // Optimistically toggle
+            const newLiked = !wasLiked;
+            const newLikes = newLiked ? currentLikes + 1 : currentLikes - 1;
+            // Store original HTML for revert
+            const originalHtml = likeBtn.innerHTML;
+            // Update UI immediately
+            likeCountSpan.innerText = newLikes;
+            if (newLiked) {
+                likeBtn.classList.add('liked');
+                likeBtn.innerHTML = `<i class="fa-solid fa-heart"></i> <span class="like-count-display">${newLikes}</span> <span>Unlike</span>`;
+            } else {
+                likeBtn.classList.remove('liked');
+                likeBtn.innerHTML = `<i class="fa-regular fa-heart"></i> <span class="like-count-display">${newLikes}</span> <span>Like</span>`;
+            }
+            likeBtn.disabled = true;
+            likeBtn.style.opacity = '0.7';
+
+            try {
+                const res = await axios.post(`/post/${postId}/like`);
+                const serverLiked = res.data.liked;
+                const serverLikes = res.data.likeCount;
+                // If server disagrees, correct the UI
+                if (serverLiked !== newLiked || serverLikes !== newLikes) {
+                    likeCountSpan.innerText = serverLikes;
+                    if (serverLiked) {
+                        likeBtn.classList.add('liked');
+                        likeBtn.innerHTML = `<i class="fa-solid fa-heart"></i> <span class="like-count-display">${serverLikes}</span> <span>Unlike</span>`;
+                    } else {
+                        likeBtn.classList.remove('liked');
+                        likeBtn.innerHTML = `<i class="fa-regular fa-heart"></i> <span class="like-count-display">${serverLikes}</span> <span>Like</span>`;
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+                // Revert to original state
+                likeBtn.innerHTML = originalHtml;
+                likeBtn.classList.toggle('liked', wasLiked);
+                const correctedSpan = likeBtn.querySelector('.like-count-display');
+                if (correctedSpan) correctedSpan.innerText = currentLikes;
+            } finally {
+                likeBtn.disabled = false;
+                likeBtn.style.opacity = '';
+            }
+        }
+
+        // ----- Suggestion card click (navigate) -----
+        function suggestionClickHandler(e) {
+            const card = e.target.closest('.suggestion-horizontal-item');
+            if (!card) return;
             if (e.target.closest('.suggestion-horizontal-follow-btn')) return;
-            const href = this.getAttribute('data-href');
+            const href = card.dataset.href;
             if (href) window.location.href = href;
         }
 
-        async function handleFollowClick(e) {
-            e.stopPropagation();
-            const userId = this.dataset.userId;
-            try {
-                const res = await axios.post(`/follow/${userId}`);
-                if (res.data.following) {
-                    this.textContent = 'Unfollow';
-                    this.classList.add('following');
-                    const followingSpan = document.getElementById('sidebar-following-count');
-                    if (followingSpan) followingSpan.innerText = parseInt(followingSpan.innerText) + 1;
-                } else {
-                    this.textContent = 'Follow';
-                    this.classList.remove('following');
-                    const followingSpan = document.getElementById('sidebar-following-count');
-                    if (followingSpan) followingSpan.innerText = parseInt(followingSpan.innerText) - 1;
-                }
-            } catch (err) { console.error(err); }
+        // ----- Attach event listeners -----
+        document.addEventListener('click', followClickHandler);
+        if (postsContainer) {
+            postsContainer.addEventListener('click', likeClickHandler);
+        }
+        if (suggestionsContainer) {
+            suggestionsContainer.addEventListener('click', suggestionClickHandler);
         }
 
-        async function handleLikeClick(e) {
-            e.stopPropagation();
-            const postId = this.dataset.postId;
-            try {
-                const res = await axios.post(`/post/${postId}/like`);
-                const likeCountSpan = this.querySelector('.like-count-display');
-                if (likeCountSpan) likeCountSpan.innerText = res.data.likeCount;
-                if (res.data.liked) {
-                    this.classList.add('liked');
-                    this.innerHTML = '<i class="fa-solid fa-heart"></i> <span class="like-count-display">' + res.data.likeCount + '</span> <span>Unlike</span>';
-                } else {
-                    this.classList.remove('liked');
-                    this.innerHTML = '<i class="fa-regular fa-heart"></i> <span class="like-count-display">' + res.data.likeCount + '</span> <span>Like</span>';
-                }
-            } catch (err) { console.error(err); }
+        // ----- Cleanup for garbage collection -----
+        function cleanupFeed() {
+            document.removeEventListener('click', followClickHandler);
+            if (postsContainer) postsContainer.removeEventListener('click', likeClickHandler);
+            if (suggestionsContainer) suggestionsContainer.removeEventListener('click', suggestionClickHandler);
+            window.suggestionsContainerRef = null;
+            window.postsContainerRef = null;
+            window.sidebarFollowingSpanRef = null;
         }
-
-        function init() {
-            suggestionCards = document.querySelectorAll('.suggestion-horizontal-item');
-            suggestionCards.forEach(card => {
-                card.addEventListener('click', handleSuggestionClick);
-            });
-
-            followBtns = document.querySelectorAll('.suggestion-horizontal-follow-btn');
-            followBtns.forEach(btn => {
-                btn.addEventListener('click', handleFollowClick);
-            });
-
-            postFollowBtns = document.querySelectorAll('.post-follow-btn');
-            postFollowBtns.forEach(btn => {
-                btn.addEventListener('click', handleFollowClick);
-            });
-
-            likeBtns = document.querySelectorAll('.like-action');
-            likeBtns.forEach(btn => {
-                btn.addEventListener('click', handleLikeClick);
-            });
-        }
-
-        function cleanup() {
-            if (suggestionCards) {
-                suggestionCards.forEach(card => card.removeEventListener('click', handleSuggestionClick));
-                suggestionCards = null;
-            }
-            if (followBtns) {
-                followBtns.forEach(btn => btn.removeEventListener('click', handleFollowClick));
-                followBtns = null;
-            }
-            if (postFollowBtns) {
-                postFollowBtns.forEach(btn => btn.removeEventListener('click', handleFollowClick));
-                postFollowBtns = null;
-            }
-            if (likeBtns) {
-                likeBtns.forEach(btn => btn.removeEventListener('click', handleLikeClick));
-                likeBtns = null;
-            }
-        }
-
-        init();
-        window.cleanupFeed = cleanup;
+        window.cleanupFeed = cleanupFeed;
+        window.suggestionsContainerRef = suggestionsContainer;
+        window.postsContainerRef = postsContainer;
+        window.sidebarFollowingSpanRef = sidebarFollowingSpan;
     })();
 </script>

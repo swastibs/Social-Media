@@ -94,6 +94,13 @@
             if (reader) reader = null;
             if (imageInput) imageInput.removeEventListener('change', handleFileChange);
             if (removeBtn) removeBtn.removeEventListener('click', removeFile);
+            // Nullify all DOM references
+            window.imageInputRef = null;
+            window.fileNameDisplayRef = null;
+            window.selectedFileNameRef = null;
+            window.imagePreviewRef = null;
+            window.removeBtnRef = null;
+            window.fileLabelRef = null;
         }
 
         if (imageInput) imageInput.addEventListener('change', handleFileChange);

@@ -155,6 +155,16 @@
             if (removeBtn) removeBtn.removeEventListener('click', removeNewFile);
             if (removeImageCheckbox) removeImageCheckbox.removeEventListener('change', handleCheckboxChange);
             if (contentTextarea) contentTextarea.removeEventListener('input', updateCharCount);
+            // Nullify DOM references
+            window.fileInputRef = null;
+            window.fileNameDisplayRef = null;
+            window.selectedFileNameRef = null;
+            window.imagePreviewRef = null;
+            window.currentImageSectionRef = null;
+            window.removeImageCheckboxRef = null;
+            window.removeBtnRef = null;
+            window.fileLabelRef = null;
+            window.contentTextareaRef = null;
         }
 
         if (fileInput) fileInput.addEventListener('change', handleFileChange);

@@ -17,7 +17,7 @@ const {
   BUCKET,
 } = require("../config/minio");
 const { ROLES } = require("../constant/role");
-const flushAuthCache = require("../utils/flushAuthCache"); // 👈 import
+const flushAuthCache = require("../utils/flushAuthCache");
 
 /* =========================
    CONFIG
