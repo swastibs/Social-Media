@@ -10,6 +10,7 @@ const { ROLES } = require("../../constant/role");
 const { Op } = require("sequelize");
 const { getSafeUserInclude } = require("../../utils/dbHelper");
 const { uploadToMinio, deleteFromMinioByUrl } = require("../../config/minio");
+const redirectBack = require("../../utils/redirectBack");
 
 // Helper to check if currentUser follows targetUser
 const isFollowing = async (currentUserId, targetUserId) => {
@@ -46,7 +47,7 @@ exports.renderProfile = async (req, res, next) => {
     });
     if (!profileUser || profileUser.isDeleted) {
       req.flash("error_msg", "User not found");
-      return res.redirect("/feed");
+      return redirectBack(req, res, "/feed");
     }
 
     const { count, rows: posts } = await Post.findAndCountAll({
@@ -130,7 +131,7 @@ exports.renderFollowers = async (req, res, next) => {
     const profileUser = await User.findByPk(profileUserId);
     if (!profileUser || profileUser.isDeleted) {
       req.flash("error_msg", "User not found");
-      return res.redirect("/feed");
+      return redirectBack(req, res, "/feed");
     }
 
     const { count, rows: followers } = await User.findAndCountAll({
@@ -201,7 +202,7 @@ exports.renderFollowing = async (req, res, next) => {
     const profileUser = await User.findByPk(profileUserId);
     if (!profileUser || profileUser.isDeleted) {
       req.flash("error_msg", "User not found");
-      return res.redirect("/feed");
+      return redirectBack(req, res, "/feed");
     }
 
     const { count, rows: following } = await User.findAndCountAll({

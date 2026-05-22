@@ -150,7 +150,6 @@ exports.searchPage = async (req, res, next) => {
         );
       }
     }
-
     res.render("search", {
       title: "Search",
       user: req.user,
@@ -162,7 +161,7 @@ exports.searchPage = async (req, res, next) => {
         currentPage,
         limit,
       },
-      pageCss: ["search.css", "feed.css"],
+      pageCss: "search.css",
     });
   } catch (error) {
     next(error);
