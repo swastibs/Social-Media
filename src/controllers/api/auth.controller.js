@@ -116,15 +116,11 @@ exports.changePassword = async (req, res, next) => {
     const { oldPassword, newPassword } = req.body;
 
     const user = await User.findByPk(userId);
-    if (!user) {
-      throw new ApiError(404, "User not found");
-    }
+    if (!user) throw new ApiError(404, "User not found");
 
     // Verify old password
     const isMatch = await compare(oldPassword, user.password);
-    if (!isMatch) {
-      throw new ApiError(401, "Old password is incorrect");
-    }
+    if (!isMatch) throw new ApiError(401, "Old password is incorrect");
 
     // Hash and update new password
     const hashedPassword = await hash(newPassword, 10);

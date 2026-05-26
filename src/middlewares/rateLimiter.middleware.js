@@ -21,12 +21,12 @@ const rateLimiter = (windowSeconds, maxRequests, prefix = "rate") => {
         const retryAfter = ttl > 0 ? ttl : windowSeconds;
         res.setHeader("Retry-After", retryAfter);
 
-        if (req.accepts("json")) {
+        if (req.accepts("json"))
           return res.status(429).json({
             success: false,
             message: `Too many requests. Please try again in ${retryAfter} seconds.`,
           });
-        } else {
+        else {
           req.flash(
             "error_msg",
             `Too many attempts. Please wait ${retryAfter} seconds.`,
@@ -35,11 +35,8 @@ const rateLimiter = (windowSeconds, maxRequests, prefix = "rate") => {
         }
       }
 
-      if (count === 0) {
-        await redis.set(key, 1, "EX", windowSeconds);
-      } else {
-        await redis.incr(key);
-      }
+      if (count === 0) await redis.set(key, 1, "EX", windowSeconds);
+      else await redis.incr(key);
 
       const remaining = maxRequests - (count + 1);
       res.setHeader("X-RateLimit-Limit", maxRequests);

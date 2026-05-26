@@ -4,7 +4,7 @@
         </h1>
         <div class="post-meta">
             <span><i class="fa-regular fa-calendar"></i>
-                <%= new Date(post.createdAt).toLocaleString() %>
+                <%= new Date(post.createdAt).toLocaleDateString('en-GB') %>
             </span>
             <span><i class="fa-regular fa-heart"></i>
                 <%= post.likeCount %> likes
@@ -45,7 +45,7 @@
                             <%= comment.User?.name || 'Unknown' %>
                         </strong>
                         <small>
-                            <%= new Date(comment.createdAt).toLocaleString() %>
+                            <%= new Date(comment.createdAt).toLocaleDateString('en-GB') %>
                         </small>
                     </div>
                 </div>

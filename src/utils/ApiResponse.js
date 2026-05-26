@@ -29,9 +29,7 @@ exports.successResponse = (res, options = {}) => {
     ...extra,
   };
 
-  if (data !== null && data !== undefined) {
-    response.data = data;
-  }
+  if (data !== null && data !== undefined) response.data = data;
 
   return res.status(statusCode).json(response);
 };

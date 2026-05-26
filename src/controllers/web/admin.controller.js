@@ -24,18 +24,15 @@ const redirectBack = (req, res, fallback = "/admin/dashboard") => {
 };
 
 const handleAdminActionError = async (err, transaction, req, res, fallback) => {
-  if (transaction && !transaction.finished) {
-    await transaction.rollback();
-  }
+  if (transaction && !transaction.finished) await transaction.rollback();
+
   req.flash("error", err.message || "Admin action failed");
   req.flash("error_msg", err.message || "Admin action failed");
   return redirectBack(req, res, fallback);
 };
 
 const blockDeletedEntity = (entity) => {
-  if (entity?.isDeleted) {
-    throw new ApiError(400, "Cannot modify deleted item");
-  }
+  if (entity?.isDeleted) throw new ApiError(400, "Cannot modify deleted item");
 };
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -200,12 +197,12 @@ exports.users = async (req, res, next) => {
       order = "DESC",
     } = req.query;
     const where = { id: { [Op.ne]: req.user.id } };
-    if (search) {
+    if (search)
       where[Op.or] = [
         { name: { [Op.like]: `%${search}%` } },
         { email: { [Op.like]: `%${search}%` } },
       ];
-    }
+
     if (["user", "admin"].includes(role)) where.role = role;
     if (status === "active") where.isActive = true;
     if (status === "inactive") where.isActive = false;
@@ -264,9 +261,8 @@ exports.posts = async (req, res, next) => {
       order = "DESC",
     } = req.query;
     const where = {};
-    if (search) {
-      where.content = { [Op.like]: `%${search}%` };
-    }
+    if (search) where.content = { [Op.like]: `%${search}%` };
+
     applyDeletedFilter(where, deleted);
 
     const createdAt = getDateRange(createdFrom, createdTo);
@@ -275,12 +271,12 @@ exports.posts = async (req, res, next) => {
     const likeCount = {};
     const minLikesNumber = Number(minLikes);
     const maxLikesNumber = Number(maxLikes);
-    if (minLikes !== "" && Number.isFinite(minLikesNumber)) {
+    if (minLikes !== "" && Number.isFinite(minLikesNumber))
       likeCount[Op.gte] = minLikesNumber;
-    }
-    if (maxLikes !== "" && Number.isFinite(maxLikesNumber)) {
+
+    if (maxLikes !== "" && Number.isFinite(maxLikesNumber))
       likeCount[Op.lte] = maxLikesNumber;
-    }
+
     if (Object.keys(likeCount).length) where.likeCount = likeCount;
 
     if (hasImage === "yes") where.imageUrl = { [Op.ne]: null };
@@ -348,9 +344,8 @@ exports.comments = async (req, res, next) => {
       order = "DESC",
     } = req.query;
     const where = {};
-    if (search) {
-      where.content = { [Op.like]: `%${search}%` };
-    }
+    if (search) where.content = { [Op.like]: `%${search}%` };
+
     applyDeletedFilter(where, deleted);
 
     const createdAt = getDateRange(createdFrom, createdTo);
@@ -406,14 +401,14 @@ exports.activities = async (req, res, next) => {
       endDate,
     } = req.query;
     const query = {};
-    if (userId && Number.isInteger(Number(userId))) {
+    if (userId && Number.isInteger(Number(userId)))
       query.userId = Number(userId);
-    }
+
     if (method) query.method = method;
     if (route) query.route = { $regex: escapeRegex(route), $options: "i" };
-    if (status && Number.isInteger(Number(status))) {
+    if (status && Number.isInteger(Number(status)))
       query.responseStatus = Number(status);
-    }
+
     if (entity) query.entity = entity;
     if (startDate || endDate) {
       query.createdAt = {};
@@ -507,22 +502,22 @@ exports.search = async (req, res, next) => {
         Comment.count({ where: commentWhere }),
       ]);
 
-      if (type === "all" || type === "users") {
+      if (type === "all" || type === "users")
         results.users = await User.findAll({
           where: userWhere,
           attributes: { exclude: ["password"] },
           limit,
           order: [["createdAt", "DESC"]],
         });
-      }
-      if (type === "all" || type === "posts") {
+
+      if (type === "all" || type === "posts")
         results.posts = await findPostsWithCommentCounts({
           where: postWhere,
           limit,
           order: [["createdAt", "DESC"]],
         });
-      }
-      if (type === "all" || type === "comments") {
+
+      if (type === "all" || type === "comments")
         results.comments = await Comment.findAll({
           where: commentWhere,
           include: [
@@ -532,7 +527,6 @@ exports.search = async (req, res, next) => {
           limit,
           order: [["createdAt", "DESC"]],
         });
-      }
     }
 
     res.render("admin/search", {
@@ -622,12 +616,12 @@ exports.activateUser = async (req, res, next) => {
     });
     if (!user) throw new ApiError(404, "User not found");
     blockDeletedEntity(user);
-    if (user.role === ROLES.ADMIN && user.id !== req.user.id) {
+    if (user.role === ROLES.ADMIN && user.id !== req.user.id)
       throw new ApiError(
         403,
         "Admin accounts cannot be changed from this action",
       );
-    }
+
     user.isActive = true;
     await user.save({ transaction });
     await transaction.commit();
@@ -649,12 +643,11 @@ exports.deactivateUser = async (req, res, next) => {
     });
     if (!user) throw new ApiError(404, "User not found");
     blockDeletedEntity(user);
-    if (user.id === req.user.id) {
+    if (user.id === req.user.id)
       throw new ApiError(403, "You cannot deactivate your own admin account");
-    }
-    if (user.role === ROLES.ADMIN) {
+    if (user.role === ROLES.ADMIN)
       throw new ApiError(403, "Admin accounts cannot be deactivated here");
-    }
+
     user.isActive = false;
     await user.save({ transaction });
     await transaction.commit();
@@ -676,9 +669,9 @@ exports.promoteToAdmin = async (req, res, next) => {
     });
     if (!user) throw new ApiError(404, "User not found");
     blockDeletedEntity(user);
-    if (user.role === ROLES.ADMIN) {
+    if (user.role === ROLES.ADMIN)
       throw new ApiError(400, "User is already admin");
-    }
+
     user.role = ROLES.ADMIN;
     user.isActive = true;
     await user.save({ transaction });
@@ -701,12 +694,12 @@ exports.deleteUser = async (req, res, next) => {
     });
     if (!user) throw new ApiError(404, "User not found");
     blockDeletedEntity(user);
-    if (user.id === req.user.id) {
+    if (user.id === req.user.id)
       throw new ApiError(403, "You cannot delete your own admin account");
-    }
-    if (user.role === ROLES.ADMIN) {
+
+    if (user.role === ROLES.ADMIN)
       throw new ApiError(403, "Cannot delete admin accounts");
-    }
+
     await user.update(
       { isDeleted: true, isActive: false, deletedBy: req.user.id },
       { transaction },

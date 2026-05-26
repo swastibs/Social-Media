@@ -24,7 +24,7 @@
                                         <% } %>
                             </a>
                             <div class="post-time-detailed"><i class="fa-regular fa-calendar"></i>
-                                <%= new Date(post.createdAt).toLocaleString() %>
+                                <%= new Date(post.createdAt).toLocaleDateString('en-GB') %>
                             </div>
                         </div>
                         <% if (currentUser && (currentUser.id===post.userId || currentUser.role==='admin' )) { %>
@@ -97,7 +97,8 @@
                         </div>
                         <% } else { %>
                             <% comments.forEach(comment=> { %>
-                                <div class="comment-item-detailed" id="comment-<%= comment.id %>">
+                                <div class="comment-item-detailed" id="comment-<%= comment.id %>"
+                                    data-created-at="<%= comment.createdAt %>">
                                     <div class="comment-avatar-detailed">
                                         <% if (comment.User?.thumbnailUrl || comment.User?.profilePictureUrl) { %>
                                             <img src="<%= comment.User?.thumbnailUrl || comment.User?.profilePictureUrl %>"
@@ -120,7 +121,7 @@
                                                         <% } %>
                                             </a>
                                             <span class="comment-time-detailed"><i class="fa-regular fa-clock"></i>
-                                                <%= new Date(comment.createdAt).toLocaleString() %>
+                                                <%= new Date(comment.createdAt).toLocaleDateString('en-GB') %>
                                             </span>
                                         </div>
                                         <p class="comment-text-detailed" id="comment-text-<%= comment.id %>">
@@ -168,6 +169,22 @@
 
 <script>
     (function () {
+        const EDIT_WINDOW_MINUTES = <%= editWindowMinutes %>;
+
+        function hideExpiredEditButtons() {
+            const now = new Date();
+            document.querySelectorAll('.comment-item-detailed').forEach(commentDiv => {
+                const createdAtAttr = commentDiv.getAttribute('data-created-at');
+                if (!createdAtAttr) return;
+                const createdAt = new Date(createdAtAttr);
+                const diffMinutes = (now - createdAt) / (1000 * 60);
+                if (diffMinutes > EDIT_WINDOW_MINUTES) {
+                    const editBtn = commentDiv.querySelector('.edit-comment-btn-detailed');
+                    if (editBtn) editBtn.style.display = 'none';
+                }
+            });
+        }
+
         // Like button functionality
         const likeBtn = document.querySelector('.like-btn-detailed');
         if (likeBtn) {
@@ -203,7 +220,7 @@
                         if (noCommentsMsg) noCommentsMsg.remove();
 
                         const commentHtml = `
-                            <div class="comment-item-detailed" id="comment-${newComment.id}">
+                            <div class="comment-item-detailed" id="comment-${newComment.id}" data-created-at="${newComment.createdAt}">
                                 <div class="comment-avatar-detailed">
                                     ${newComment.User.profilePictureUrl
                                 ? `<img src="${newComment.User.thumbnailUrl || newComment.User.profilePictureUrl}" alt="${escapeHtml(newComment.User.name)}" class="img-cover" width="44" height="44" style="width:44px; height:44px;">`
@@ -334,6 +351,8 @@
             });
         }
 
+        // Initial hide of expired edit buttons
+        hideExpiredEditButtons();
         attachCommentEvents();
     })();
 </script>

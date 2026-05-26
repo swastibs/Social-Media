@@ -26,9 +26,8 @@ exports.storeToken = async (token, userId) => {
         ignoreExpiration: true,
       });
       const expiresIn = decoded.exp - Math.floor(Date.now() / 1000);
-      if (expiresIn > 0) {
+      if (expiresIn > 0)
         await redis.expire(`${USER_TOKENS_PREFIX}${userId}`, expiresIn);
-      }
     } catch (err) {
       // Fallback: set expiry to 1 day if token invalid
       await redis.expire(`${USER_TOKENS_PREFIX}${userId}`, 24 * 60 * 60);
@@ -59,18 +58,16 @@ exports.deleteToken = async (token) => {
     });
     const expiresIn = decoded.exp - Math.floor(Date.now() / 1000);
 
-    if (expiresIn > 0) {
+    if (expiresIn > 0)
       await redis.set(
         `${BLACKLIST_PREFIX}${token}`,
         "revoked",
         "EX",
         expiresIn,
       );
-    }
 
-    if (decoded.userId) {
+    if (decoded.userId)
       await redis.srem(`${USER_TOKENS_PREFIX}${decoded.userId}`, token);
-    }
   } catch (err) {
     console.error("deleteToken error:", err.message);
   }
@@ -98,7 +95,6 @@ exports.deleteAllUserTokens = async (userId) => {
  * @param {string} token - JWT token
  */
 exports.removeTokenFromUser = async (userId, token) => {
-  if (userId && token) {
+  if (userId && token)
     await redis.srem(`${USER_TOKENS_PREFIX}${userId}`, token);
-  }
 };

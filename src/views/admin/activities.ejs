@@ -89,7 +89,7 @@
         <div class="results-count">
             <i class="fa-solid fa-database"></i>
             Found <strong>
-                <%= pagination.totalRecords.toLocaleString() %>
+                <%= pagination.totalRecords.toLocaleDateString('en-GB') %>
             </strong> activity logs
             <% if (filters.userId || filters.method || filters.route || filters.status || filters.entity ||
                 filters.startDate || filters.endDate) { %>
@@ -129,7 +129,7 @@
                         <% activities.forEach(activity=> { %>
                             <tr class="<%= activity.userId ? 'clickable-row' : '' %>">
                                 <td class="no-wrap">
-                                    <%= new Date(activity.createdAt).toLocaleString('en-GB') %>
+                                    <%= new Date(activity.createdAt).toLocaleDateString('en-GB') %>
                                 </td>
                                 <td class="no-wrap">
                                     <% if (activity.userId) { %>

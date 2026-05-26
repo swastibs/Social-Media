@@ -25,11 +25,8 @@ const attachUserIfLoggedIn = async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findByPk(decoded.userId);
-    if (!user || user.isDeleted || !user.isActive) {
-      req.user = null;
-    } else {
-      req.user = user;
-    }
+    if (!user || user.isDeleted || !user.isActive) req.user = null;
+    else req.user = user;
   } catch (err) {
     req.user = null;
   }

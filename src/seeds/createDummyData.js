@@ -101,12 +101,12 @@ const getRandomBio = () => sampleBios[randomInt(0, sampleBios.length - 1)];
 
 const generatePostContent = () => {
   let content = postTemplates[randomInt(0, postTemplates.length - 1)];
-  if (content.includes("{tech}")) {
+  if (content.includes("{tech}"))
     content = content.replace(
       "{tech}",
       technologies[randomInt(0, technologies.length - 1)],
     );
-  }
+
   return content;
 };
 
@@ -327,10 +327,10 @@ const seed = async () => {
     for (const userId of userIds) {
       for (let i = 0; i < CONFIG.POSTS_PER_USER; i++) {
         let imageUrl = null;
-        if (i % 2 === 0) {
+        if (i % 2 === 0)
           imageUrl =
             uploadedPostUrls[randomInt(0, uploadedPostUrls.length - 1)];
-        }
+
         const post = await Post.create(
           {
             userId,
@@ -383,13 +383,12 @@ const seed = async () => {
     for (const post of createdPosts) {
       let postLikes = 0;
       for (const userId of userIds) {
-        if (Math.random() < CONFIG.LIKES_RATIO) {
+        if (Math.random() < CONFIG.LIKES_RATIO)
           try {
             await PostLike.create({ userId, postId: post.id }, { transaction });
             postLikes++;
             totalLikes++;
           } catch (e) {}
-        }
       }
       await Post.update(
         { likeCount: postLikes },

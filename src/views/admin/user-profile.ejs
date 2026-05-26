@@ -84,7 +84,7 @@
                                     <%= post.User?.name || 'Unknown' %>
                                 </strong>
                                 <small>
-                                    <%= new Date(post.createdAt).toLocaleString() %>
+                                    <%= new Date(post.createdAt).toLocaleDateString('en-GB') %>
                                 </small>
                             </div>
                         </div>

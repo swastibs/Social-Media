@@ -52,14 +52,14 @@
         function updateCharCount() {
             const length = contentTextarea.value.length;
             charCounter.textContent = `${length} / ${maxChars}`;
-            if (length > maxChars) {
+            if (length > maxChars)
                 charCounter.classList.add('danger');
-            } else if (length > maxChars * 0.9) {
+            else if (length > maxChars * 0.9) {
                 charCounter.classList.add('warning');
                 charCounter.classList.remove('danger');
-            } else {
+            } else
                 charCounter.classList.remove('warning', 'danger');
-            }
+
         }
 
         contentTextarea.addEventListener('input', updateCharCount);
