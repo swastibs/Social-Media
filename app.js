@@ -1,36 +1,49 @@
+/**
+ * PostLoop - Web MVC Edition
+ * Main Express application configuration
+ *
+ * Sets up middleware, view engine, session, Passport,
+ * global error handling, and routes.
+ */
+
 const path = require("path");
 const express = require("express");
 const compression = require("compression");
 const passport = require("passport");
 require("dotenv").config();
-const swaggerUi = require("swagger-ui-express");
 const cookieParser = require("cookie-parser");
 const expressLayouts = require("express-ejs-layouts");
 const session = require("express-session");
 const flash = require("connect-flash");
 
+// Configuration imports
 require("./src/config/passport");
-const indexRoute = require("./src/routes/api/index.route");
-const { globalErrorHandler } = require("./src/middlewares/globalErrorHandeler");
 const { connectDB } = require("./src/config/db");
 const connectMongo = require("./src/config/mongo");
-const activityLogger = require("./src/middlewares/activityLogger.middleware");
-const webRouter = require("./src/routes/web/web.route");
-const attachUserIfLoggedIn = require("./src/middlewares/attachUser.middleware");
-const { razorpayWebhook } = require("./src/controllers/api/payment.controller");
 
-require("./src/jobs/cleanupActivities");
+// Middleware imports
+const activityLogger = require("./src/middlewares/activityLogger.middleware");
+const attachUserIfLoggedIn = require("./src/middlewares/attachUser.middleware");
+const { globalErrorHandler } = require("./src/middlewares/globalErrorHandeler");
+
+// routes
+const webRouter = require("./src/routes/web/web.route");
+const apiRouter = require("./src/routes/api/index.route");
 
 const app = express();
+
+// COMPRESSION (gzip)
 app.use(compression());
 
-// view engine setup
+// VIEW ENGINE (EJS)
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "src/views"));
 
-connectDB();
-connectMongo();
+// DATABASE CONNECTIONS
+connectDB(); // MySQL (Sequelize)
+connectMongo(); // MongoDB (Activity logs)
 
+// STATIC FILES (CSS, JS, images)
 app.use(
   express.static(path.join(__dirname, "src/public"), {
     maxAge: "1d",
@@ -38,25 +51,18 @@ app.use(
   }),
 );
 
-app.use(
-  "/api-docs",
-  swaggerUi.serve,
-  swaggerUi.setup(require("./src/config/swagger-output.json"), {
-    explorer: true,
-    customCss: ".swagger-ui .topbar { display: none }",
-  }),
-);
-
+// SESSION & FLASH MESSAGES
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "your-secret-key",
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 1000 * 60 * 60 * 24 },
+    cookie: { maxAge: 1000 * 60 * 60 * 24 }, // 24 hours
   }),
 );
 app.use(flash());
 
+// Make flash messages available in all views
 app.use((req, res, next) => {
   res.locals.success_msg = req.flash("success_msg");
   res.locals.error_msg = req.flash("error_msg");
@@ -64,51 +70,44 @@ app.use((req, res, next) => {
   next();
 });
 
-// Razorpay webhook – must be placed BEFORE express.json()
-app.post(
-  "/api/payments/webhook",
-  express.raw({ type: "application/json" }),
-  razorpayWebhook,
-);
-
-// Global JSON parser (after webhook)
+// BODY PARSERS
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// EJS LAYOUTS (express-ejs-layouts)
 app.use(expressLayouts);
 app.set("layout", "layouts/main");
 
+// PASSPORT (JWT strategy + GitHub OAuth)
 app.use(passport.initialize());
 app.use(passport.session());
 
+// COOKIE PARSER (for reading JWT token)
 app.use(cookieParser());
-app.use(attachUserIfLoggedIn); // 👈 add this line
+
+// CUSTOM MIDDLEWARES
+// Attach user object if logged in (populates req.user)
+app.use(attachUserIfLoggedIn);
+
+// Activity logger (logs POST/PUT/DELETE to MongoDB)
 app.use(activityLogger);
 
+// ROUTES (Web only)
 app.use("/", webRouter);
-app.use("/api", indexRoute);
+app.use("/api", apiRouter);
 
-// 404 handler – HTML for web (with layout), JSON for API
+// 404 HANDLER
 app.use((req, res) => {
-  const isApi = req.originalUrl.startsWith("/api");
-
-  if (isApi) {
-    return res.status(404).json({
-      success: false,
-      message: "Resource not found",
-    });
-  }
-
   // Render error page WITH the main layout (sidebar will appear if user logged in)
   res.status(404).render("error", {
     title: "Page Not Found",
     message: "The page you are looking for does not exist.",
     user: req.user || null,
-    layout: "layouts/main", // Force layout
+    layout: "layouts/main",
   });
 });
 
-// Global error handler (must be LAST)
+// GLOBAL ERROR HANDLER (must be LAST)
 app.use(globalErrorHandler);
 
 module.exports = app;

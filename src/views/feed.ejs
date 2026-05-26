@@ -1,5 +1,6 @@
 <div class="feed-layout">
     <div class="feed-main-column">
+        <!-- Suggested users horizontal scroll -->
         <div class="suggestions-horizontal">
             <div class="suggestions-horizontal-header">
                 <h3>Suggested for you</h3>
@@ -19,8 +20,8 @@
                         </div>
                         <span class="suggestion-horizontal-name">
                             <%= user.name %>
-                                <% if (user.isVerified) { %>
-                                    <span class="verified-badge-small" title="Verified User">✓</span>
+                                <% if (user.isVerified) { %><span class="verified-badge-small"
+                                        title="Verified User">✓</span>
                                     <% } %>
                         </span>
                         <button class="suggestion-horizontal-follow-btn" data-user-id="<%= user.id %>">Follow</button>
@@ -29,6 +30,7 @@
             </div>
         </div>
 
+        <!-- Feed posts grid -->
         <% if (posts.length===0) { %>
             <div class="empty-feed">
                 <i class="fa-regular fa-newspaper"></i>
@@ -44,6 +46,7 @@
                 </div>
                 <% } %>
 
+                    <!-- Pagination -->
                     <% if (pagination.totalPages> 1) { %>
                         <div class="pagination-container">
                             <ul class="pagination">
@@ -104,12 +107,10 @@
 
 <script>
     (function () {
-        // ----- DOM references -----
         const suggestionsContainer = document.getElementById('suggestionsList');
         const postsContainer = document.getElementById('postsGrid');
         const sidebarFollowingSpan = document.getElementById('sidebar-following-count');
 
-        // Helper: update following count in sidebar (optimistic)
         function updateFollowingCount(delta) {
             if (sidebarFollowingSpan) {
                 const newVal = parseInt(sidebarFollowingSpan.innerText) + delta;
@@ -117,7 +118,7 @@
             }
         }
 
-        // ----- Optimistic Follow handler -----
+        // Optimistic follow handler
         async function followClickHandler(e) {
             const followBtn = e.target.closest('.suggestion-horizontal-follow-btn, .post-follow-btn');
             if (!followBtn) return;
@@ -126,12 +127,9 @@
             const userId = followBtn.dataset.userId;
             if (!userId) return;
 
-            // --- Optimistic update ---
             const wasFollowing = followBtn.classList.contains('following');
             const newFollowing = !wasFollowing;
-            // Store original text for potential revert
             const originalText = followBtn.textContent;
-            // Update UI immediately
             followBtn.textContent = newFollowing ? 'Unfollow' : 'Follow';
             if (newFollowing) {
                 followBtn.classList.add('following');
@@ -140,15 +138,12 @@
                 followBtn.classList.remove('following');
                 updateFollowingCount(-1);
             }
-            // Disable button to prevent double clicks (optional)
             followBtn.disabled = true;
 
             try {
                 const res = await axios.post(`/follow/${userId}`);
                 const isNowFollowing = res.data.following;
-                // If server disagrees, revert
                 if (isNowFollowing !== newFollowing) {
-                    // Revert optimistic change
                     followBtn.textContent = isNowFollowing ? 'Unfollow' : 'Follow';
                     if (isNowFollowing) {
                         followBtn.classList.add('following');
@@ -160,7 +155,6 @@
                 }
             } catch (err) {
                 console.error(err);
-                // Revert on error
                 followBtn.textContent = originalText;
                 if (wasFollowing) {
                     followBtn.classList.add('following');
@@ -174,7 +168,7 @@
             }
         }
 
-        // ----- Optimistic Like handler -----
+        // Optimistic like handler
         async function likeClickHandler(e) {
             const likeBtn = e.target.closest('.like-action');
             if (!likeBtn) return;
@@ -183,16 +177,12 @@
             const postId = likeBtn.dataset.postId;
             if (!postId) return;
 
-            // --- Optimistic update ---
             const wasLiked = likeBtn.classList.contains('liked');
             const likeCountSpan = likeBtn.querySelector('.like-count-display');
             let currentLikes = parseInt(likeCountSpan.innerText);
-            // Optimistically toggle
             const newLiked = !wasLiked;
             const newLikes = newLiked ? currentLikes + 1 : currentLikes - 1;
-            // Store original HTML for revert
             const originalHtml = likeBtn.innerHTML;
-            // Update UI immediately
             likeCountSpan.innerText = newLikes;
             if (newLiked) {
                 likeBtn.classList.add('liked');
@@ -208,7 +198,6 @@
                 const res = await axios.post(`/post/${postId}/like`);
                 const serverLiked = res.data.liked;
                 const serverLikes = res.data.likeCount;
-                // If server disagrees, correct the UI
                 if (serverLiked !== newLiked || serverLikes !== newLikes) {
                     likeCountSpan.innerText = serverLikes;
                     if (serverLiked) {
@@ -221,7 +210,6 @@
                 }
             } catch (err) {
                 console.error(err);
-                // Revert to original state
                 likeBtn.innerHTML = originalHtml;
                 likeBtn.classList.toggle('liked', wasLiked);
                 const correctedSpan = likeBtn.querySelector('.like-count-display');
@@ -232,7 +220,6 @@
             }
         }
 
-        // ----- Suggestion card click (navigate) -----
         function suggestionClickHandler(e) {
             const card = e.target.closest('.suggestion-horizontal-item');
             if (!card) return;
@@ -241,27 +228,15 @@
             if (href) window.location.href = href;
         }
 
-        // ----- Attach event listeners -----
         document.addEventListener('click', followClickHandler);
-        if (postsContainer) {
-            postsContainer.addEventListener('click', likeClickHandler);
-        }
-        if (suggestionsContainer) {
-            suggestionsContainer.addEventListener('click', suggestionClickHandler);
-        }
+        if (postsContainer) postsContainer.addEventListener('click', likeClickHandler);
+        if (suggestionsContainer) suggestionsContainer.addEventListener('click', suggestionClickHandler);
 
-        // ----- Cleanup for garbage collection -----
         function cleanupFeed() {
             document.removeEventListener('click', followClickHandler);
             if (postsContainer) postsContainer.removeEventListener('click', likeClickHandler);
             if (suggestionsContainer) suggestionsContainer.removeEventListener('click', suggestionClickHandler);
-            window.suggestionsContainerRef = null;
-            window.postsContainerRef = null;
-            window.sidebarFollowingSpanRef = null;
         }
         window.cleanupFeed = cleanupFeed;
-        window.suggestionsContainerRef = suggestionsContainer;
-        window.postsContainerRef = postsContainer;
-        window.sidebarFollowingSpanRef = sidebarFollowingSpan;
     })();
 </script>

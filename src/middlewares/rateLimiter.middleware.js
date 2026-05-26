@@ -1,12 +1,12 @@
+/**
+ * Rate Limiter Middleware
+ *
+ * Limits requests per IP/user per time window using Redis.
+ * Returns JSON for API calls, flashes error and redirects for web.
+ */
+
 const redis = require("../config/redis");
 
-/**
- * Rate limiter middleware factory
- * @param {number} windowSeconds - Time window in seconds (e.g., 60)
- * @param {number} maxRequests - Max allowed requests per window
- * @param {string} [prefix='rate'] - Redis key prefix
- * @returns {Function} Express middleware
- */
 const rateLimiter = (windowSeconds, maxRequests, prefix = "rate") => {
   return async (req, res, next) => {
     const clientId = req.user?.id || req.ip || req.connection.remoteAddress;
@@ -21,14 +21,12 @@ const rateLimiter = (windowSeconds, maxRequests, prefix = "rate") => {
         const retryAfter = ttl > 0 ? ttl : windowSeconds;
         res.setHeader("Retry-After", retryAfter);
 
-        // Detect if client expects JSON or HTML
         if (req.accepts("json")) {
           return res.status(429).json({
             success: false,
             message: `Too many requests. Please try again in ${retryAfter} seconds.`,
           });
         } else {
-          // Web request – flash error and redirect back
           req.flash(
             "error_msg",
             `Too many attempts. Please wait ${retryAfter} seconds.`,
@@ -37,11 +35,12 @@ const rateLimiter = (windowSeconds, maxRequests, prefix = "rate") => {
         }
       }
 
-      // Increment count
-      if (count === 0) await redis.set(key, 1, "EX", windowSeconds);
-      else await redis.incr(key);
+      if (count === 0) {
+        await redis.set(key, 1, "EX", windowSeconds);
+      } else {
+        await redis.incr(key);
+      }
 
-      // Optional headers
       const remaining = maxRequests - (count + 1);
       res.setHeader("X-RateLimit-Limit", maxRequests);
       res.setHeader("X-RateLimit-Remaining", remaining);

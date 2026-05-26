@@ -1,3 +1,9 @@
+/**
+ * Authentication Validations (Web)
+ *
+ * Joi schemas for signup, login, and password change forms.
+ */
+
 const { Joi } = require("express-validation");
 
 const email = Joi.string().email().lowercase().trim().messages({
@@ -44,9 +50,12 @@ exports.changePasswordSchema = {
       "string.max": "New password cannot exceed 32 characters",
       "any.required": "New password is required",
     }),
-    confirmPassword: Joi.string().valid(Joi.ref("newPassword")).required().messages({
-      "any.only": "Passwords do not match",
-      "any.required": "Please confirm your new password",
-    }),
+    confirmPassword: Joi.string()
+      .valid(Joi.ref("newPassword"))
+      .required()
+      .messages({
+        "any.only": "Passwords do not match",
+        "any.required": "Please confirm your new password",
+      }),
   }).unknown(false),
 };

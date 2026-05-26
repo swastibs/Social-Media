@@ -417,67 +417,6 @@
   right: -100px;
 }
 
-@media (max-width: 992px) {
-  .landing-container {
-    grid-template-columns: 1fr;
-    text-align: center;
-  }
-
-  .hero-badge {
-    margin-inline: auto;
-  }
-
-  .hero-description {
-    margin-inline: auto;
-  }
-
-  .hero-actions {
-    justify-content: center;
-  }
-
-  .hero-stats {
-    justify-content: center;
-  }
-
-  .hero-right {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-  }
-}
-
-@media (max-width: 768px) {
-  .landing-navbar {
-    padding: 1rem;
-  }
-
-  .landing-container {
-    padding: 2rem 1rem 4rem;
-  }
-
-  .hero-title {
-    font-size: 3rem;
-  }
-
-  .nav-login-btn {
-    display: none;
-  }
-}
-
-@media (max-width: 600px) {
-  .modern-auth-card {
-    padding: 1.4rem;
-  }
-
-  .auth-top h2 {
-    font-size: 1.7rem;
-  }
-
-  .signup-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
 /* GitHub OAuth Button */
 .github-login-btn {
   display: flex;
@@ -512,4 +451,55 @@
 
 .github-login-btn:active {
   transform: scale(0.98);
+}
+
+@media (max-width: 992px) {
+  .landing-container {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  .hero-badge {
+    margin-inline: auto;
+  }
+  .hero-description {
+    margin-inline: auto;
+  }
+  .hero-actions {
+    justify-content: center;
+  }
+  .hero-stats {
+    justify-content: center;
+  }
+  .hero-right {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .landing-navbar {
+    padding: 1rem;
+  }
+  .landing-container {
+    padding: 2rem 1rem 4rem;
+  }
+  .hero-title {
+    font-size: 3rem;
+  }
+  .nav-login-btn {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .modern-auth-card {
+    padding: 1.4rem;
+  }
+  .auth-top h2 {
+    font-size: 1.7rem;
+  }
+  .signup-grid {
+    grid-template-columns: 1fr;
+  }
 }

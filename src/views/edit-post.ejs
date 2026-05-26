@@ -4,19 +4,18 @@
         <p>Update your thoughts</p>
     </div>
 
-    <form action="/post/edit/<%= post.id %>" method="POST" enctype="multipart/form-data" class="post-form">
+    <form action="/post/edit/<%= post.id %>" method="POST" enctype="multipart/form-data" class="post-form"
+        id="editPostForm">
         <div class="form-group">
-            <label for="content">
-                <i class="fas fa-pencil-alt"></i> Content
-            </label>
+            <label for="content">Content</label>
             <textarea id="content" name="content" rows="6" required class="form-textarea"><%= post.content %></textarea>
+            <div class="char-counter" id="charCounter">
+                <%= post.content.length %> / 1000
+            </div>
         </div>
 
         <div class="form-group">
-            <label for="image">
-                <i class="fas fa-image"></i> Image (optional)
-            </label>
-
+            <label for="image">Image (optional)</label>
             <div class="custom-file-upload">
                 <label for="image" class="file-upload-label">
                     <i class="fas fa-cloud-upload-alt"></i>
@@ -56,6 +55,7 @@
                             <i class="fas fa-times"></i> Cancel new image
                         </button>
                     </div>
+                    <small class="form-text text-muted">Allowed formats: JPEG, PNG, WebP. Max size: 2MB.</small>
         </div>
 
         <div class="form-actions">
@@ -71,6 +71,27 @@
 
 <script>
     (function () {
+        // Character counter
+        const contentTextarea = document.getElementById('content');
+        const charCounter = document.getElementById('charCounter');
+        const maxChars = 1000;
+
+        function updateCharCount() {
+            const length = contentTextarea.value.length;
+            charCounter.textContent = `${length} / ${maxChars}`;
+            if (length > maxChars) {
+                charCounter.classList.add('danger');
+            } else if (length > maxChars * 0.9) {
+                charCounter.classList.add('warning');
+                charCounter.classList.remove('danger');
+            } else {
+                charCounter.classList.remove('warning', 'danger');
+            }
+        }
+
+        contentTextarea.addEventListener('input', updateCharCount);
+
+        // File upload handling
         const fileInput = document.getElementById('image');
         const fileNameDisplay = document.getElementById('fileNameDisplay');
         const selectedFileName = document.getElementById('selectedFileName');
@@ -79,20 +100,14 @@
         const removeImageCheckbox = document.getElementById('removeImageCheckbox');
         const removeBtn = document.querySelector('[data-remove-image]');
         const fileLabel = document.querySelector('.file-upload-label');
-        const contentTextarea = document.getElementById('content');
-
-        let reader = null;
 
         function removeNewFile() {
-            if (fileInput) fileInput.value = '';
-            if (fileNameDisplay) fileNameDisplay.style.display = 'none';
-            if (imagePreview) imagePreview.style.display = 'none';
+            fileInput.value = '';
+            fileNameDisplay.style.display = 'none';
+            imagePreview.style.display = 'none';
             if (currentImageSection) {
                 currentImageSection.style.opacity = '1';
                 currentImageSection.style.pointerEvents = 'auto';
-            }
-            if (reader) {
-                reader = null;
             }
         }
 
@@ -102,31 +117,22 @@
                 selectedFileName.textContent = file.name;
                 fileNameDisplay.style.display = 'flex';
 
-                if (reader) {
-                    reader = null;
-                }
-                reader = new FileReader();
+                const reader = new FileReader();
                 reader.onload = function (event) {
                     const img = imagePreview.querySelector('img');
                     if (img) img.src = event.target.result;
-                    if (imagePreview) imagePreview.style.display = 'block';
-                    if (reader) {
-                        reader = null;
-                    }
+                    imagePreview.style.display = 'block';
                 };
                 reader.readAsDataURL(file);
 
-                if (fileLabel) {
-                    fileLabel.classList.add('success');
-                    setTimeout(() => {
-                        if (fileLabel) fileLabel.classList.remove('success');
-                    }, 300);
-                }
+                if (fileLabel) fileLabel.classList.add('success');
+                setTimeout(() => {
+                    if (fileLabel) fileLabel.classList.remove('success');
+                }, 300);
 
                 if (removeImageCheckbox) {
                     removeImageCheckbox.checked = false;
                 }
-
                 if (currentImageSection) {
                     currentImageSection.style.opacity = '0.5';
                     currentImageSection.style.pointerEvents = 'none';
@@ -149,29 +155,10 @@
             }
         }
 
-        function cleanup() {
-            if (reader) reader = null;
-            if (fileInput) fileInput.removeEventListener('change', handleFileChange);
-            if (removeBtn) removeBtn.removeEventListener('click', removeNewFile);
-            if (removeImageCheckbox) removeImageCheckbox.removeEventListener('change', handleCheckboxChange);
-            if (contentTextarea) contentTextarea.removeEventListener('input', updateCharCount);
-            // Nullify DOM references
-            window.fileInputRef = null;
-            window.fileNameDisplayRef = null;
-            window.selectedFileNameRef = null;
-            window.imagePreviewRef = null;
-            window.currentImageSectionRef = null;
-            window.removeImageCheckboxRef = null;
-            window.removeBtnRef = null;
-            window.fileLabelRef = null;
-            window.contentTextareaRef = null;
-        }
-
-        if (fileInput) fileInput.addEventListener('change', handleFileChange);
+        fileInput.addEventListener('change', handleFileChange);
         if (removeBtn) removeBtn.addEventListener('click', removeNewFile);
         if (removeImageCheckbox) removeImageCheckbox.addEventListener('change', handleCheckboxChange);
 
         window.removeNewFile = removeNewFile;
-        window.cleanupEditPost = cleanup;
     })();
 </script>

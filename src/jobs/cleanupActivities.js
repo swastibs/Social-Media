@@ -1,14 +1,15 @@
+/**
+ * Scheduled Job: Cleanup Old Activities
+ *
+ * Runs daily at 2:00 AM to delete activity logs older than 3 months
+ * from MongoDB. Uses node-schedule for cron scheduling.
+ */
+
 const schedule = require("node-schedule");
 const mongoose = require("mongoose");
 const Activity = require("../models/activity.model");
 
-// Cron pattern: at 02:00 every day (you can change the hour)
-//                 ┌─ minute (0)
-//                 │ ┌─ hour (2)
-//                 │ │ ┌─ day of month (*)
-//                 │ │ │ ┌─ month (*)
-//                 │ │ │ │ ┌─ day of week (*)
-//                 │ │ │ │ │
+// Cron pattern: 0 2 * * *  (at 02:00 every day)
 const cronRule = "0 2 * * *";
 
 const cleanupJob = schedule.scheduleJob(cronRule, async () => {
@@ -17,6 +18,7 @@ const cleanupJob = schedule.scheduleJob(cronRule, async () => {
     `[${new Date().toISOString()}] Starting daily cleanup of activities older than 3 months...`,
   );
 
+  // Ensure MongoDB is connected before proceeding
   if (mongoose.connection.readyState !== 1) {
     console.error("[Cleanup Job] MongoDB not connected, aborting.");
     return;

@@ -4,15 +4,36 @@
         <p>View and manage all user posts</p>
     </div>
 
+    <!-- Search bar (always visible) -->
     <div class="admin-filters">
-        <form method="GET" class="filter-form">
-            <div class="filter-group">
-                <label for="postSearch"><i class="fa-solid fa-magnifying-glass"></i> Search Posts</label>
+        <form method="GET" class="search-filter-form">
+            <div class="filter-group search-group">
+                <label for="postSearch">Search Posts</label>
                 <input id="postSearch" type="text" name="search" placeholder="Search by content..."
                     value="<%= searchQuery %>" class="filter-input">
             </div>
-            <details class="filter-group filter-group-full">
-                <summary><i class="fa-solid fa-sliders"></i> Filters</summary>
+            <div class="filter-actions">
+                <button type="submit" class="btn-primary"><i class="fa-solid fa-search"></i> Search</button>
+                <% if (searchQuery || filters.createdFrom || filters.createdTo || filters.minLikes || filters.maxLikes
+                    || filters.hasImage !=='any' || filters.deleted !=='all' || filters.sortBy !=='createdAt' ||
+                    filters.order !=='DESC' ) { %>
+                    <a href="/admin/posts" class="btn-secondary"><i class="fa-solid fa-times"></i> Clear</a>
+                    <% } %>
+            </div>
+        </form>
+    </div>
+
+    <!-- Filter dropdown button -->
+    <div class="filter-dropdown">
+        <button type="button" class="filter-dropdown-btn" id="filterToggleBtn">
+            <i class="fa-solid fa-sliders-h"></i> Filters
+            <% if (filters.createdFrom || filters.createdTo || filters.minLikes || filters.maxLikes || filters.hasImage
+                !=='any' || filters.deleted !=='all' || filters.sortBy !=='createdAt' || filters.order !=='DESC' ) { %>
+                <span class="filter-active-badge">active</span>
+                <% } %>
+        </button>
+        <div class="filter-dropdown-content" id="filterDropdown">
+            <form method="GET" class="filter-form">
                 <div class="filter-row">
                     <div class="filter-group">
                         <label for="postCreatedFrom"><i class="fa-regular fa-calendar"></i> Created From</label>
@@ -61,8 +82,8 @@
                             </option>
                             <option value="likeCount" <%=filters.sortBy==='likeCount' ? 'selected' : '' %>>Likes
                             </option>
-                            <option value="commentCount" <%=filters.sortBy==='commentCount' ? 'selected' : '' %>>
-                                Comments</option>
+                            <option value="commentCount" <%=filters.sortBy==='commentCount' ? 'selected' : '' %>
+                                >Comments</option>
                         </select>
                     </div>
                     <div class="filter-group">
@@ -73,16 +94,26 @@
                         </select>
                     </div>
                 </div>
-            </details>
-            <div class="filter-actions">
-                <button type="submit" class="btn-primary"><i class="fa-solid fa-search"></i> Search</button>
-                <% if (searchQuery || filters.createdFrom || filters.createdTo || filters.minLikes || filters.maxLikes
-                    || filters.hasImage !=='any' || filters.deleted !=='all' || filters.sortBy !=='createdAt' ||
-                    filters.order !=='DESC' ) { %>
-                    <a href="/admin/posts" class="btn-secondary"><i class="fa-solid fa-times"></i> Clear</a>
-                    <% } %>
-            </div>
-        </form>
+                <div class="filter-actions">
+                    <button type="submit" class="btn-primary">Apply Filters</button>
+                    <a href="/admin/posts" class="btn-secondary">Reset</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Filter summary -->
+    <div class="filter-summary">
+        <div class="results-count">
+            <strong>
+                <%= pagination.totalRecords %>
+            </strong> posts found
+            <% if (searchQuery || filters.createdFrom || filters.createdTo || filters.minLikes || filters.maxLikes ||
+                filters.hasImage !=='any' || filters.deleted !=='all' || filters.sortBy !=='createdAt' || filters.order
+                !=='DESC' ) { %>
+                <span class="filter-badge">Filtered</span>
+                <% } %>
+        </div>
     </div>
 
     <div class="admin-grid">
@@ -110,9 +141,6 @@
                                 <div>
                                     <div class="card-title-text">
                                         <%= post.User.name %>
-                                            <% if (post.User.isVerified) { %>
-                                                <span class="verified-badge-small" title="Verified User">✓</span>
-                                                <% } %>
                                     </div>
                                     <div class="card-subtitle">
                                         <%= new Date(post.createdAt).toLocaleString() %>
@@ -146,10 +174,9 @@
                                 <% if (post.isDeleted) { %>
                                     <button type="button" class="action-btn danger" title="Already deleted" disabled><i
                                             class="fa-solid fa-trash"></i></button>
-                                    <span class="card-subtitle">Already deleted</span>
                                     <% } else { %>
                                         <form method="POST" action="/admin/post/<%= post.id %>/delete"
-                                            class="inline-action-form" data-admin-confirm="delete-post">
+                                            class="inline-action-form" onsubmit="return confirm('Delete this post?')">
                                             <button type="submit" class="action-btn danger" title="Delete Post"><i
                                                     class="fa-solid fa-trash"></i></button>
                                         </form>
@@ -168,11 +195,27 @@
 </div>
 
 <script>
+    // Toggle filter dropdown
+    const toggleBtn = document.getElementById('filterToggleBtn');
+    const dropdown = document.getElementById('filterDropdown');
+    if (toggleBtn && dropdown) {
+        toggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.classList.toggle('show');
+        });
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!toggleBtn.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+    }
+
+    // Card click navigation
     document.querySelectorAll('.admin-card').forEach(card => {
         card.addEventListener('click', (e) => {
             if (e.target.closest('.card-actions')) return;
-            const href = card.dataset.href;
-            if (href) window.location.href = href;
+            window.location.href = card.dataset.href;
         });
     });
 </script>

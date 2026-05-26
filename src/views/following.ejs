@@ -87,14 +87,17 @@
                 if (res.data.following) {
                     btn.textContent = 'Unfollow';
                     btn.classList.add('following');
+                    const followingSpan = document.getElementById('sidebar-following-count');
+                    if (followingSpan) followingSpan.innerText = parseInt(followingSpan.innerText) + 1;
                 } else {
                     btn.textContent = 'Follow';
                     btn.classList.remove('following');
+                    const followingSpan = document.getElementById('sidebar-following-count');
+                    if (followingSpan) followingSpan.innerText = parseInt(followingSpan.innerText) - 1;
                 }
             } catch (err) { console.error(err); }
         });
     });
-    followBtns.length = 0;
 
     const userCards = document.querySelectorAll('.user-card');
     userCards.forEach(card => {
@@ -104,7 +107,4 @@
             }
         });
     });
-    userCards.length = 0;
-    followBtns = null;
-    userCards = null;
 </script>

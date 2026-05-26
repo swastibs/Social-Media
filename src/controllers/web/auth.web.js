@@ -1,3 +1,13 @@
+/**
+ * Authentication Controller (Web)
+ *
+ * Handles:
+ * - Landing page (login/signup tabs)
+ * - Login / Signup forms with flash messages
+ * - Logout (clears JWT cookie and Redis session)
+ * - Password change (with old password verification)
+ */
+
 const { User } = require("../../models");
 const { compare, hash } = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -9,11 +19,13 @@ const {
 } = require("../../utils/authCache");
 const { uploadToMinio } = require("../../config/minio");
 
+// ========== Landing & Tab Switching ==========
 exports.landing = (req, res) => {
-  if (req.user)
+  if (req.user) {
     return res.redirect(
       req.user.role === "admin" ? "/admin/dashboard" : "/feed",
     );
+  }
   res.render("landing", {
     mode: "login",
     oldInput: {},
@@ -22,10 +34,11 @@ exports.landing = (req, res) => {
 };
 
 exports.loginForm = (req, res) => {
-  if (req.user)
+  if (req.user) {
     return res.redirect(
       req.user.role === "admin" ? "/admin/dashboard" : "/feed",
     );
+  }
   res.render("landing", {
     mode: "login",
     oldInput: req.flash("oldInput")[0] || {},
@@ -33,6 +46,20 @@ exports.loginForm = (req, res) => {
   });
 };
 
+exports.signupForm = (req, res) => {
+  if (req.user) {
+    return res.redirect(
+      req.user.role === "admin" ? "/admin/dashboard" : "/feed",
+    );
+  }
+  res.render("landing", {
+    mode: "signup",
+    oldInput: req.flash("oldInput")[0] || {},
+    pageCss: "landing.css",
+  });
+};
+
+// ========== Login ==========
 exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -44,7 +71,7 @@ exports.login = async (req, res, next) => {
       return res.redirect("/login");
     }
 
-    // GitHub-only account (password = null) cannot use email/password
+    // GitHub-only accounts cannot use email/password
     if (!user.password) {
       req.flash(
         "error_msg",
@@ -79,18 +106,7 @@ exports.login = async (req, res, next) => {
   }
 };
 
-exports.signupForm = (req, res) => {
-  if (req.user)
-    return res.redirect(
-      req.user.role === "admin" ? "/admin/dashboard" : "/feed",
-    );
-  res.render("landing", {
-    mode: "signup",
-    oldInput: req.flash("oldInput")[0] || {},
-    pageCss: "landing.css",
-  });
-};
-
+// ========== Signup ==========
 exports.signup = async (req, res, next) => {
   try {
     const { name, email, password, bio } = req.body;
@@ -100,6 +116,7 @@ exports.signup = async (req, res, next) => {
       req.flash("oldInput", { name, email, bio });
       return res.redirect("/signup");
     }
+
     const hashed = await hash(password, 10);
     let profilePictureUrl = null,
       thumbnailUrl = null;
@@ -126,6 +143,7 @@ exports.signup = async (req, res, next) => {
       followersCount: 0,
       followingCount: 0,
     });
+
     req.flash("success_msg", "Account created! Please log in.");
     res.redirect("/login");
   } catch (err) {
@@ -133,6 +151,7 @@ exports.signup = async (req, res, next) => {
   }
 };
 
+// ========== Logout ==========
 exports.logout = async (req, res) => {
   const token = req.cookies.postloop_token;
   const userId = req.user?.id;
@@ -144,7 +163,7 @@ exports.logout = async (req, res) => {
 
   res.clearCookie("postloop_token", { path: "/" });
 
-  // ✅ Use Passport logout – removes user from session without destroying the session
+  // Passport logout – removes user from session without destroying the session
   req.logout((err) => {
     if (err) console.error("Logout error:", err);
     req.flash("success_msg", "You have been logged out.");
@@ -152,6 +171,7 @@ exports.logout = async (req, res) => {
   });
 };
 
+// ========== Change Password ==========
 exports.changePasswordForm = (req, res) => {
   res.render("auth/change-password", {
     title: "Change Password",

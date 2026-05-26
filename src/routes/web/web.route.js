@@ -1,8 +1,16 @@
+/**
+ * Web Routes (User‑facing)
+ *
+ * All routes except /admin. Handles authentication, profile, feed,
+ * posts, comments, search, follow requests, password reset, GitHub OAuth.
+ */
+
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const router = express.Router();
-
 const { validate } = require("express-validation");
+const passport = require("passport");
+
 const rateLimiter = require("../../middlewares/rateLimiter.middleware");
 const {
   redirectIfLoggedIn,
@@ -12,6 +20,7 @@ const upload = require("../../middlewares/multer");
 const webCacheMiddleware = require("../../middlewares/webCache.middleware");
 const { invalidateCache } = require("../../middlewares/invalidate.middleware");
 
+// Controllers
 const {
   landing,
   loginForm,
@@ -35,7 +44,14 @@ const {
 } = require("../../validations/web/profile.validation");
 
 const { renderFeed } = require("../../controllers/web/feed.web");
-const { toggleFollow } = require("../../controllers/web/user.web");
+
+const {
+  toggleFollow,
+  showFollowRequests,
+  acceptFollowRequest,
+  rejectFollowRequest,
+  removeFollower,
+} = require("../../controllers/web/user.web");
 
 const {
   renderProfile,
@@ -43,6 +59,7 @@ const {
   renderFollowing,
   renderEditProfile,
   updateProfile,
+  togglePrivacy,
 } = require("../../controllers/web/profile.web");
 
 const {
@@ -82,13 +99,19 @@ const { searchPage } = require("../../controllers/web/search.web");
 
 const forgotController = require("../../controllers/web/forgotPassword.controller");
 
-// Import admin router
-const adminRouter = require("./admin.route");
-const passport = require("passport");
+// Payment controllers (web)
+const {
+  createOrder,
+  verifyPayment,
+  razorpayWebhook,
+} = require("../../controllers/web/payment.web");
 
+const { storeToken } = require("../../utils/authCache");
+
+// Invalidate cache helper for web mutations
 const invalidateWebCache = invalidateCache(["web:*"]);
 
-// 🔥 MIDDLEWARE TO BLOCK ADMIN FROM USER ROUTES
+// Block admin from accessing user routes
 const blockAdminFromUserRoutes = (req, res, next) => {
   if (req.user && req.user.role === "admin") {
     req.flash("error_msg", "Admins cannot access user pages.");
@@ -97,12 +120,16 @@ const blockAdminFromUserRoutes = (req, res, next) => {
   next();
 };
 
-// Public Routes (no auth)
+const adminRouter = require("./admin.route");
+// ...
+router.use("/admin", adminRouter);
+
+// ========== Public Routes (no auth) ==========
 router.get("/", redirectIfLoggedIn, landing);
 router.get("/login", redirectIfLoggedIn, loginForm);
 router.get("/signup", redirectIfLoggedIn, signupForm);
 
-// Auth Routes (no admin blocking needed – they are not logged in yet)
+// ========== Auth Routes ==========
 router.post(
   "/login",
   rateLimiter(300, 5, "web-login"),
@@ -126,7 +153,7 @@ router.post(
   logout,
 );
 
-// Password change – also blocked for admin
+// ========== Password Change ==========
 router.get(
   "/change-password",
   isAuthenticated,
@@ -143,16 +170,59 @@ router.post(
   changePassword,
 );
 
-// Feed – block admin
+// ========== Forgot / Reset Password ==========
+router.get("/forgot-password", forgotController.showForgotForm);
+router.post(
+  "/forgot-password",
+  rateLimiter(60, 3, "forgot-pw"),
+  validate(forgotPasswordSchema),
+  forgotController.requestReset,
+);
+router.get("/reset-password", forgotController.showResetForm);
+router.post(
+  "/reset-password",
+  rateLimiter(60, 5, "reset-pw"),
+  validate(resetPasswordSchema),
+  forgotController.resetPassword,
+);
+
+// ========== Feed ==========
 router.get(
   "/feed",
   isAuthenticated,
   blockAdminFromUserRoutes,
-  webCacheMiddleware(60 * 5),
+
   renderFeed,
 );
 
-// Profile Routes – block admin
+// ========== Follow Requests ==========
+router.get(
+  "/follow-requests",
+  isAuthenticated,
+  blockAdminFromUserRoutes,
+  webCacheMiddleware(60 * 5),
+  showFollowRequests,
+);
+router.post(
+  "/follow-requests/:userId/accept",
+  isAuthenticated,
+  blockAdminFromUserRoutes,
+  rateLimiter(60, 20, "accept-follow"),
+  validate(userIdParamSchema),
+  invalidateWebCache,
+  acceptFollowRequest,
+);
+router.post(
+  "/follow-requests/:userId/reject",
+  isAuthenticated,
+  blockAdminFromUserRoutes,
+  rateLimiter(60, 20, "reject-follow"),
+  validate(userIdParamSchema),
+  invalidateWebCache,
+  rejectFollowRequest,
+);
+
+// ========== Profile ==========
 router.get(
   "/profile/edit",
   isAuthenticated,
@@ -202,8 +272,15 @@ router.post(
   invalidateWebCache,
   toggleFollow,
 );
+router.post(
+  "/profile/:userId/followers/remove/:followerId",
+  isAuthenticated,
+  blockAdminFromUserRoutes,
+  rateLimiter(60, 20, "remove-follower"),
+  removeFollower,
+);
 
-// Post Routes – block admin
+// ========== Posts ==========
 router.get(
   "/post/create",
   isAuthenticated,
@@ -225,7 +302,7 @@ router.get(
   isAuthenticated,
   blockAdminFromUserRoutes,
   validate(postIdParamSchema),
-  webCacheMiddleware(60 * 60 * 6),
+  // webCacheMiddleware(60 * 60 * 6),
   postDetail,
 );
 router.get(
@@ -264,7 +341,7 @@ router.post(
   toggleLike,
 );
 
-// Comment Routes – block admin
+// ========== Comments ==========
 router.post(
   "/comment/create",
   isAuthenticated,
@@ -293,7 +370,7 @@ router.delete(
   deleteComment,
 );
 
-// Search – block admin
+// ========== Search ==========
 router.get(
   "/search",
   isAuthenticated,
@@ -302,26 +379,37 @@ router.get(
   searchPage,
 );
 
-// Forgot Password routes
-router.get("/forgot-password", forgotController.showForgotForm);
-
+// ========== Payments (AJAX & Webhook) ==========
 router.post(
-  "/forgot-password",
-  rateLimiter(60, 3, "forgot-pw"),
-  validate(forgotPasswordSchema),
-  forgotController.requestReset,
+  "/payment/create-order",
+  isAuthenticated,
+  rateLimiter(60, 10, "create-order"),
+  createOrder,
+);
+router.post(
+  "/payment/verify-payment",
+  isAuthenticated,
+  rateLimiter(60, 10, "verify-payment"),
+  verifyPayment,
+);
+// Webhook (no auth, raw body) – must come before express.json()
+router.post(
+  "/payment/webhook",
+  express.raw({ type: "application/json" }),
+  razorpayWebhook,
 );
 
-router.get("/reset-password", forgotController.showResetForm);
-
+// ========== Privacy Toggle (AJAX) ==========
 router.post(
-  "/reset-password",
-  rateLimiter(60, 5, "reset-pw"),
-  validate(resetPasswordSchema),
-  forgotController.resetPassword,
+  "/profile/privacy",
+  isAuthenticated,
+  blockAdminFromUserRoutes,
+  rateLimiter(60, 20, "toggle-privacy"),
+  invalidateWebCache,
+  togglePrivacy,
 );
 
-// GitHub OAuth routes
+// ========== GitHub OAuth ==========
 router.get("/auth/github", passport.authenticate("github"));
 router.get(
   "/auth/github/callback",
@@ -329,29 +417,20 @@ router.get(
     failureRedirect: "/login",
     failureFlash: true,
   }),
-  (req, res) => {
-    // Success – generate JWT token and set cookie
+  async (req, res) => {
     const token = jwt.sign(
       { userId: req.user.id, email: req.user.email, role: req.user.role },
       process.env.JWT_SECRET,
       { expiresIn: "1d" },
     );
-    // Store token in Redis (required by your authCache)
-    const { storeToken } = require("../../utils/authCache");
-    storeToken(token, req.user.id)
-      .then(() => {
-        res.cookie("postloop_token", token, {
-          httpOnly: true,
-          maxAge: 24 * 60 * 60 * 1000,
-        });
-        // Redirect based on role
-        if (req.user.role === "admin") return res.redirect("/admin/dashboard");
-        res.redirect("/feed");
-      })
-      .catch(() => res.redirect("/feed"));
+    await storeToken(token, req.user.id);
+    res.cookie("postloop_token", token, {
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+    if (req.user.role === "admin") return res.redirect("/admin/dashboard");
+    res.redirect("/feed");
   },
 );
-
-router.use("/admin", adminRouter);
 
 module.exports = router;
