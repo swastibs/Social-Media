@@ -13,8 +13,7 @@
         <div class="profile-info">
             <h1>
                 <%= profileUser.name %>
-                    <% if (profileUser.isVerified) { %>
-                        <span class="verified-badge" title="Verified User">✓</span>
+                    <% if (profileUser.isVerified) { %><span class="verified-badge" title="Verified User">✓</span>
                         <% } %>
             </h1>
             <p>
@@ -53,8 +52,8 @@
                                                 Admin</button>
                                         </form>
                                         <form method="POST" action="/admin/user/<%= profileUser.id %>/delete"
-                                            onsubmit="return confirm('Delete this user permanently?')"
-                                            class="inline-action-form">
+                                            class="inline-action-form"
+                                            onsubmit="return confirm('Delete this user permanently?')">
                                             <button type="submit" class="btn-admin btn-delete">Delete User</button>
                                         </form>
                                         <% } %>
@@ -68,8 +67,6 @@
         <div class="posts-grid">
             <% posts.forEach(post=> { %>
                 <div class="post-card" data-href="/admin/post/<%= post.id %>">
-                    <a href="/admin/post/<%= post.id %>" class="admin-card-link"
-                        aria-label="View admin post details"></a>
                     <div class="post-header">
                         <div class="post-author">
                             <div class="post-author-avatar">
@@ -117,10 +114,8 @@
                             <button type="button" class="btn-admin btn-delete" disabled>Already deleted</button>
                             <% } else { %>
                                 <form method="POST" action="/admin/post/<%= post.id %>/delete"
-                                    onsubmit="return confirm('Delete this post? All comments will be deleted.')">
-                                    <button type="submit" class="btn-admin btn-delete"><i
-                                            class="fa-regular fa-trash-can"></i>
-                                        Delete Post</button>
+                                    class="inline-action-form" onsubmit="return confirm('Delete this post?')">
+                                    <button type="submit" class="btn-admin btn-delete">Delete Post</button>
                                 </form>
                                 <% } %>
                     </div>
@@ -132,3 +127,12 @@
         </div>
         <% } %>
 </div>
+
+<script>
+    document.querySelectorAll('.post-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            if (e.target.closest('.post-actions, a, button')) return;
+            window.location.href = card.dataset.href;
+        });
+    });
+</script>

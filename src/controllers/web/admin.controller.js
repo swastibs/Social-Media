@@ -1,10 +1,17 @@
+/**
+ * Admin Controller (Web)
+ * Full-featured admin panel with user/post/comment/activity management.
+ */
+
 const { Op } = require("sequelize");
 const { User, Post, Comment, sequelize } = require("../../models");
 const Activity = require("../../models/activity.model");
 const { paginate } = require("../../utils/pagination");
 const ApiError = require("../../utils/ApiError");
 const { ROLES } = require("../../constant/role");
+const { deleteByPattern } = require("../../utils/cache");
 
+// ========== Helper Functions ==========
 const adminUserInclude = {
   model: User,
   attributes: ["id", "name", "thumbnailUrl", "profilePictureUrl", "isVerified"],
@@ -20,7 +27,6 @@ const handleAdminActionError = async (err, transaction, req, res, fallback) => {
   if (transaction && !transaction.finished) {
     await transaction.rollback();
   }
-
   req.flash("error", err.message || "Admin action failed");
   req.flash("error_msg", err.message || "Admin action failed");
   return redirectBack(req, res, fallback);
@@ -53,9 +59,65 @@ const applyDeletedFilter = (where, deleted) => {
   if (deleted === "active") where.isDeleted = false;
 };
 
-const addCommentCountsToPosts = async (posts) => {
-  if (!posts.length) return posts;
+const postCommentCountAttribute = [
+  sequelize.fn("COUNT", sequelize.col("Comments.id")),
+  "commentCount",
+];
 
+const getPostGroupColumns = () => [
+  "Post.id",
+  "User.id",
+  "User.name",
+  "User.thumbnailUrl",
+  "User.profilePictureUrl",
+  "User.isVerified",
+];
+
+const addCommentCountQueryOptions = (options = {}) => ({
+  ...options,
+  attributes: {
+    ...(options.attributes || {}),
+    include: [
+      ...(options.attributes?.include || []),
+      postCommentCountAttribute,
+    ],
+  },
+  include: [
+    ...(options.include || []),
+    { model: Comment, attributes: [], required: false },
+  ],
+  group: [...(options.group || []), ...getPostGroupColumns()],
+  subQuery: false,
+});
+
+const toPostWithNumericCommentCount = (post) => {
+  const json = typeof post.toJSON === "function" ? post.toJSON() : post;
+  return {
+    ...json,
+    commentCount: Number(json.commentCount || 0),
+  };
+};
+
+const findPostsWithCommentCounts = async ({
+  where = {},
+  limit,
+  offset,
+  order = [["createdAt", "DESC"]],
+}) => {
+  const posts = await Post.findAll(
+    addCommentCountQueryOptions({
+      where,
+      include: [adminUserInclude],
+      limit,
+      offset,
+      order,
+    }),
+  );
+  return posts.map(toPostWithNumericCommentCount);
+};
+
+const countCommentsForPosts = async (posts) => {
+  if (!posts.length) return posts;
   const postIds = posts.map((post) => post.id);
   const commentCounts = await Comment.findAll({
     where: { postId: { [Op.in]: postIds } },
@@ -72,14 +134,13 @@ const addCommentCountsToPosts = async (posts) => {
       parseInt(comment.count, 10),
     ]),
   );
-
   return posts.map((post) => ({
     ...(typeof post.toJSON === "function" ? post.toJSON() : post),
     commentCount: countMap[post.id] || 0,
   }));
 };
 
-// ---------- Dashboard (enhanced) ----------
+// ========== Dashboard ==========
 exports.dashboard = async (req, res, next) => {
   try {
     const totalUsers = await User.count();
@@ -109,7 +170,6 @@ exports.dashboard = async (req, res, next) => {
       .limit(10);
 
     res.render("admin/dashboard", {
-      layout: "admin/layouts/admin-main",
       title: "Admin Dashboard",
       user: req.user,
       stats: { totalUsers, totalPosts, totalComments },
@@ -124,7 +184,7 @@ exports.dashboard = async (req, res, next) => {
   }
 };
 
-// ---------- Users List ----------
+// ========== Users List ==========
 exports.users = async (req, res, next) => {
   try {
     const {
@@ -166,7 +226,6 @@ exports.users = async (req, res, next) => {
       order: [[sortField, sortOrder]],
     });
     res.render("admin/users", {
-      layout: "admin/layouts/admin-main",
       title: "Manage Users",
       user: req.user,
       users: data,
@@ -188,7 +247,7 @@ exports.users = async (req, res, next) => {
   }
 };
 
-// ---------- Posts List (with comment counts) ----------
+// ========== Posts List ==========
 exports.posts = async (req, res, next) => {
   try {
     const {
@@ -232,29 +291,27 @@ exports.posts = async (req, res, next) => {
     const sortField = allowedSort.includes(sortBy) ? sortBy : "createdAt";
     const sortClause =
       sortField === "commentCount"
-        ? [
-            [
-              sequelize.literal(
-                "(SELECT COUNT(*) FROM comments AS c WHERE c.postId = Post.id)",
-              ),
-              sortOrder,
-            ],
-          ]
+        ? [[sequelize.literal("commentCount"), sortOrder]]
         : [[sortField, sortOrder]];
 
-    const { data, pagination } = await paginate({
-      model: Post,
+    const safeLimit = Math.min(parseInt(limit, 10) || 20, 50);
+    const totalRecords = await Post.count({ where });
+    const totalPages = Math.max(Math.ceil(totalRecords / safeLimit), 1);
+    const safePage = Math.min(Math.max(parseInt(page, 10) || 1, 1), totalPages);
+    const postsWithCounts = await findPostsWithCommentCounts({
       where,
-      page,
-      limit,
-      include: [adminUserInclude],
+      limit: safeLimit,
+      offset: (safePage - 1) * safeLimit,
       order: sortClause,
     });
-
-    const postsWithCounts = await addCommentCountsToPosts(data);
+    const pagination = {
+      totalRecords,
+      totalPages,
+      currentPage: safePage,
+      limit: safeLimit,
+    };
 
     res.render("admin/posts", {
-      layout: "admin/layouts/admin-main",
       title: "Manage Posts",
       user: req.user,
       posts: postsWithCounts,
@@ -277,7 +334,7 @@ exports.posts = async (req, res, next) => {
   }
 };
 
-// ---------- Comments List ----------
+// ========== Comments List ==========
 exports.comments = async (req, res, next) => {
   try {
     const {
@@ -315,7 +372,6 @@ exports.comments = async (req, res, next) => {
       order: [[sortField, sortOrder]],
     });
     res.render("admin/comments", {
-      layout: "admin/layouts/admin-main",
       title: "Manage Comments",
       user: req.user,
       comments: data,
@@ -335,7 +391,7 @@ exports.comments = async (req, res, next) => {
   }
 };
 
-// ---------- Activities List (with filter data) ----------
+// ========== Activities List ==========
 exports.activities = async (req, res, next) => {
   try {
     const {
@@ -380,7 +436,6 @@ exports.activities = async (req, res, next) => {
       .skip(safeSkip)
       .limit(limitNum);
 
-    // Get distinct filter values
     const [uniqueMethods, uniqueStatuses, uniqueEntities] = await Promise.all([
       Activity.distinct("method"),
       Activity.distinct("responseStatus"),
@@ -388,7 +443,6 @@ exports.activities = async (req, res, next) => {
     ]);
 
     res.render("admin/activities", {
-      layout: "admin/layouts/admin-main",
       title: "Activity Logs",
       user: req.user,
       activities,
@@ -417,7 +471,7 @@ exports.activities = async (req, res, next) => {
   }
 };
 
-// ---------- Search (All entities) ----------
+// ========== Global Search ==========
 exports.search = async (req, res, next) => {
   try {
     const { q } = req.query;
@@ -462,13 +516,11 @@ exports.search = async (req, res, next) => {
         });
       }
       if (type === "all" || type === "posts") {
-        const posts = await Post.findAll({
+        results.posts = await findPostsWithCommentCounts({
           where: postWhere,
-          include: [adminUserInclude],
           limit,
           order: [["createdAt", "DESC"]],
         });
-        results.posts = await addCommentCountsToPosts(posts);
       }
       if (type === "all" || type === "comments") {
         results.comments = await Comment.findAll({
@@ -484,7 +536,6 @@ exports.search = async (req, res, next) => {
     }
 
     res.render("admin/search", {
-      layout: "admin/layouts/admin-main",
       title: "Admin Search",
       user: req.user,
       searchQuery: searchTerm,
@@ -498,7 +549,7 @@ exports.search = async (req, res, next) => {
   }
 };
 
-// ---------- User Profile (admin view) ----------
+// ========== User Profile (Admin View) ==========
 exports.userProfile = async (req, res, next) => {
   try {
     const userId = req.params.userId;
@@ -518,10 +569,9 @@ exports.userProfile = async (req, res, next) => {
           order: [["createdAt", "DESC"]],
           limit: 10,
         });
-    const postsWithCounts = await addCommentCountsToPosts(posts);
+    const postsWithCounts = await countCommentsForPosts(posts);
 
     res.render("admin/user-profile", {
-      layout: "admin/layouts/admin-main",
       title: `User: ${user.name}`,
       user: req.user,
       profileUser: user,
@@ -533,7 +583,7 @@ exports.userProfile = async (req, res, next) => {
   }
 };
 
-// ---------- Post Detail (admin view) ----------
+// ========== Post Detail (Admin View) ==========
 exports.postDetail = async (req, res, next) => {
   try {
     const postId = req.params.postId;
@@ -551,7 +601,6 @@ exports.postDetail = async (req, res, next) => {
       order: [["createdAt", "DESC"]],
     });
     res.render("admin/post-detail", {
-      layout: "admin/layouts/admin-main",
       title: `Post by ${post.User.name}`,
       user: req.user,
       post,
@@ -563,6 +612,7 @@ exports.postDetail = async (req, res, next) => {
   }
 };
 
+// ========== Admin Actions ==========
 exports.activateUser = async (req, res, next) => {
   const transaction = await sequelize.transaction();
   try {
@@ -578,10 +628,11 @@ exports.activateUser = async (req, res, next) => {
         "Admin accounts cannot be changed from this action",
       );
     }
-
     user.isActive = true;
     await user.save({ transaction });
     await transaction.commit();
+    await deleteByPattern(`web:cache:/profile/${user.id}*`);
+    await deleteByPattern("web:cache:/admin/users*");
     req.flash("success_msg", "User activated");
     return redirectBack(req, res, "/admin/users");
   } catch (err) {
@@ -604,10 +655,11 @@ exports.deactivateUser = async (req, res, next) => {
     if (user.role === ROLES.ADMIN) {
       throw new ApiError(403, "Admin accounts cannot be deactivated here");
     }
-
     user.isActive = false;
     await user.save({ transaction });
     await transaction.commit();
+    await deleteByPattern(`web:cache:/profile/${user.id}*`);
+    await deleteByPattern("web:cache:/admin/users*");
     req.flash("success_msg", "User deactivated");
     return redirectBack(req, res, "/admin/users");
   } catch (err) {
@@ -627,11 +679,12 @@ exports.promoteToAdmin = async (req, res, next) => {
     if (user.role === ROLES.ADMIN) {
       throw new ApiError(400, "User is already admin");
     }
-
     user.role = ROLES.ADMIN;
     user.isActive = true;
     await user.save({ transaction });
     await transaction.commit();
+    await deleteByPattern(`web:cache:/profile/${user.id}*`);
+    await deleteByPattern("web:cache:/admin/users*");
     req.flash("success_msg", "User promoted to admin");
     return redirectBack(req, res, "/admin/users");
   } catch (err) {
@@ -654,7 +707,6 @@ exports.deleteUser = async (req, res, next) => {
     if (user.role === ROLES.ADMIN) {
       throw new ApiError(403, "Cannot delete admin accounts");
     }
-
     await user.update(
       { isDeleted: true, isActive: false, deletedBy: req.user.id },
       { transaction },
@@ -668,6 +720,8 @@ exports.deleteUser = async (req, res, next) => {
       { where: { userId: user.id }, transaction },
     );
     await transaction.commit();
+    await deleteByPattern(`web:cache:/profile/${user.id}*`);
+    await deleteByPattern("web:cache:/admin/users*");
     req.flash("success_msg", "User deleted");
     return res.redirect("/admin/users");
   } catch (err) {
@@ -684,7 +738,6 @@ exports.deletePost = async (req, res, next) => {
     });
     if (!post) throw new ApiError(404, "Post not found");
     blockDeletedEntity(post);
-
     await post.update(
       { isDeleted: true, deletedBy: req.user.id },
       { transaction },
@@ -699,6 +752,10 @@ exports.deletePost = async (req, res, next) => {
       transaction,
     });
     await transaction.commit();
+    await deleteByPattern(`web:cache:/post/${post.id}*`);
+    await deleteByPattern("web:cache:/feed*");
+    await deleteByPattern(`web:cache:/profile/${post.userId}*`);
+    await deleteByPattern("web:cache:/admin/posts*");
     req.flash("success_msg", "Post deleted");
     return res.redirect("/admin/posts");
   } catch (err) {
@@ -720,6 +777,8 @@ exports.deleteComment = async (req, res, next) => {
       { transaction },
     );
     await transaction.commit();
+    await deleteByPattern(`web:cache:/post/${comment.postId}*`);
+    await deleteByPattern("web:cache:/admin/comments*");
     req.flash("success_msg", "Comment deleted");
     return redirectBack(req, res, "/admin/comments");
   } catch (err) {

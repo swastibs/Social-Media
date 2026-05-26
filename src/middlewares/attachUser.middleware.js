@@ -1,12 +1,14 @@
+/**
+ * Attach User Middleware
+ *
+ * Reads JWT token from cookies and attaches user object to `req.user`
+ * if valid. Does NOT redirect or throw errors – simply sets user or null.
+ */
+
 const jwt = require("jsonwebtoken");
 const { isTokenValid } = require("../utils/authCache");
 const { User } = require("../models");
 
-/**
- * Middleware that attaches `req.user` if a valid token is present in cookies.
- * Unlike `isAuthenticated`, it never redirects or throws errors.
- * It simply sets `req.user` to the user object or null.
- */
 const attachUserIfLoggedIn = async (req, res, next) => {
   const token = req.cookies?.postloop_token;
   if (!token) {

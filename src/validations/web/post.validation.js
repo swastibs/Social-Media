@@ -1,4 +1,18 @@
+/**
+ * Post Validations (Web)
+ *
+ * Joi schemas for creating, updating, and deleting posts.
+ */
+
 const { Joi } = require("express-validation");
+
+const removeImage = Joi.boolean()
+  .truthy("true")
+  .falsy("false")
+  .optional()
+  .messages({
+    "boolean.base": "removeImage must be a boolean",
+  });
 
 const id = Joi.number().integer().positive().required().messages({
   "number.base": "Post ID must be a number",
@@ -24,9 +38,7 @@ exports.updatePostSchema = {
       "string.min": "Content must be at least 2 characters",
       "any.required": "Content is required",
     }),
-    removeImage: Joi.string().valid("true", "false").optional().messages({
-      "any.only": "removeImage must be 'true' or 'false'",
-    }),
+    removeImage,
   }).unknown(false),
 };
 

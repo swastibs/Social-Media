@@ -13,7 +13,7 @@
             </div>
         </div>
 
-        <form method="GET" class="filter-form activity-filter-form" id="filterForm">
+        <form method="GET" class="filter-form activity-filter-form">
             <div class="filter-row">
                 <div class="filter-group">
                     <label for="activityUserId"><i class="fa-regular fa-user"></i> User ID</label>
@@ -51,15 +51,13 @@
                     </select>
                 </div>
             </div>
-
             <div class="filter-row">
                 <div class="filter-group filter-group-full">
                     <label for="activityRoute"><i class="fa-solid fa-link"></i> Route Search</label>
                     <input id="activityRoute" type="text" name="route" value="<%= filters.route %>"
-                        placeholder="Search by route path, for example /api/users" class="filter-input">
+                        placeholder="Search by route path" class="filter-input">
                 </div>
             </div>
-
             <div class="filter-row">
                 <div class="filter-group">
                     <label for="activityStartDate"><i class="fa-regular fa-calendar"></i> Start Date</label>
@@ -80,12 +78,8 @@
                     </select>
                 </div>
                 <div class="filter-actions">
-                    <button type="submit" class="btn-primary">
-                        <i class="fa-solid fa-filter"></i> Apply
-                    </button>
-                    <a href="/admin/activities" class="btn-secondary">
-                        <i class="fa-solid fa-eraser"></i> Clear
-                    </a>
+                    <button type="submit" class="btn-primary"><i class="fa-solid fa-filter"></i> Apply</button>
+                    <a href="/admin/activities" class="btn-secondary"><i class="fa-solid fa-eraser"></i> Clear</a>
                 </div>
             </div>
         </form>
@@ -164,9 +158,7 @@
                                         <span class="entity-badge"><i class="fa-solid fa-tag"></i>
                                             <%= activity.entity %>
                                         </span>
-                                        <% } else { %>
-                                            -
-                                            <% } %>
+                                        <% } else { %>-<% } %>
                                 </td>
                                 <td class="message-cell" title="<%= activity.message || '-' %>">
                                     <%= activity.message ? activity.message.substring(0, 50) : '-' %>
@@ -179,28 +171,16 @@
         </table>
     </div>
 
-    <%- include('../partials/pagination', {
-        pagination,
-        baseUrl: '/admin/activities',
-        query: {
-            userId: filters.userId,
-            method: filters.method,
-            route: filters.route,
-            status: filters.status,
-            entity: filters.entity,
-            startDate: filters.startDate,
-            endDate: filters.endDate,
-            limit: pagination.limit
-        }
-    }) %>
+    <%- include('../partials/pagination', { pagination, baseUrl: '/admin/activities' , query: { userId: filters.userId,
+        method: filters.method, route: filters.route, status: filters.status, entity: filters.entity, startDate:
+        filters.startDate, endDate: filters.endDate, limit: pagination.limit } }) %>
 </div>
 
 <script>
     document.querySelectorAll('.admin-table tbody tr').forEach(row => {
         row.addEventListener('click', (e) => {
             if (e.target.closest('a, button')) return;
-            const userIdCell = row.cells[1];
-            const userIdLink = userIdCell?.querySelector('a');
+            const userIdLink = row.cells[1]?.querySelector('a');
             if (userIdLink) window.location.href = userIdLink.href;
         });
     });

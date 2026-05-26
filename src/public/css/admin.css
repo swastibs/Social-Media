@@ -120,7 +120,11 @@
   position: absolute;
   inset: auto -25% -55% 35%;
   height: 130px;
-  background: radial-gradient(circle, rgba(14, 165, 233, 0.15), transparent 64%);
+  background: radial-gradient(
+    circle,
+    rgba(14, 165, 233, 0.15),
+    transparent 64%
+  );
   pointer-events: none;
 }
 
@@ -322,7 +326,9 @@
 }
 
 .list-item:focus-visible {
-  box-shadow: 0 12px 24px rgba(14, 165, 233, 0.08), var(--admin-focus-ring);
+  box-shadow:
+    0 12px 24px rgba(14, 165, 233, 0.08),
+    var(--admin-focus-ring);
 }
 
 .clickable,
@@ -360,7 +366,11 @@
   color: white;
   font-weight: 800;
   text-transform: uppercase;
-  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  background: linear-gradient(
+    135deg,
+    var(--primary-color),
+    var(--primary-dark)
+  );
 }
 
 .avatar-initials.small {
@@ -586,6 +596,25 @@
   min-height: 48px;
   justify-content: center;
   white-space: nowrap;
+}
+
+/* Specific for inline users filter form (no sidebar) */
+.users-filter-form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
+}
+
+.users-filter-form .filter-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: stretch;
+  margin-top: 0.25rem;
+}
+
+.users-filter-form .filter-actions .btn-primary,
+.users-filter-form .filter-actions .btn-secondary {
+  min-height: 46px;
 }
 
 .filter-summary {
@@ -1089,7 +1118,11 @@
 .page-item.active .page-link {
   color: white;
   border-color: transparent;
-  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  background: linear-gradient(
+    135deg,
+    var(--primary-color),
+    var(--primary-dark)
+  );
   box-shadow: 0 12px 24px rgba(14, 165, 233, 0.25);
 }
 
@@ -1295,15 +1328,12 @@ button:focus-visible {
   .admin-container {
     padding: 1.25rem;
   }
-
   .stats-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
   .dashboard-grid {
     grid-template-columns: 1fr;
   }
-
   .filter-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1313,7 +1343,6 @@ button:focus-visible {
   .admin-container {
     padding: 1rem;
   }
-
   .admin-header,
   .admin-filters,
   .filter-summary,
@@ -1323,7 +1352,6 @@ button:focus-visible {
   .search-section {
     border-radius: 22px;
   }
-
   .stats-grid,
   .filter-form,
   .search-form,
@@ -1334,38 +1362,31 @@ button:focus-visible {
   .comments-grid {
     grid-template-columns: 1fr;
   }
-
   .filter-actions {
     justify-content: stretch;
   }
-
   .filter-actions .btn-primary,
   .filter-actions .btn-secondary,
   .search-form .btn-primary {
     width: 100%;
   }
-
   .list-item,
   .activity-item {
     grid-template-columns: auto minmax(0, 1fr);
   }
-
   .item-badge,
   .activity-status,
   .click-indicator {
     grid-column: 2;
     justify-content: flex-start;
   }
-
   .pagination-container {
     align-items: stretch;
     flex-direction: column;
   }
-
   .pagination {
     justify-content: center;
   }
-
   .pagination-info {
     text-align: center;
   }
@@ -1375,7 +1396,6 @@ button:focus-visible {
   .admin-container {
     padding-inline: 0.75rem;
   }
-
   .admin-header,
   .dashboard-card,
   .admin-card,
@@ -1384,21 +1404,17 @@ button:focus-visible {
   .post-card {
     border-radius: 20px;
   }
-
   .stat-card {
     min-height: 132px;
     padding: 1rem;
   }
-
   .card-header {
     align-items: flex-start;
     flex-direction: column;
   }
-
   .view-all-link {
     white-space: normal;
   }
-
   .admin-table {
     min-width: 840px;
   }
@@ -1419,7 +1435,6 @@ button:focus-visible {
   from {
     opacity: 0;
   }
-
   to {
     opacity: 1;
   }
@@ -1430,9 +1445,224 @@ button:focus-visible {
     opacity: 0;
     transform: translateY(10px);
   }
-
   to {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* ========== FILTER DROPDOWN ========== */
+.search-filter-form {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.search-group {
+  flex: 1;
+  min-width: 200px;
+}
+
+.search-group label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.filter-dropdown {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 1.25rem;
+}
+
+.filter-dropdown-btn {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--admin-radius-sm);
+  padding: 0.6rem 1.2rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-color);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.filter-dropdown-btn:hover {
+  border-color: var(--primary-color);
+  background: var(--admin-surface-soft);
+}
+
+.filter-active-badge {
+  background: var(--primary-color);
+  color: white;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 20px;
+  margin-left: 0.3rem;
+}
+
+.filter-dropdown-content {
+  display: none;
+  position: absolute;
+  top: 110%;
+  left: 0;
+  min-width: 280px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--admin-radius-md);
+  box-shadow: var(--admin-shadow);
+  padding: 1rem;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+}
+
+.filter-dropdown-content.show {
+  display: block;
+}
+
+.filter-dropdown-content .filter-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.filter-dropdown-content .filter-group {
+  width: 100%;
+}
+
+.filter-dropdown-content .filter-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.filter-dropdown-content .filter-actions .btn-primary,
+.filter-dropdown-content .filter-actions .btn-secondary {
+  flex: 1;
+  justify-content: center;
+}
+
+/* ========== FILTER DROPDOWN ========== */
+.search-filter-form {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.search-group {
+  flex: 1;
+  min-width: 200px;
+}
+
+.search-group label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.filter-dropdown {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 1.25rem;
+}
+
+.filter-dropdown-btn {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--admin-radius-sm);
+  padding: 0.6rem 1.2rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-color);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.filter-dropdown-btn:hover {
+  border-color: var(--primary-color);
+  background: var(--admin-surface-soft);
+}
+
+.filter-active-badge {
+  background: var(--primary-color);
+  color: white;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 20px;
+  margin-left: 0.3rem;
+}
+
+.filter-dropdown-content {
+  display: none;
+  position: absolute;
+  top: 110%;
+  left: 0;
+  min-width: 360px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--admin-radius-md);
+  box-shadow: var(--admin-shadow);
+  padding: 1rem;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+}
+
+.filter-dropdown-content.show {
+  display: block;
+}
+
+.filter-dropdown-content .filter-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.filter-dropdown-content .filter-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+
+.filter-dropdown-content .filter-group {
+  width: 100%;
+}
+
+.filter-dropdown-content .filter-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.filter-dropdown-content .filter-actions .btn-primary,
+.filter-dropdown-content .filter-actions .btn-secondary {
+  flex: 1;
+  justify-content: center;
+}
+
+/* Make sure filter summary styles exist */
+.filter-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--admin-border-soft);
+  border-radius: var(--admin-radius-lg);
+  background: var(--admin-surface);
+  backdrop-filter: blur(18px);
 }

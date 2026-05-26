@@ -40,6 +40,14 @@
   flex-wrap: wrap;
 }
 
+.remove-follower-btn {
+  background: #ef4444;
+  color: white;
+}
+.remove-follower-btn:hover {
+  background: #dc2626;
+}
+
 .edit-profile-btn {
   display: inline-block;
   background: var(--bg-secondary);

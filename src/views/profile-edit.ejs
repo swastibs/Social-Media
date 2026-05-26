@@ -45,6 +45,15 @@
             </div>
         </div>
 
+        <!-- Privacy Toggle (public/private) -->
+        <div class="form-group">
+            <label class="checkbox-label">
+                <input type="checkbox" name="isPrivate" value="true" <%=user.isPrivate ? 'checked' : '' %>>
+                <i class="fa-solid fa-lock"></i> Make my account private
+            </label>
+            <small class="form-text text-muted">Only approved followers can see your posts and follow you.</small>
+        </div>
+
         <!-- Form Actions -->
         <div class="form-actions">
             <a href="/profile/<%= user.id %>" class="btn-secondary">Cancel</a>

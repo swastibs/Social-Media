@@ -8,7 +8,14 @@
     "dev": "nodemon index.js",
     "swagger": "node ./src/config/swagger.js"
   },
-  "keywords": [],
+  "keywords": [
+    "social",
+    "media",
+    "express",
+    "mvc",
+    "sequelize",
+    "ejs"
+  ],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
@@ -35,15 +42,13 @@
     "nodemailer": "^8.0.7",
     "passport": "^0.7.0",
     "passport-github2": "^0.1.12",
-    "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",
     "razorpay": "^2.9.6",
     "sequelize": "^6.37.8",
-    "sharp": "^0.34.5",
-    "swagger-autogen": "^2.23.7",
-    "swagger-ui-express": "^5.0.1"
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
+    "nodemon": "^3.1.9",
     "sequelize-cli": "^6.6.5"
   }
 }

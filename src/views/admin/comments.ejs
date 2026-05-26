@@ -4,15 +4,35 @@
         <p>View and manage all user comments</p>
     </div>
 
+    <!-- Search bar (always visible) -->
     <div class="admin-filters">
-        <form method="GET" class="filter-form">
-            <div class="filter-group">
-                <label for="commentSearch"><i class="fa-solid fa-magnifying-glass"></i> Search Comments</label>
+        <form method="GET" class="search-filter-form">
+            <div class="filter-group search-group">
+                <label for="commentSearch">Search Comments</label>
                 <input id="commentSearch" type="text" name="search" placeholder="Search comments by content..."
                     value="<%= searchQuery %>" class="filter-input">
             </div>
-            <details class="filter-group filter-group-full">
-                <summary><i class="fa-solid fa-sliders"></i> Filters</summary>
+            <div class="filter-actions">
+                <button type="submit" class="btn-primary"><i class="fa-solid fa-search"></i> Search</button>
+                <% if (searchQuery || filters.createdFrom || filters.createdTo || filters.deleted !=='all' ||
+                    filters.sortBy !=='createdAt' || filters.order !=='DESC' ) { %>
+                    <a href="/admin/comments" class="btn-secondary"><i class="fa-solid fa-times"></i> Clear</a>
+                    <% } %>
+            </div>
+        </form>
+    </div>
+
+    <!-- Filter dropdown button -->
+    <div class="filter-dropdown">
+        <button type="button" class="filter-dropdown-btn" id="filterToggleBtn">
+            <i class="fa-solid fa-sliders-h"></i> Filters
+            <% if (filters.createdFrom || filters.createdTo || filters.deleted !=='all' || filters.sortBy !=='createdAt'
+                || filters.order !=='DESC' ) { %>
+                <span class="filter-active-badge">active</span>
+                <% } %>
+        </button>
+        <div class="filter-dropdown-content" id="filterDropdown">
+            <form method="GET" class="filter-form">
                 <div class="filter-row">
                     <div class="filter-group">
                         <label for="commentCreatedFrom"><i class="fa-regular fa-calendar"></i> Created From</label>
@@ -24,6 +44,8 @@
                         <input id="commentCreatedTo" type="date" name="createdTo" value="<%= filters.createdTo %>"
                             class="filter-input">
                     </div>
+                </div>
+                <div class="filter-row">
                     <div class="filter-group">
                         <label for="commentDeleted"><i class="fa-solid fa-trash"></i> Deleted</label>
                         <select id="commentDeleted" name="deleted" class="filter-select">
@@ -42,8 +64,6 @@
                             <option value="postId" <%=filters.sortBy==='postId' ? 'selected' : '' %>>Post ID</option>
                         </select>
                     </div>
-                </div>
-                <div class="filter-row">
                     <div class="filter-group">
                         <label for="commentOrder"><i class="fa-solid fa-arrow-up-a-z"></i> Order</label>
                         <select id="commentOrder" name="order" class="filter-select">
@@ -52,17 +72,28 @@
                         </select>
                     </div>
                 </div>
-            </details>
-            <div class="filter-actions">
-                <button type="submit" class="btn-primary"><i class="fa-solid fa-search"></i> Search</button>
-                <% if (searchQuery || filters.createdFrom || filters.createdTo || filters.deleted !=='all' ||
-                    filters.sortBy !=='createdAt' || filters.order !=='DESC' ) { %>
-                    <a href="/admin/comments" class="btn-secondary"><i class="fa-solid fa-times"></i> Clear</a>
-                    <% } %>
-            </div>
-        </form>
+                <div class="filter-actions">
+                    <button type="submit" class="btn-primary">Apply Filters</button>
+                    <a href="/admin/comments" class="btn-secondary">Reset</a>
+                </div>
+            </form>
+        </div>
     </div>
 
+    <!-- Filter summary -->
+    <div class="filter-summary">
+        <div class="results-count">
+            <strong>
+                <%= pagination.totalRecords %>
+            </strong> comments found
+            <% if (searchQuery || filters.createdFrom || filters.createdTo || filters.deleted !=='all' || filters.sortBy
+                !=='createdAt' || filters.order !=='DESC' ) { %>
+                <span class="filter-badge">Filtered</span>
+                <% } %>
+        </div>
+    </div>
+
+    <!-- Comments grid -->
     <div class="admin-grid">
         <% if (comments.length===0) { %>
             <div class="empty-state admin-grid-empty">
@@ -89,9 +120,6 @@
                                 <div>
                                     <div class="card-title-text">
                                         <%= comment.User.name %>
-                                            <% if (comment.User.isVerified) { %>
-                                                <span class="verified-badge-small" title="Verified User">✓</span>
-                                                <% } %>
                                     </div>
                                     <div class="card-subtitle">
                                         <%= new Date(comment.createdAt).toLocaleString() %>
@@ -114,10 +142,10 @@
                                 <% if (comment.isDeleted) { %>
                                     <button type="button" class="action-btn danger" title="Already deleted" disabled><i
                                             class="fa-solid fa-trash"></i></button>
-                                    <span class="card-subtitle">Already deleted</span>
                                     <% } else { %>
                                         <form method="POST" action="/admin/comment/<%= comment.id %>/delete"
-                                            class="inline-action-form" data-admin-confirm="delete-comment">
+                                            class="inline-action-form"
+                                            onsubmit="return confirm('Delete this comment?')">
                                             <button type="submit" class="action-btn danger" title="Delete Comment"><i
                                                     class="fa-solid fa-trash"></i></button>
                                         </form>
@@ -135,11 +163,27 @@
 </div>
 
 <script>
+    // Toggle filter dropdown
+    const toggleBtn = document.getElementById('filterToggleBtn');
+    const dropdown = document.getElementById('filterDropdown');
+    if (toggleBtn && dropdown) {
+        toggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.classList.toggle('show');
+        });
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!toggleBtn.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+    }
+
+    // Card click navigation
     document.querySelectorAll('.admin-card').forEach(card => {
         card.addEventListener('click', (e) => {
             if (e.target.closest('.card-actions')) return;
-            const href = card.dataset.href;
-            if (href) window.location.href = href;
+            window.location.href = card.dataset.href;
         });
     });
 </script>

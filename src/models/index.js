@@ -1,3 +1,9 @@
+/**
+ * Models Index
+ *
+ * Exports all Sequelize models and sets up associations.
+ */
+
 const { sequelize } = require("../config/db");
 
 const User = require("./user.model");
@@ -7,60 +13,54 @@ const PostLike = require("./postLike.model");
 const UserFollow = require("./userFollow.model");
 const Payment = require("./payment.model");
 
-// User → Post
+// ========== User → Post ==========
 User.hasMany(Post, { foreignKey: "userId" });
 Post.belongsTo(User, { foreignKey: "userId" });
 
-// User → Comment
+// ========== User → Comment ==========
 User.hasMany(Comment, { foreignKey: "userId" });
 Comment.belongsTo(User, { foreignKey: "userId" });
 
-// Post → Comment
+// ========== Post → Comment ==========
 Post.hasMany(Comment, { foreignKey: "postId" });
 Comment.belongsTo(Post, { foreignKey: "postId" });
 
-// Post → DeletedBy (index disabled)
+// ========== DeletedBy references (no index) ==========
 Post.belongsTo(User, {
   foreignKey: "deletedBy",
   as: "deletedByUser",
-  index: false,
+  constraints: false,
 });
-
-// Comment → DeletedBy (index disabled)
 Comment.belongsTo(User, {
   foreignKey: "deletedBy",
   as: "deletedByUser",
-  index: false,
+  constraints: false,
 });
-
-// User self‑reference (index disabled)
 User.belongsTo(User, {
   foreignKey: "deletedBy",
   as: "deletedByUser",
-  index: false,
+  constraints: false,
 });
 
-// Many-to-Many (likes)
+// ========== Many-to-Many: Post Likes ==========
 User.belongsToMany(Post, {
   through: PostLike,
   foreignKey: "userId",
   as: "likedPosts",
 });
-
 Post.belongsToMany(User, {
   through: PostLike,
   foreignKey: "postId",
   as: "likedUsers",
 });
 
-// User Follow System
+// ========== User Follow System ==========
 User.belongsToMany(User, {
   through: UserFollow,
   as: "followers",
   foreignKey: "followingId",
   otherKey: "followerId",
 });
-
 User.belongsToMany(User, {
   through: UserFollow,
   as: "following",
@@ -68,6 +68,15 @@ User.belongsToMany(User, {
   otherKey: "followingId",
 });
 
+UserFollow.belongsTo(User, { foreignKey: "followerId", as: "follower" });
+UserFollow.belongsTo(User, { foreignKey: "followingId", as: "following" });
+User.hasMany(UserFollow, { foreignKey: "followerId", as: "followRelations" });
+User.hasMany(UserFollow, {
+  foreignKey: "followingId",
+  as: "followedRelations",
+});
+
+// ========== Payments ==========
 User.hasMany(Payment, { foreignKey: "userId" });
 Payment.belongsTo(User, { foreignKey: "userId" });
 

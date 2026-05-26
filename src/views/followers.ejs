@@ -5,12 +5,12 @@
         </h2>
         <a href="/profile/<%= profileUser.id %>" class="back-link">← Back to Profile</a>
     </div>
-    <div class="users-grid">
+    <div class="users-grid" id="followersGrid">
         <% if (users.length===0) { %>
             <div class="empty-state">No followers yet.</div>
             <% } else { %>
                 <% users.forEach(user=> { %>
-                    <div class="user-card" data-href="/profile/<%= user.id %>">
+                    <div class="user-card" data-user-id="<%= user.id %>" data-href="/profile/<%= user.id %>">
                         <div class="user-card-avatar">
                             <% if (user.thumbnailUrl || user.profilePictureUrl) { %>
                                 <img src="<%= user.thumbnailUrl || user.profilePictureUrl %>" alt="<%= user.name %>"
@@ -24,8 +24,8 @@
                         <div class="user-card-info">
                             <h3 class="user-card-name">
                                 <%= user.name %>
-                                    <% if (user.isVerified) { %>
-                                        <span class="verified-badge-small" title="Verified User">✓</span>
+                                    <% if (user.isVerified) { %><span class="verified-badge-small"
+                                            title="Verified User">✓</span>
                                         <% } %>
                             </h3>
                             <p class="user-card-bio">
@@ -40,12 +40,20 @@
                                 </span>
                             </div>
                         </div>
+
                         <% if (currentUser && currentUser.id !==user.id) { %>
                             <button class="list-follow-btn <%= followStatusMap[user.id] ? 'following' : '' %>"
                                 data-user-id="<%= user.id %>">
                                 <%= followStatusMap[user.id] ? 'Unfollow' : 'Follow' %>
                             </button>
                             <% } %>
+
+                                <% if (currentUser && currentUser.id===profileUser.id) { %>
+                                    <button type="button" class="list-follow-btn remove-follower-btn"
+                                        data-user-id="<%= user.id %>">
+                                        Remove
+                                    </button>
+                                    <% } %>
                     </div>
                     <% }) %>
                         <% } %>
@@ -77,38 +85,71 @@
 </div>
 
 <script>
-    const followBtns = document.querySelectorAll('.list-follow-btn');
-    followBtns.forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            e.stopPropagation();
-            const userId = btn.dataset.userId;
-            try {
-                const res = await axios.post(`/follow/${userId}`);
-                if (res.data.following) {
-                    btn.textContent = 'Unfollow';
-                    btn.classList.add('following');
-                    const followingSpan = document.getElementById('sidebar-following-count');
-                    if (followingSpan) followingSpan.innerText = parseInt(followingSpan.innerText) + 1;
-                } else {
-                    btn.textContent = 'Follow';
-                    btn.classList.remove('following');
-                    const followingSpan = document.getElementById('sidebar-following-count');
-                    if (followingSpan) followingSpan.innerText = parseInt(followingSpan.innerText) - 1;
-                }
-            } catch (err) { console.error(err); }
-        });
-    });
-    followBtns.length = 0;
-
-    const userCards = document.querySelectorAll('.user-card');
-    userCards.forEach(card => {
-        card.addEventListener('click', (e) => {
-            if (e.target.tagName !== 'BUTTON') {
-                window.location.href = card.dataset.href;
+    (function () {
+        function updateFollowerCount(delta) {
+            const followersSpan = document.getElementById('sidebar-followers-count');
+            if (followersSpan) {
+                const newVal = parseInt(followersSpan.innerText) + delta;
+                followersSpan.innerText = newVal >= 0 ? newVal : 0;
             }
+        }
+
+        const followBtns = document.querySelectorAll('.list-follow-btn:not(.remove-follower-btn)');
+        followBtns.forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const userId = btn.dataset.userId;
+                try {
+                    const res = await axios.post(`/follow/${userId}`);
+                    if (res.data.following) {
+                        btn.textContent = 'Unfollow';
+                        btn.classList.add('following');
+                        const followingSpan = document.getElementById('sidebar-following-count');
+                        if (followingSpan) followingSpan.innerText = parseInt(followingSpan.innerText) + 1;
+                    } else {
+                        btn.textContent = 'Follow';
+                        btn.classList.remove('following');
+                        const followingSpan = document.getElementById('sidebar-following-count');
+                        if (followingSpan) followingSpan.innerText = parseInt(followingSpan.innerText) - 1;
+                    }
+                } catch (err) { console.error(err); }
+            });
         });
-    });
-    userCards.length = 0;
-    followBtns = null;
-    userCards = null;
+
+        const removeBtns = document.querySelectorAll('.remove-follower-btn');
+        removeBtns.forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const followerId = btn.dataset.userId;
+                const profileUserId = '<%= profileUser.id %>';
+                if (!confirm('Remove this follower? They will no longer see your private posts.')) return;
+                try {
+                    const res = await axios.post(`/profile/${profileUserId}/followers/remove/${followerId}`);
+                    if (res.status === 200 || res.data.success) {
+                        const userCard = btn.closest('.user-card');
+                        if (userCard) userCard.remove();
+                        updateFollowerCount(-1);
+                        const grid = document.getElementById('followersGrid');
+                        if (grid && grid.querySelectorAll('.user-card').length === 0) {
+                            grid.innerHTML = '<div class="empty-state">No followers yet.</div>';
+                        }
+                    } else {
+                        alert('Failed to remove follower');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('Something went wrong');
+                }
+            });
+        });
+
+        const userCards = document.querySelectorAll('.user-card');
+        userCards.forEach(card => {
+            card.addEventListener('click', (e) => {
+                if (e.target.tagName !== 'BUTTON') {
+                    window.location.href = card.dataset.href;
+                }
+            });
+        });
+    })();
 </script>

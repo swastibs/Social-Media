@@ -1,9 +1,20 @@
+/**
+ * Search Controller (Web)
+ *
+ * Handles searching across:
+ * - Users (by name, email, bio)
+ * - Posts (by content)
+ * - Comments (by content)
+ *
+ * Returns paginated results with rich data (like status, comment counts for posts).
+ */
+
 const { User, Post, Comment, PostLike, sequelize } = require("../../models");
 const { ROLES } = require("../../constant/role");
 const { Op } = require("sequelize");
 const { getSafeUserInclude } = require("../../utils/dbHelper");
 
-// Helper: search users
+// ========== Helper: search users ==========
 async function searchUsers(searchTerm, limit, offset) {
   const where = {
     [Op.or]: [
@@ -25,6 +36,7 @@ async function searchUsers(searchTerm, limit, offset) {
       "isVerified",
       "bio",
       "profilePictureUrl",
+      "thumbnailUrl",
       "postsCount",
       "followersCount",
     ],
@@ -36,7 +48,7 @@ async function searchUsers(searchTerm, limit, offset) {
   return { data: rows, total: count, totalPages: Math.ceil(count / limit) };
 }
 
-// Helper: search posts
+// ========== Helper: search posts ==========
 async function searchPosts(searchTerm, limit, offset, currentUserId) {
   const where = { content: { [Op.like]: `%${searchTerm}%` }, isDeleted: false };
 
@@ -49,7 +61,7 @@ async function searchPosts(searchTerm, limit, offset, currentUserId) {
     subQuery: false,
   });
 
-  // check liked status for current user
+  // Check liked status for current user
   let likedPostIds = new Set();
   if (currentUserId && posts.length) {
     const postIds = posts.map((p) => p.id);
@@ -61,7 +73,7 @@ async function searchPosts(searchTerm, limit, offset, currentUserId) {
     likedPostIds = new Set(likedPosts.map((lp) => lp.postId));
   }
 
-  // get comment counts
+  // Get comment counts
   const postIds = posts.map((p) => p.id);
   const commentCounts = await Comment.findAll({
     where: { postId: { [Op.in]: postIds }, isDeleted: false },
@@ -89,7 +101,7 @@ async function searchPosts(searchTerm, limit, offset, currentUserId) {
   };
 }
 
-// Helper: search comments
+// ========== Helper: search comments ==========
 async function searchComments(searchTerm, limit, offset, currentUserId) {
   const where = { content: { [Op.like]: `%${searchTerm}%` }, isDeleted: false };
 
@@ -112,7 +124,7 @@ async function searchComments(searchTerm, limit, offset, currentUserId) {
   return { data: comments, total: count, totalPages: Math.ceil(count / limit) };
 }
 
-// Main search page (with pagination)
+// ========== Main search page ==========
 exports.searchPage = async (req, res, next) => {
   try {
     const { q, type = "all", page = 1 } = req.query;
@@ -129,7 +141,7 @@ exports.searchPage = async (req, res, next) => {
     let currentPage = parseInt(page);
 
     if (searchTerm && searchTerm.length >= 2) {
-      // run searches based on active tab (or all)
+      // Run searches based on active tab (or all)
       if (type === "all" || type === "users") {
         results.users = await searchUsers(searchTerm, limit, offset);
       }
@@ -150,6 +162,7 @@ exports.searchPage = async (req, res, next) => {
         );
       }
     }
+
     res.render("search", {
       title: "Search",
       user: req.user,

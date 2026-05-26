@@ -1,3 +1,9 @@
+/**
+ * Forgot Password Validations (Web)
+ *
+ * Joi schemas for requesting password reset and resetting password.
+ */
+
 const { Joi } = require("express-validation");
 
 exports.forgotPasswordSchema = {

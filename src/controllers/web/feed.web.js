@@ -1,3 +1,13 @@
+/**
+ * Feed Controller (Web)
+ *
+ * Renders the main feed page showing posts from:
+ * - Users that the current user follows (accepted)
+ * - Public users (isPrivate = false) that the user does NOT follow
+ *
+ * Also provides suggested users and real-time follow/like interactions.
+ */
+
 const {
   User,
   Post,
@@ -8,37 +18,68 @@ const {
 } = require("../../models");
 const { ROLES } = require("../../constant/role");
 const { Op } = require("sequelize");
-const { getSafeUserInclude } = require("../../utils/dbHelper");
+const {
+  getSafeUserInclude,
+  getAcceptedFollowingIds,
+} = require("../../utils/dbHelper");
 
-const getFollowingIds = async (userId) => {
-  const follows = await UserFollow.findAll({
-    where: { followerId: userId },
-    attributes: ["followingId"],
+/**
+ * Helper: Get all public user IDs (isPrivate = false, active, not deleted, role = user).
+ * Excludes given IDs (self + already followed).
+ */
+const getPublicUserIds = async (excludeIds = []) => {
+  const users = await User.findAll({
+    where: {
+      isPrivate: false,
+      isDeleted: false,
+      isActive: true,
+      role: ROLES.USER,
+      id: { [Op.notIn]: excludeIds },
+    },
+    attributes: ["id"],
     raw: true,
   });
-  return follows.map((f) => f.followingId);
+  return users.map((u) => u.id);
 };
 
-const getFeedPosts = async (currentUserId, limit, offset, followingIds) => {
-  const excludeIds = [...followingIds, currentUserId];
-  const whereClause =
-    followingIds.length === 0
-      ? { userId: { [Op.notIn]: excludeIds }, isDeleted: false }
-      : {
-          [Op.or]: [
-            { userId: { [Op.in]: followingIds }, isDeleted: false },
-            { userId: { [Op.notIn]: excludeIds }, isDeleted: false },
-          ],
-        };
+/**
+ * Core feed posts retrieval.
+ * Combines posts from:
+ *   1. Users that current user follows (status = accepted)
+ *   2. Public users (isPrivate = false) that current user does NOT follow (and not themselves)
+ */
+const getFeedPosts = async (
+  currentUserId,
+  limit,
+  offset,
+  acceptedFollowingIds,
+) => {
+  // 1. Get all public user IDs (excluding current user and already followed)
+  const excludeFromPublic = [...acceptedFollowingIds, currentUserId];
+  const publicUserIds = await getPublicUserIds(excludeFromPublic);
+
+  // 2. Build WHERE clause for posts:
+  //    - userId IN acceptedFollowingIds  OR
+  //    - userId IN publicUserIds
+  const userIdCondition = {
+    [Op.or]: [
+      { userId: { [Op.in]: acceptedFollowingIds } },
+      { userId: { [Op.in]: publicUserIds } },
+    ],
+  };
 
   const posts = await Post.findAll({
-    where: whereClause,
+    where: {
+      ...userIdCondition,
+      isDeleted: false,
+    },
     include: [getSafeUserInclude()],
     order: [["createdAt", "DESC"]],
     limit,
     offset,
   });
 
+  // 3. Enrich with like status and comment counts
   const postIds = posts.map((p) => p.id);
   const likedPosts = await PostLike.findAll({
     where: { userId: currentUserId, postId: { [Op.in]: postIds } },
@@ -67,6 +108,9 @@ const getFeedPosts = async (currentUserId, limit, offset, followingIds) => {
   }));
 };
 
+/**
+ * Render the main feed page.
+ */
 exports.renderFeed = async (req, res, next) => {
   try {
     const currentUser = req.user;
@@ -74,12 +118,32 @@ exports.renderFeed = async (req, res, next) => {
     const limit = 12;
     const offset = (page - 1) * limit;
 
-    const followingIds = await getFollowingIds(currentUser.id);
-    let posts = await getFeedPosts(currentUser.id, limit, offset, followingIds);
-    const totalPostsCount = await Post.count({ where: { isDeleted: false } });
+    // Only accepted follows matter for feed
+    const acceptedFollowingIds = await getAcceptedFollowingIds(currentUser.id);
+    let posts = await getFeedPosts(
+      currentUser.id,
+      limit,
+      offset,
+      acceptedFollowingIds,
+    );
+
+    // Count total posts that would be visible (for pagination)
+    const publicUserIds = await getPublicUserIds([
+      ...acceptedFollowingIds,
+      currentUser.id,
+    ]);
+    const totalPostsCount = await Post.count({
+      where: {
+        [Op.or]: [
+          { userId: { [Op.in]: acceptedFollowingIds } },
+          { userId: { [Op.in]: publicUserIds } },
+        ],
+        isDeleted: false,
+      },
+    });
     const totalPages = Math.ceil(totalPostsCount / limit);
 
-    // ----- ADD FOLLOW STATUS TO POST AUTHORS -----
+    // ----- Determine follow status for post authors (to show "Follow" / "Following" button) -----
     const authorIds = [
       ...new Set(
         posts.map((p) => p.userId).filter((id) => id && id !== currentUser.id),
@@ -87,38 +151,42 @@ exports.renderFeed = async (req, res, next) => {
     ];
     let followStatusMap = {};
     if (authorIds.length) {
-      const follows = await UserFollow.findAll({
+      // Check for accepted follows (only accepted counts as "Following")
+      const acceptedFollows = await UserFollow.findAll({
         where: {
           followerId: currentUser.id,
           followingId: { [Op.in]: authorIds },
+          status: "accepted",
         },
         attributes: ["followingId"],
         raw: true,
       });
-      const followingSet = new Set(follows.map((f) => f.followingId));
+      const acceptedSet = new Set(acceptedFollows.map((f) => f.followingId));
       followStatusMap = Object.fromEntries(
-        authorIds.map((id) => [id, followingSet.has(id)]),
+        authorIds.map((id) => [id, acceptedSet.has(id)]),
       );
     }
     posts = posts.map((post) => ({
       ...post,
       isFollowing: followStatusMap[post.userId] || false,
     }));
-    // ---------------------------------------------
 
-    const excludeSuggestionIds = [...followingIds, currentUser.id];
+    // ----- Suggested users (exclude accepted follows and self, also exclude private users) -----
+    const excludeSuggestionIds = [...acceptedFollowingIds, currentUser.id];
     const suggestedUsers = await User.findAll({
       where: {
         id: { [Op.notIn]: excludeSuggestionIds },
         isDeleted: false,
         isActive: true,
         role: ROLES.USER,
+        isPrivate: false, // only suggest public users
       },
-      attributes: ["id", "name", "profilePictureUrl", "bio"],
+      attributes: ["id", "name", "profilePictureUrl", "bio", "isVerified"],
       limit: 10,
       order: sequelize.random(),
     });
 
+    // Fetch current user with counts for sidebar
     const userWithCounts = await User.findByPk(currentUser.id, {
       attributes: [
         "id",
@@ -127,6 +195,7 @@ exports.renderFeed = async (req, res, next) => {
         "bio",
         "isVerified",
         "profilePictureUrl",
+        "thumbnailUrl",
         "postsCount",
         "followersCount",
         "followingCount",
@@ -136,7 +205,7 @@ exports.renderFeed = async (req, res, next) => {
     res.render("feed", {
       title: "Feed",
       user: userWithCounts,
-      currentUser: userWithCounts, // pass for the partial
+      currentUser: userWithCounts,
       suggestedUsers,
       posts,
       pagination: {
