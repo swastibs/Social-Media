@@ -54,9 +54,9 @@ exports.redirectIfLoggedIn = async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findByPk(decoded.userId);
-    if (user && !user.isDeleted && user.isActive) {
+    if (user && !user.isDeleted && user.isActive)
       return res.redirect(user.role === "admin" ? "/admin/dashboard" : "/feed");
-    }
+
     next();
   } catch (err) {
     next();

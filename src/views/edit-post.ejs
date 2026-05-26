@@ -84,9 +84,9 @@
             } else if (length > maxChars * 0.9) {
                 charCounter.classList.add('warning');
                 charCounter.classList.remove('danger');
-            } else {
+            } else
                 charCounter.classList.remove('warning', 'danger');
-            }
+
         }
 
         contentTextarea.addEventListener('input', updateCharCount);
@@ -149,9 +149,8 @@
                     currentImageSection.style.opacity = '0.5';
                 }
             } else {
-                if (currentImageSection) {
+                if (currentImageSection)
                     currentImageSection.style.opacity = '1';
-                }
             }
         }
 

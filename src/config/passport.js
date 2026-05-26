@@ -70,13 +70,12 @@ passport.use(
 
         if (!user) {
           const email = profile.emails?.[0]?.value;
-          if (!email) {
+          if (!email)
             return done(
               new Error(
                 "GitHub account has no public email. Please set a public email in GitHub settings.",
               ),
             );
-          }
 
           const name =
             profile.displayName || profile.username || email.split("@")[0];

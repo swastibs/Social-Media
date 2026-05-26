@@ -10,6 +10,7 @@
 const { Comment, Post, sequelize } = require("../../models");
 const { getSafeUserInclude } = require("../../utils/dbHelper");
 const { deleteByPattern } = require("../../utils/cache");
+const { COMMENT_EDIT_WINDOW_MINUTES } = require("../../constant/editWindow");
 
 /**
  * Helper: Check if comment is still editable (within 15 minutes of creation)
@@ -18,7 +19,7 @@ const isEditable = (commentCreatedAt) => {
   const now = new Date();
   const createdAt = new Date(commentCreatedAt);
   const diffMinutes = (now - createdAt) / (1000 * 60);
-  return diffMinutes <= 15;
+  return diffMinutes <= COMMENT_EDIT_WINDOW_MINUTES;
 };
 
 // ========== CREATE COMMENT (AJAX) ==========

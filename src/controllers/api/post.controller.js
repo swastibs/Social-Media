@@ -82,13 +82,12 @@ exports.getAllPosts = async (req, res, next) => {
       include: [getSafeUserInclude()],
     });
 
-    if (req.cacheKey) {
+    if (req.cacheKey)
       await setCache(req.cacheKey, {
         data,
         meta: pagination,
         message: "Posts fetched successfully",
       });
-    }
 
     return successResponse(res, {
       message: "Posts fetched successfully",
@@ -112,12 +111,11 @@ exports.getPost = async (req, res, next) => {
 
     if (!post) throw new ApiError(404, "Post not found");
 
-    if (req.cacheKey) {
+    if (req.cacheKey)
       await setCache(req.cacheKey, {
         data: post,
         message: "Post fetched successfully",
       });
-    }
 
     return successResponse(res, {
       message: "Post fetched successfully",
@@ -187,13 +185,10 @@ exports.deletePost = async (req, res, next) => {
       lock: transaction.LOCK.UPDATE,
     });
 
-    if (!post) {
-      throw new ApiError(404, "Post not found");
-    }
+    if (!post) throw new ApiError(404, "Post not found");
 
-    if (user.role !== ROLES.ADMIN && post.userId !== user.id) {
+    if (user.role !== ROLES.ADMIN && post.userId !== user.id)
       throw new ApiError(403, "Not authorized");
-    }
 
     await post.update({ isDeleted: true, deletedBy: user.id }, { transaction });
 
@@ -204,9 +199,7 @@ exports.deletePost = async (req, res, next) => {
 
     // safer instance decrement
     const owner = await User.findByPk(post.userId, { transaction });
-    if (owner) {
-      await owner.decrement("postsCount", { transaction });
-    }
+    if (owner) await owner.decrement("postsCount", { transaction });
 
     await transaction.commit();
 
@@ -238,9 +231,7 @@ exports.likePost = async (req, res, next) => {
       lock: transaction.LOCK.UPDATE,
     });
 
-    if (!post) {
-      throw new ApiError(404, "Post not found");
-    }
+    if (!post) throw new ApiError(404, "Post not found");
 
     const [like, created] = await PostLike.findOrCreate({
       where: { userId, postId },
@@ -297,13 +288,12 @@ exports.getAllCommentsOfPost = async (req, res, next) => {
       include: [getSafeUserInclude()],
     });
 
-    if (req.cacheKey) {
+    if (req.cacheKey)
       await setCache(req.cacheKey, {
         data,
         meta: pagination,
         message: "Comments fetched successfully",
       });
-    }
 
     return successResponse(res, {
       message: "Comments fetched successfully",
@@ -332,12 +322,11 @@ exports.getCommentOfPost = async (req, res, next) => {
 
     if (!comment) throw new ApiError(404, "Comment not found");
 
-    if (req.cacheKey) {
+    if (req.cacheKey)
       await setCache(req.cacheKey, {
         data: comment,
         message: "Comment fetched successfully",
       });
-    }
 
     return successResponse(res, {
       message: "Comment fetched successfully",

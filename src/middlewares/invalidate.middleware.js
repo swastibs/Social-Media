@@ -18,11 +18,10 @@ exports.invalidateCache = (patterns = []) => {
       // Attach a listener to invalidate cache after response is sent
       res.on("finish", async () => {
         // Only invalidate on successful mutations (2xx status codes)
-        if (res.statusCode >= 200 && res.statusCode < 300) {
+        if (res.statusCode >= 200 && res.statusCode < 300)
           for (const pattern of patterns) {
             await deleteByPattern(pattern);
           }
-        }
       });
       next();
     } catch (err) {

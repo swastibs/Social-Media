@@ -36,16 +36,16 @@ module.exports = (ttl = DEFAULT_TTL) => {
       let capturedHtml = null;
 
       res.send = function (body) {
-        if (typeof body === "string" && res.statusCode === 200) {
+        if (typeof body === "string" && res.statusCode === 200)
           capturedHtml = body;
-        }
+
         return originalSend.call(this, body);
       };
 
       res.once("finish", () => {
-        if (capturedHtml && res.statusCode === 200) {
+        if (capturedHtml && res.statusCode === 200)
           setCache(cacheKey, capturedHtml, ttl).catch(() => {});
-        }
+
         res.send = originalSend;
       });
 

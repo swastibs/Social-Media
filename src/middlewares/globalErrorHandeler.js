@@ -33,12 +33,12 @@ exports.globalErrorHandler = (err, req, res, next) => {
         ? "Image must be 2MB or smaller"
         : err.message || "Invalid upload";
 
-    if (isApi) {
+    if (isApi)
       return res.status(422).json({
         success: false,
         message,
       });
-    }
+
     if (req.headers.referer) {
       req.flash("error_msg", message);
       if (req.body) req.flash("oldInput", req.body);
@@ -56,13 +56,12 @@ exports.globalErrorHandler = (err, req, res, next) => {
       details.query?.[0]?.message ||
       "Validation failed";
 
-    if (isApi) {
+    if (isApi)
       return res.status(400).json({
         success: false,
         message: firstError,
         errors: err.details || null,
       });
-    }
 
     if (req.headers.referer) {
       req.flash("error_msg", firstError);
@@ -74,12 +73,12 @@ exports.globalErrorHandler = (err, req, res, next) => {
 
   // Custom ApiError
   if (err instanceof ApiError) {
-    if (isApi) {
+    if (isApi)
       return res.status(err.statusCode).json({
         success: false,
         message: err.message,
       });
-    }
+
     if (err.statusCode >= 400 && err.statusCode < 500 && req.headers.referer) {
       req.flash("error_msg", err.message);
       return res.redirect("back");
@@ -89,12 +88,11 @@ exports.globalErrorHandler = (err, req, res, next) => {
 
   // Unexpected errors (500)
   console.error("Unhandled error:", err);
-  if (isApi) {
+  if (isApi)
     return res.status(500).json({
       success: false,
       message: "Internal server error",
     });
-  }
 
   if (req.headers.referer) {
     req.flash("error_msg", "Something went wrong. Please try again.");

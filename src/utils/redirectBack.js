@@ -18,9 +18,9 @@ function redirectBack(req, res, fallback = "/") {
   const protocol = req.protocol;
 
   // Only redirect to referer if it's from the same application origin
-  if (referer && referer.startsWith(`${protocol}://${host}`)) {
+  if (referer && referer.startsWith(`${protocol}://${host}`))
     return res.redirect(referer);
-  }
+
   return res.redirect(fallback);
 }
 

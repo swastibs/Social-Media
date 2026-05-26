@@ -12,11 +12,8 @@ const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
   const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-  if (allowed.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new ApiError(422, "Only image files allowed"), false);
-  }
+  if (allowed.includes(file.mimetype)) cb(null, true);
+  else cb(new ApiError(422, "Only image files allowed"), false);
 };
 
 module.exports = multer({

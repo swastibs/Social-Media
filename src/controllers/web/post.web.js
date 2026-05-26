@@ -21,6 +21,7 @@ const { paginate } = require("../../utils/pagination");
 const { uploadToMinio, deleteFromMinioByUrl } = require("../../config/minio");
 const redirectBack = require("../../utils/redirectBack");
 const { deleteByPattern } = require("../../utils/cache");
+const { COMMENT_EDIT_WINDOW_MINUTES } = require("../../constant/editWindow");
 
 const shouldRemoveImage = (value) => value === true || value === "true";
 
@@ -83,6 +84,13 @@ exports.createPost = async (req, res, next) => {
 // ========== SINGLE POST (with comments) ==========
 exports.postDetail = async (req, res, next) => {
   try {
+    res.setHeader(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate, private",
+    );
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+
     const postId = req.params.postId;
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = 10;
@@ -146,7 +154,9 @@ exports.postDetail = async (req, res, next) => {
     const now = new Date();
     comments = comments.map((comment) => ({
       ...comment.toJSON(),
-      isEditable: now - new Date(comment.createdAt) <= 15 * 60 * 1000,
+      isEditable:
+        now - new Date(comment.createdAt) <=
+        COMMENT_EDIT_WINDOW_MINUTES * 60 * 1000,
     }));
 
     const totalComments = await Comment.count({
@@ -162,6 +172,7 @@ exports.postDetail = async (req, res, next) => {
         liked,
         commentCount: totalComments,
       },
+      editWindowMinutes: COMMENT_EDIT_WINDOW_MINUTES,
       comments,
       pagination: {
         currentPage: page,
@@ -237,9 +248,8 @@ exports.updatePost = async (req, res, next) => {
     post.content = content;
 
     if (file) {
-      if (post.imageUrl) {
-        await deleteFromMinioByUrl(post.imageUrl);
-      }
+      if (post.imageUrl) await deleteFromMinioByUrl(post.imageUrl);
+
       const result = await uploadToMinio(
         file.buffer,
         file.originalname,
@@ -314,9 +324,8 @@ exports.deletePost = async (req, res, next) => {
 
     // Decrement postsCount of the author
     const author = await User.findByPk(post.userId, { transaction });
-    if (author && author.postsCount > 0) {
+    if (author && author.postsCount > 0)
       await author.decrement("postsCount", { transaction });
-    }
 
     await transaction.commit();
 

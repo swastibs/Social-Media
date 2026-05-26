@@ -64,9 +64,7 @@ exports.verifyPayment = async (req, res, next) => {
     const paymentRecord = await Payment.findOne({
       where: { razorpayOrderId: razorpay_order_id },
     });
-    if (!paymentRecord) {
-      throw new ApiError(404, "Payment record not found");
-    }
+    if (!paymentRecord) throw new ApiError(404, "Payment record not found");
 
     const body = `${razorpay_order_id}|${razorpay_payment_id}`;
     const expectedSignature = crypto
@@ -117,9 +115,8 @@ exports.razorpayWebhook = async (req, res) => {
     .update(JSON.stringify(req.body))
     .digest("hex");
 
-  if (generatedSignature !== signature) {
+  if (generatedSignature !== signature)
     return res.status(400).send("Invalid signature");
-  }
 
   const event = req.body;
   console.log("Webhook received:", event.event);

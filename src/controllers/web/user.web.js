@@ -20,9 +20,8 @@ exports.toggleFollow = async (req, res, next) => {
   try {
     const followerId = req.user.id;
     const followingId = parseInt(req.params.userId);
-    if (followerId === followingId) {
+    if (followerId === followingId)
       return res.status(400).json({ error: "Cannot follow yourself" });
-    }
 
     const targetUser = await User.findByPk(followingId, { transaction });
     if (!targetUser) return res.status(404).json({ error: "User not found" });
@@ -135,9 +134,12 @@ exports.acceptFollowRequest = async (req, res, next) => {
 
     await transaction.commit();
 
-    // Invalidate caches
     await deleteByPattern(`web:cache:/profile/${currentUserId}*`);
     await deleteByPattern(`web:cache:/profile/${followerId}*`);
+    await deleteByPattern(`web:cache:/profile/${currentUserId}/followers*`);
+    await deleteByPattern(`web:cache:/profile/${currentUserId}/following*`);
+    await deleteByPattern(`web:cache:/feed*`);
+    await deleteByPattern(`web:cache:/follow-requests*`);
 
     req.flash("success_msg", "Follow request accepted");
     res.redirect("/follow-requests");
@@ -215,19 +217,19 @@ exports.removeFollower = async (req, res, next) => {
 
     // Security: only the profile owner can remove their own followers
     if (loggedInUserId !== profileOwnerId) {
-      if (req.xhr) {
+      if (req.xhr)
         return res.status(403).json({ success: false, message: "Forbidden" });
-      }
+
       req.flash("error_msg", "You are not authorized");
       return res.redirect("back");
     }
 
     if (profileOwnerId === followerId) {
-      if (req.xhr) {
+      if (req.xhr)
         return res
           .status(400)
           .json({ success: false, message: "You cannot remove yourself" });
-      }
+
       req.flash("error_msg", "You cannot remove yourself");
       return res.redirect("back");
     }
@@ -239,11 +241,11 @@ exports.removeFollower = async (req, res, next) => {
 
     if (!follow) {
       await transaction.rollback();
-      if (req.xhr) {
+      if (req.xhr)
         return res
           .status(404)
           .json({ success: false, message: "Follower not found" });
-      }
+
       req.flash("error_msg", "Follower not found");
       return res.redirect("back");
     }
@@ -270,20 +272,19 @@ exports.removeFollower = async (req, res, next) => {
     await deleteByPattern(`web:cache:/profile/${profileOwnerId}/followers*`);
     await deleteByPattern(`web:cache:/profile/${followerId}*`);
 
-    if (req.xhr) {
+    if (req.xhr)
       return res.json({
         success: true,
         message: "Follower removed successfully",
       });
-    }
 
     req.flash("success_msg", "Follower removed successfully");
     res.redirect("back");
   } catch (err) {
     await transaction.rollback();
-    if (req.xhr) {
+    if (req.xhr)
       return res.status(500).json({ success: false, message: err.message });
-    }
+
     next(err);
   }
 };

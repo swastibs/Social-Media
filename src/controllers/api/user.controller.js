@@ -217,13 +217,12 @@ exports.getAllPostsOfUser = async (req, res, next) => {
       include: [getSafeUserInclude()],
     });
 
-    if (req.cacheKey) {
+    if (req.cacheKey)
       await setCache(req.cacheKey, {
         data,
         meta: pagination,
         message: "Posts fetched successfully",
       });
-    }
 
     return successResponse(res, {
       message: "Posts fetched successfully",
@@ -250,12 +249,11 @@ exports.getPostOfUser = async (req, res, next) => {
 
     if (!post) throw new ApiError(404, "Post not found");
 
-    if (req.cacheKey) {
+    if (req.cacheKey)
       await setCache(req.cacheKey, {
         data: post,
         message: "Post fetched successfully",
       });
-    }
 
     return successResponse(res, {
       message: "Post fetched successfully",
@@ -286,13 +284,12 @@ exports.getAllCommentsOfUser = async (req, res, next) => {
       ],
     });
 
-    if (req.cacheKey) {
+    if (req.cacheKey)
       await setCache(req.cacheKey, {
         data,
         meta: pagination,
         message: "Comments fetched successfully",
       });
-    }
 
     return successResponse(res, {
       message: "Comments fetched successfully",
@@ -322,12 +319,11 @@ exports.getCommentOfUser = async (req, res, next) => {
 
     if (!comment) throw new ApiError(404, "Comment not found");
 
-    if (req.cacheKey) {
+    if (req.cacheKey)
       await setCache(req.cacheKey, {
         data: comment,
         message: "Comment fetched successfully",
       });
-    }
 
     return successResponse(res, {
       message: "Comment fetched successfully",
@@ -443,13 +439,12 @@ exports.getFollowers = async (req, res, next) => {
 
     const result = data.map(sanitizedUser);
 
-    if (req.cacheKey) {
+    if (req.cacheKey)
       await setCache(req.cacheKey, {
         data: result,
         meta: pagination,
         message: "Followers fetched successfully",
       });
-    }
 
     return successResponse(res, {
       message: "Followers fetched successfully",
@@ -486,13 +481,12 @@ exports.getFollowing = async (req, res, next) => {
 
     const result = data.map(sanitizedUser);
 
-    if (req.cacheKey) {
+    if (req.cacheKey)
       await setCache(req.cacheKey, {
         data: result,
         meta: pagination,
         message: "Following fetched successfully",
       });
-    }
 
     return successResponse(res, {
       message: "Following fetched successfully",

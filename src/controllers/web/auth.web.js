@@ -21,11 +21,11 @@ const { uploadToMinio } = require("../../config/minio");
 
 // ========== Landing & Tab Switching ==========
 exports.landing = (req, res) => {
-  if (req.user) {
+  if (req.user)
     return res.redirect(
       req.user.role === "admin" ? "/admin/dashboard" : "/feed",
     );
-  }
+
   res.render("landing", {
     mode: "login",
     oldInput: {},
@@ -34,11 +34,11 @@ exports.landing = (req, res) => {
 };
 
 exports.loginForm = (req, res) => {
-  if (req.user) {
+  if (req.user)
     return res.redirect(
       req.user.role === "admin" ? "/admin/dashboard" : "/feed",
     );
-  }
+
   res.render("landing", {
     mode: "login",
     oldInput: req.flash("oldInput")[0] || {},
@@ -47,11 +47,11 @@ exports.loginForm = (req, res) => {
 };
 
 exports.signupForm = (req, res) => {
-  if (req.user) {
+  if (req.user)
     return res.redirect(
       req.user.role === "admin" ? "/admin/dashboard" : "/feed",
     );
-  }
+
   res.render("landing", {
     mode: "signup",
     oldInput: req.flash("oldInput")[0] || {},

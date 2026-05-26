@@ -142,25 +142,24 @@ exports.searchPage = async (req, res, next) => {
 
     if (searchTerm && searchTerm.length >= 2) {
       // Run searches based on active tab (or all)
-      if (type === "all" || type === "users") {
+      if (type === "all" || type === "users")
         results.users = await searchUsers(searchTerm, limit, offset);
-      }
-      if (type === "all" || type === "posts") {
+
+      if (type === "all" || type === "posts")
         results.posts = await searchPosts(
           searchTerm,
           limit,
           offset,
           req.user?.id,
         );
-      }
-      if (type === "all" || type === "comments") {
+
+      if (type === "all" || type === "comments")
         results.comments = await searchComments(
           searchTerm,
           limit,
           offset,
           req.user?.id,
         );
-      }
     }
 
     res.render("search", {

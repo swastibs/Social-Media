@@ -94,11 +94,10 @@ exports.renderProfile = async (req, res, next) => {
     if (
       currentUser &&
       (currentUser.id === profileUserId || currentUser.role === "admin")
-    ) {
+    )
       canViewPosts = true;
-    } else if (!profileUser.isPrivate) {
-      canViewPosts = true;
-    } else {
+    else if (!profileUser.isPrivate) canViewPosts = true;
+    else {
       if (currentUser) {
         followStatus = await getFollowStatus(currentUser.id, profileUserId);
         if (followStatus === "accepted") canViewPosts = true;
@@ -153,9 +152,8 @@ exports.renderProfile = async (req, res, next) => {
     }
 
     let viewerFollows = false;
-    if (currentUser && currentUser.id !== profileUserId) {
+    if (currentUser && currentUser.id !== profileUserId)
       viewerFollows = await isFollowing(currentUser.id, profileUserId);
-    }
 
     const actualFollowersCount = await UserFollow.count({
       where: { followingId: profileUserId, status: "accepted" },
@@ -399,9 +397,8 @@ exports.updateProfile = async (req, res, next) => {
 
     if (name) user.name = name.trim();
     if (bio !== undefined) user.bio = bio ? bio.trim() : null;
-    if (isPrivate !== undefined) {
+    if (isPrivate !== undefined)
       user.isPrivate = isPrivate === "true" || isPrivate === true;
-    }
 
     const oldPictureUrl = user.profilePictureUrl;
 
@@ -444,11 +441,11 @@ exports.togglePrivacy = async (req, res, next) => {
     const userId = req.user.id;
     const { isPrivate } = req.body;
     const user = await User.findByPk(userId);
-    if (!user) {
+    if (!user)
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
-    }
+
     user.isPrivate = isPrivate === true || isPrivate === "true";
     await user.save();
 

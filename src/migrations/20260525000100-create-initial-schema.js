@@ -25,12 +25,11 @@ module.exports = {
           fields.every((field) => indexFields.includes(field))
         );
       });
-      if (!exists) {
+      if (!exists)
         await queryInterface.addIndex(tableName, fields, {
           ...options,
           name: indexName,
         });
-      }
     };
 
     await ensureTable("users", {
