@@ -65,6 +65,13 @@ exports.verifyPayment = async (req, res, next) => {
     });
     if (!paymentRecord) throw new ApiError(404, "Payment record not found");
 
+    if (paymentRecord.userId !== userId) {
+      throw new ApiError(
+        403,
+        "Unauthorized: This payment does not belong to you",
+      );
+    }
+
     const body = `${razorpay_order_id}|${razorpay_payment_id}`;
     const expectedSignature = crypto
       .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)

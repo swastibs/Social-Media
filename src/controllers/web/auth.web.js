@@ -18,6 +18,7 @@ const {
   removeTokenFromUser,
 } = require("../../utils/authCache");
 const { uploadToMinio } = require("../../config/minio");
+const { deleteByPattern } = require("../../utils/cache");
 
 // ========== Landing & Tab Switching ==========
 exports.landing = (req, res) => {
@@ -97,6 +98,7 @@ exports.login = async (req, res, next) => {
     res.cookie("postloop_token", token, {
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000,
+      sameSite: "lax",
     });
 
     if (user.role === "admin") return res.redirect("/admin/dashboard");
@@ -132,7 +134,7 @@ exports.signup = async (req, res, next) => {
       thumbnailUrl = result.thumbnailUrl;
     }
 
-    await User.create({
+    const newUser = await User.create({
       name,
       email,
       password: hashed,
@@ -144,7 +146,7 @@ exports.signup = async (req, res, next) => {
       followingCount: 0,
     });
 
-    await deleteByPattern(`web:cache:/profile/${user.id}*`);
+    await deleteByPattern(`web:cache:/profile/${newUser.id}*`);
 
     req.flash("success_msg", "Account created! Please log in.");
     res.redirect("/login");
@@ -165,12 +167,8 @@ exports.logout = async (req, res) => {
 
   res.clearCookie("postloop_token", { path: "/" });
 
-  // Passport logout – removes user from session without destroying the session
-  req.logout((err) => {
-    if (err) console.error("Logout error:", err);
-    req.flash("success_msg", "You have been logged out.");
-    res.redirect("/");
-  });
+  req.flash("success_msg", "You have been logged out.");
+  res.redirect("/");
 };
 
 // ========== Change Password ==========

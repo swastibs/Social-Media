@@ -325,8 +325,7 @@ exports.deletePost = async (req, res, next) => {
 
     // Decrement postsCount of the author
     const author = await User.findByPk(post.userId, { transaction });
-    if (author && author.postsCount > 0)
-      await author.decrement("postsCount", { transaction });
+    if (author) await author.decrement("postsCount", { transaction });
 
     await transaction.commit();
 
@@ -377,8 +376,10 @@ exports.toggleLike = async (req, res, next) => {
       await post.decrement("likeCount", { transaction });
       await transaction.commit();
 
-      // Invalidate post cache
+      // After transaction.commit()
       await deleteByPattern(`web:cache:/post/${postId}*`);
+      await deleteByPattern("web:cache:/feed*");
+      await deleteByPattern(`web:cache:/profile/${post.userId}*`);
 
       return res.json({ liked: false, likeCount: post.likeCount - 1 });
     } else {

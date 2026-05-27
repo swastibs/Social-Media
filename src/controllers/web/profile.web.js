@@ -428,9 +428,6 @@ exports.updateProfile = async (req, res, next) => {
 
     if (file && oldPictureUrl) await deleteFromMinioByUrl(oldPictureUrl);
 
-    // Invalidate cached profile pages
-    await deleteByPattern(`web:cache:/profile/${userId}*`);
-
     req.flash("success_msg", "Profile updated successfully");
     res.redirect(`/profile/${userId}`);
   } catch (error) {

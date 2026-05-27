@@ -427,6 +427,7 @@ router.get(
     res.cookie("postloop_token", token, {
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000,
+      sameSite: "lax",
     });
     if (req.user.role === "admin") return res.redirect("/admin/dashboard");
     res.redirect("/feed");
