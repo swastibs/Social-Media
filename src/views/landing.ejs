@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PostLoop</title>
+    <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/landing.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+</head>
+
+<body>
+    <section class="hero-section">
+        <div class="hero-overlay"></div>
+
+        <!-- NAVBAR -->
+        <header class="landing-navbar">
+            <a href="/" class="landing-logo">
+                <div class="logo-circle">
+                    <i class="fa-solid fa-bolt"></i>
+                </div>
+                <span>PostLoop</span>
+            </a>
+        </header>
+
+        <!-- HERO CONTENT -->
+        <div class="landing-container">
+            <!-- LEFT COLUMN (text) -->
+            <div class="hero-left">
+                <div class="hero-badge">
+                    <i class="fa-solid fa-fire"></i> Social platform for creators & communities
+                </div>
+                <h1 class="hero-title">
+                    Share moments.<br />
+                    Build connections.<br />
+                    Stay in the loop.
+                </h1>
+                <p class="hero-description">
+                    Join thousands of people sharing stories, photos, ideas, and experiences in real time.
+                </p>
+                <div class="hero-stats">
+                    <div class="hero-stat">
+                        <h3>120K+</h3>
+                        <p>Users</p>
+                    </div>
+                    <div class="hero-stat">
+                        <h3>1M+</h3>
+                        <p>Posts</p>
+                    </div>
+                    <div class="hero-stat">
+                        <h3>24/7</h3>
+                        <p>Community</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN (auth switcher) -->
+            <div class="hero-right">
+                <div class="auth-switcher">
+                    <!-- TABS -->
+                    <div class="auth-tabs">
+                        <a href="/login" class="auth-tab <%= mode === 'login' ? 'active' : '' %>">Login</a>
+                        <a href="/signup" class="auth-tab <%= mode === 'signup' ? 'active' : '' %>">Sign Up</a>
+                    </div>
+
+                    <!-- LOGIN PANEL -->
+                    <div class="auth-panel <%= mode === 'login' ? 'active' : '' %>" id="loginPanel">
+                        <div class="modern-auth-card">
+                            <div class="auth-top">
+                                <div class="auth-icon"><i class="fa-solid fa-user"></i></div>
+                                <h2>Welcome Back</h2>
+                                <p>Login to continue exploring PostLoop.</p>
+                            </div>
+                            <form method="POST" action="/login" class="modern-auth-form">
+                                <div class="modern-input-group">
+                                    <label>Email</label>
+                                    <div class="input-wrapper">
+                                        <i class="fa-regular fa-envelope"></i>
+                                        <input type="email" name="email" placeholder="Enter your email"
+                                            value="<%= oldInput.email || '' %>" required />
+                                    </div>
+                                </div>
+                                <div class="modern-input-group">
+                                    <label>Password</label>
+                                    <div class="input-wrapper">
+                                        <i class="fa-solid fa-lock"></i>
+                                        <input type="password" name="password" placeholder="Enter your password"
+                                            required />
+                                    </div>
+                                    <div style="text-align: right; margin-top: 0.5rem;">
+                                        <a href="/forgot-password" style="font-size: 0.8rem; color: #0ea5e9;">Forgot
+                                            password?</a>
+                                    </div>
+                                </div>
+                                <button type="submit" class="modern-submit-btn">Login</button>
+                                <a href="/auth/github" class="github-login-btn">
+                                    <i class="fab fa-github"></i> Continue with GitHub
+                                </a>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- SIGNUP PANEL -->
+                    <div class="auth-panel <%= mode === 'signup' ? 'active' : '' %>" id="signupPanel">
+                        <div class="modern-auth-card signup-card">
+                            <div class="auth-top">
+                                <div class="auth-icon gradient"><i class="fa-solid fa-user-plus"></i></div>
+                                <h2>Create Account</h2>
+                                <p>Join PostLoop and start sharing instantly.</p>
+                            </div>
+                            <form method="POST" action="/signup" enctype="multipart/form-data" class="modern-auth-form">
+                                <div class="signup-grid">
+                                    <div class="modern-input-group">
+                                        <label>Name</label>
+                                        <div class="input-wrapper">
+                                            <i class="fa-regular fa-user"></i>
+                                            <input type="text" name="name" placeholder="Your full name"
+                                                value="<%= oldInput.name || '' %>" required />
+                                        </div>
+                                    </div>
+                                    <div class="modern-input-group">
+                                        <label>Email</label>
+                                        <div class="input-wrapper">
+                                            <i class="fa-regular fa-envelope"></i>
+                                            <input type="email" name="email" placeholder="Enter your email"
+                                                value="<%= oldInput.email || '' %>" required />
+                                        </div>
+                                    </div>
+                                    <div class="modern-input-group">
+                                        <label>Password</label>
+                                        <div class="input-wrapper">
+                                            <i class="fa-solid fa-lock"></i>
+                                            <input type="password" name="password" placeholder="Create password"
+                                                required />
+                                        </div>
+                                    </div>
+                                    <div class="modern-input-group">
+                                        <label>Profile Picture</label>
+                                        <input type="file" name="profilePicture" class="modern-file-input"
+                                            accept="image/*" />
+                                    </div>
+                                    <div class="modern-input-group full-width">
+                                        <label>Bio</label>
+                                        <textarea name="bio" rows="1"
+                                            placeholder="Tell people about yourself..."><%= oldInput.bio || '' %></textarea>
+                                    </div>
+                                </div>
+                                <button type="submit" class="modern-submit-btn">Create Account</button>
+                                <a href="/auth/github" class="github-login-btn">
+                                    <i class="fab fa-github"></i> Sign up with GitHub
+                                </a>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="floating-blur blur-1"></div>
+        <div class="floating-blur blur-2"></div>
+    </section>
+
+    <script>
+        if (document.cookie.split("; ").find(row => row.startsWith("postloop_token="))) {
+            window.location.href = "/feed";
+        }
+
+        const tabs = document.querySelectorAll('.auth-tab');
+        const loginPanel = document.getElementById('loginPanel');
+        const signupPanel = document.getElementById('signupPanel');
+
+        if (tabs.length === 2) {
+            const loginTab = tabs[0];
+            const signupTab = tabs[1];
+            function showLogin() {
+                loginTab.classList.add('active');
+                signupTab.classList.remove('active');
+                loginPanel.classList.add('active');
+                signupPanel.classList.remove('active');
+            }
+            function showSignup() {
+                signupTab.classList.add('active');
+                loginTab.classList.remove('active');
+                signupPanel.classList.add('active');
+                loginPanel.classList.remove('active');
+            }
+            loginTab.addEventListener('click', showLogin);
+            signupTab.addEventListener('click', showSignup);
+        }
+
+        // Cleanup for potential SPA navigation
+        function cleanupLanding() {
+            if (tabs.length === 2) {
+                const loginTab = tabs[0];
+                const signupTab = tabs[1];
+                loginTab.removeEventListener('click', showLogin);
+                signupTab.removeEventListener('click', showSignup);
+            }
+            window.tabsRef = null;
+            window.loginPanelRef = null;
+            window.signupPanelRef = null;
+            window.loginTabRef = null;
+            window.signupTabRef = null;
+        }
+        window.cleanupLanding = cleanupLanding;
+    </script>
+</body>
+
+</html>

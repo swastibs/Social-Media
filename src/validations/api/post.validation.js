@@ -25,7 +25,9 @@ exports.updatePostSchema = {
   }).unknown(false),
   body: Joi.object({
     content: Joi.string().trim().min(2),
-  }).unknown(false),
+  })
+    .min(1)
+    .unknown(false),
   query: Joi.object({}),
 };
 

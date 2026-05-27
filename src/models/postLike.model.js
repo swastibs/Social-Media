@@ -1,3 +1,10 @@
+/**
+ * PostLike Model (Sequelize)
+ *
+ * Junction table for many-to-many relationship between User and Post (likes).
+ * Composite primary key (userId, postId).
+ */
+
 const { DataTypes } = require("sequelize");
 const { sequelize } = require("../config/db");
 

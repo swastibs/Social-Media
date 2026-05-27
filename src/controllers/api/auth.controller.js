@@ -6,9 +6,13 @@ const { ROLES } = require("../../constant/role");
 const { sanitizedUser } = require("../../utils/sanitizedUser");
 const ApiError = require("../../utils/ApiError");
 const { successResponse } = require("../../utils/ApiResponse");
-const { storeToken, deleteToken } = require("../../utils/authCache");
-const cloudinary = require("../../config/cloudinary");
-const { uploadToCloudinary } = require("../../utils/cloudinaryUpload");
+const {
+  storeToken,
+  deleteToken,
+  deleteAllUserTokens,
+  removeTokenFromUser,
+} = require("../../utils/authCache");
+const { uploadToMinio } = require("../../config/minio");
 
 // SIGN UP
 exports.signUp = async (req, res, next) => {
@@ -23,13 +27,14 @@ exports.signUp = async (req, res, next) => {
     const hashedPassword = await hash(password, 10);
 
     let profilePictureUrl = null;
-    let profilePicturePublicId = null;
 
     if (file) {
-      const uploaded = await uploadToCloudinary(file, "postloop/profiles");
-
-      profilePictureUrl = uploaded.secure_url;
-      profilePicturePublicId = uploaded.public_id;
+      const { url } = await uploadToMinio(
+        file.buffer,
+        file.originalname,
+        "profiles",
+      );
+      profilePictureUrl = url;
     }
 
     const user = await User.create({
@@ -38,7 +43,6 @@ exports.signUp = async (req, res, next) => {
       password: hashedPassword,
       bio: bio || null,
       profilePictureUrl,
-      profilePicturePublicId,
       postsCount: 0,
       followersCount: 0,
       followingCount: 0,
@@ -72,11 +76,18 @@ exports.logIn = async (req, res, next) => {
       where: { email, isDeleted: false },
     });
 
+    // After finding user
     if (!user) throw new ApiError(404, "User not exist");
     if (!user.isActive) throw new ApiError(403, "User is inactive");
 
-    const isPasswordMatch = await compare(password, user.password);
+    // ❌ Reject if password is null (GitHub-only user)
+    if (!user.password)
+      throw new ApiError(
+        401,
+        "This account uses GitHub login. Please sign in with GitHub.",
+      );
 
+    const isPasswordMatch = await compare(password, user.password);
     if (!isPasswordMatch) throw new ApiError(401, "Invalid credentials");
 
     const jwtToken = jwt.sign(
@@ -85,7 +96,7 @@ exports.logIn = async (req, res, next) => {
       { expiresIn: "1d" },
     );
 
-    await storeToken(jwtToken);
+    await storeToken(jwtToken, user.id);
 
     return successResponse(res, {
       message: "Login Success",
@@ -98,16 +109,46 @@ exports.logIn = async (req, res, next) => {
   }
 };
 
-// LOGOUT
-exports.logOut = async (req, res, next) => {
+// CHANGE PASSWORD
+exports.changePassword = async (req, res, next) => {
   try {
-    const token = req.headers.authorization.split(" ")[1];
+    const userId = req.user.id;
+    const { oldPassword, newPassword } = req.body;
 
-    await deleteToken(token);
+    const user = await User.findByPk(userId);
+    if (!user) throw new ApiError(404, "User not found");
+
+    // Verify old password
+    const isMatch = await compare(oldPassword, user.password);
+    if (!isMatch) throw new ApiError(401, "Old password is incorrect");
+
+    // Hash and update new password
+    const hashedPassword = await hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    await deleteAllUserTokens(userId);
 
     return successResponse(res, {
-      message: "Logout successful",
+      message: "Password changed successfully. Please login again.",
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Then inside logOut:
+exports.logOut = async (req, res, next) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    const userId = req.user?.id;
+
+    if (token) {
+      await deleteToken(token);
+      if (userId) await removeTokenFromUser(userId, token); // ✅ use imported function
+    }
+
+    return successResponse(res, { message: "Logout successful" });
   } catch (err) {
     next(err);
   }

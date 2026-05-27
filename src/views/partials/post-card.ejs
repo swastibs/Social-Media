@@ -1,0 +1,83 @@
+<div class="post-card <%= post.imageUrl ? 'has-image' : 'no-image' %>" data-post-id="<%= post.id %>">
+    <a href="/post/<%= post.id %>" class="post-card-link" aria-label="View post details"></a>
+
+    <div class="post-header">
+        <div class="post-author-info">
+            <div class="post-author-avatar">
+                <% if (post.User?.thumbnailUrl || post.User?.profilePictureUrl) { %>
+                    <img src="<%= post.User?.thumbnailUrl || post.User?.profilePictureUrl %>"
+                        alt="<%= post.User.name %>" loading="lazy" class="img-cover" width="40" height="40"
+                        style="width:40px; height:40px;">
+                    <% } else { %>
+                        <div class="avatar-initials small">
+                            <%= (post.User?.name || 'U' ).substring(0,2).toUpperCase() %>
+                        </div>
+                        <% } %>
+            </div>
+            <div class="post-author-details">
+                <a href="/profile/<%= post.User?.id %>" class="post-author-name">
+                    <%= post.User?.name || 'Unknown User' %>
+                        <% if (post.User?.isVerified) { %>
+                            <span class="verified-badge-small" title="Verified User">✓</span>
+                            <% } %>
+                </a>
+                <span class="post-time">
+                    <%= new Date(post.createdAt).toLocaleDateString('en-GB') %>
+                </span>
+            </div>
+
+            <% if (!locals.hideFollowButton && locals.currentUser && locals.currentUser.id !==post.User?.id) { %>
+                <button class="post-follow-btn <%= post.isFollowing ? 'following' : '' %>"
+                    data-user-id="<%= post.User.id %>">
+                    <%= post.isFollowing ? 'Unfollow' : 'Follow' %>
+                </button>
+                <% } %>
+
+                    <% if (locals.currentUser && (locals.currentUser.id===post.userId ||
+                        locals.currentUser.role==='admin' )) { %>
+                        <div class="post-owner-actions">
+                            <a href="/post/edit/<%= post.id %>" class="post-edit-btn" title="Edit Post"><i
+                                    class="fa-regular fa-pen-to-square"></i></a>
+                            <form method="POST" action="/post/delete/<%= post.id %>" style="display: inline;"
+                                data-confirm="delete-post">
+                                <button type="submit" class="post-delete-btn" title="Delete Post"><i
+                                        class="fa-regular fa-trash-can"></i></button>
+                            </form>
+                        </div>
+                        <% } %>
+        </div>
+    </div>
+
+    <% if (post.imageUrl) { %>
+        <div class="post-image" style="aspect-ratio: 16/9; overflow: hidden;">
+            <img src="<%= post.thumbnailUrl || post.imageUrl %>" alt="Post image" loading="lazy" width="400"
+                height="225" style="width:100%; height:auto; object-fit:cover;">
+        </div>
+        <% } %>
+
+            <div class="post-body">
+                <p class="post-text">
+                    <%= post.content ? post.content.substring(0, 120) : '' %>
+                        <%= (post.content && post.content.length> 120) ? '...' : '' %>
+                </p>
+            </div>
+
+            <div class="post-buttons">
+                <button class="post-action like-action <%= post.liked ? 'liked' : '' %>" data-post-id="<%= post.id %>">
+                    <i class="fa-regular fa-heart"></i>
+                    <span class="like-count-display">
+                        <%= post.likeCount || 0 %>
+                    </span>
+                    <span>
+                        <%= post.liked ? 'Unlike' : 'Like' %>
+                    </span>
+                </button>
+                <button class="post-action comment-action" data-post-url="/post/<%= post.id %>">
+                    <i class="fa-regular fa-comment"></i>
+                    <span class="comment-count-display">
+                        <%= post.commentCount || 0 %>
+                    </span>
+                    <span>Comments</span>
+                </button>
+            </div>
+</div>

@@ -8,8 +8,7 @@ const { User, Post, Comment, UserFollow, sequelize } = require("../../models");
 const { getUser, getSafeUserInclude } = require("../../utils/dbHelper");
 const { setCache } = require("../../utils/cache");
 const { Op } = require("sequelize");
-const cloudinary = require("../../config/cloudinary");
-const { uploadToCloudinary } = require("../../utils/cloudinaryUpload");
+const { uploadToMinio, deleteFromMinioByUrl } = require("../../config/minio");
 
 // GET ALL USERS
 exports.getAllUsers = async (req, res, next) => {
@@ -218,13 +217,12 @@ exports.getAllPostsOfUser = async (req, res, next) => {
       include: [getSafeUserInclude()],
     });
 
-    if (req.cacheKey) {
+    if (req.cacheKey)
       await setCache(req.cacheKey, {
         data,
         meta: pagination,
         message: "Posts fetched successfully",
       });
-    }
 
     return successResponse(res, {
       message: "Posts fetched successfully",
@@ -251,12 +249,11 @@ exports.getPostOfUser = async (req, res, next) => {
 
     if (!post) throw new ApiError(404, "Post not found");
 
-    if (req.cacheKey) {
+    if (req.cacheKey)
       await setCache(req.cacheKey, {
         data: post,
         message: "Post fetched successfully",
       });
-    }
 
     return successResponse(res, {
       message: "Post fetched successfully",
@@ -287,13 +284,12 @@ exports.getAllCommentsOfUser = async (req, res, next) => {
       ],
     });
 
-    if (req.cacheKey) {
+    if (req.cacheKey)
       await setCache(req.cacheKey, {
         data,
         meta: pagination,
         message: "Comments fetched successfully",
       });
-    }
 
     return successResponse(res, {
       message: "Comments fetched successfully",
@@ -323,12 +319,11 @@ exports.getCommentOfUser = async (req, res, next) => {
 
     if (!comment) throw new ApiError(404, "Comment not found");
 
-    if (req.cacheKey) {
+    if (req.cacheKey)
       await setCache(req.cacheKey, {
         data: comment,
         message: "Comment fetched successfully",
       });
-    }
 
     return successResponse(res, {
       message: "Comment fetched successfully",
@@ -444,13 +439,12 @@ exports.getFollowers = async (req, res, next) => {
 
     const result = data.map(sanitizedUser);
 
-    if (req.cacheKey) {
+    if (req.cacheKey)
       await setCache(req.cacheKey, {
         data: result,
         meta: pagination,
         message: "Followers fetched successfully",
       });
-    }
 
     return successResponse(res, {
       message: "Followers fetched successfully",
@@ -487,13 +481,12 @@ exports.getFollowing = async (req, res, next) => {
 
     const result = data.map(sanitizedUser);
 
-    if (req.cacheKey) {
+    if (req.cacheKey)
       await setCache(req.cacheKey, {
         data: result,
         meta: pagination,
         message: "Following fetched successfully",
       });
-    }
 
     return successResponse(res, {
       message: "Following fetched successfully",
@@ -506,29 +499,35 @@ exports.getFollowing = async (req, res, next) => {
 };
 
 // UPDATE PROFILE (bio + profilePicture)
+// UPDATE PROFILE (with thumbnail)
 exports.updateProfile = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const { bio } = req.body;
+    const { name, bio } = req.body;
     const file = req.file;
 
     const user = await User.findByPk(userId);
     if (!user) throw new ApiError(404, "User not found");
 
+    if (name !== undefined && name.trim()) user.name = name.trim();
     if (bio !== undefined) user.bio = bio.trim();
 
-    let newUpload = null;
-    const oldPublicId = user.profilePicturePublicId;
+    const oldPictureUrl = user.profilePictureUrl;
 
     if (file) {
-      newUpload = await uploadToCloudinary(file, "postloop/profiles");
-      user.profilePictureUrl = newUpload.secure_url;
-      user.profilePicturePublicId = newUpload.public_id;
+      const { url, thumbnailUrl } = await uploadToMinio(
+        file.buffer,
+        file.originalname,
+        "profiles",
+        { thumbnailSize: 80 },
+      );
+      user.profilePictureUrl = url;
+      user.thumbnailUrl = thumbnailUrl;
     }
 
     await user.save();
 
-    if (file && oldPublicId) await cloudinary.uploader.destroy(oldPublicId);
+    if (file && oldPictureUrl) await deleteFromMinioByUrl(oldPictureUrl);
 
     return successResponse(res, {
       message: "Profile updated successfully",
@@ -537,15 +536,11 @@ exports.updateProfile = async (req, res, next) => {
         name: user.name,
         bio: user.bio,
         profilePictureUrl: user.profilePictureUrl,
+        thumbnailUrl: user.thumbnailUrl,
         postsCount: user.postsCount,
       },
     });
   } catch (error) {
-    if (req.file && error && error.public_id) {
-      try {
-        await cloudinary.uploader.destroy(error.public_id);
-      } catch (_) {}
-    }
     next(error);
   }
 };

@@ -1,0 +1,49 @@
+<aside class="modern-sidebar">
+    <div class="sidebar-header">
+        <a href="/admin/dashboard" class="brand">
+            <i class="fa-solid fa-bolt"></i>
+            <span>Admin Panel</span>
+        </a>
+    </div>
+
+    <div class="sidebar-profile">
+        <a href="/admin/user/<%= user.id %>" class="profile-link">
+            <div class="profile-avatar-side-bar">
+                <% if (user.thumbnailUrl || user.profilePictureUrl) { %>
+                    <img src="<%= user.thumbnailUrl || user.profilePictureUrl %>" alt="<%= user.name %>"
+                        class="img-cover" width="48" height="48">
+                    <% } else { %>
+                        <div class="avatar-initials">
+                            <%= user.name.substring(0,2).toUpperCase() %>
+                        </div>
+                        <% } %>
+            </div>
+            <div class="profile-info">
+                <div class="profile-name">
+                    <%= user.name %>
+                </div>
+                <div class="profile-bio">
+                    <%= user.bio ? user.bio.substring(0,45) : '' %>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <nav class="sidebar-nav">
+        <a href="/admin/dashboard" class="nav-link"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
+        <a href="/admin/users" class="nav-link"><i class="fa-solid fa-users"></i><span>Users</span></a>
+        <a href="/admin/posts" class="nav-link"><i class="fa-solid fa-newspaper"></i><span>Posts</span></a>
+        <a href="/admin/comments" class="nav-link"><i class="fa-solid fa-comments"></i><span>Comments</span></a>
+        <a href="/admin/activities" class="nav-link"><i class="fa-solid fa-clock"></i><span>Activity Logs</span></a>
+        <a href="/admin/search" class="nav-link"><i class="fa-solid fa-magnifying-glass"></i><span>Search</span></a>
+    </nav>
+
+    <div class="sidebar-footer">
+        <button id="themeToggle" class="theme-toggle-btn"><i id="themeIcon" class="fa-solid fa-moon"></i><span
+                id="themeText">Dark Mode</span></button>
+        <form method="POST" action="/logout" class="admin-logout-form">
+            <button type="submit" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span></button>
+        </form>
+    </div>
+</aside>

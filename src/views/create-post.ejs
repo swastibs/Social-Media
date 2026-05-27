@@ -1,0 +1,106 @@
+<div class="post-form-container">
+    <div class="form-header">
+        <h1>Create New Post</h1>
+        <p>Share your thoughts with the community</p>
+    </div>
+
+    <form action="/post/create" method="POST" enctype="multipart/form-data" class="post-form" id="createPostForm">
+        <div class="form-group">
+            <label for="content">Content</label>
+            <textarea id="content" name="content" rows="6" placeholder="What's on your mind?" required
+                class="form-textarea"></textarea>
+            <div class="char-counter" id="charCounter">0 / 1000</div>
+        </div>
+
+        <div class="form-group">
+            <label for="image">Image (optional)</label>
+            <div class="custom-file-upload">
+                <label for="image" class="file-upload-label">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    Choose an image
+                </label>
+                <input type="file" id="image" name="image" accept="image/*">
+                <div id="fileNameDisplay" class="file-name" style="display: none;">
+                    <i class="fas fa-check-circle"></i>
+                    <span id="selectedFileName"></span>
+                    <span class="remove-file" onclick="removeFile()">
+                        <i class="fas fa-times"></i> Remove
+                    </span>
+                </div>
+            </div>
+            <div id="imagePreview" class="image-preview" style="display: none;">
+                <p><i class="fas fa-eye"></i> Image preview:</p>
+                <img src="" alt="Preview">
+                <button type="button" data-remove-image data-input="image">Remove Image</button>
+            </div>
+            <small class="form-text text-muted">Allowed formats: JPEG, PNG, WebP. Max size: 2MB.</small>
+        </div>
+
+        <div class="form-actions">
+            <a href="/feed" class="btn-secondary">Cancel</a>
+            <button type="submit" class="btn-primary">Publish</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    (function () {
+        const contentTextarea = document.getElementById('content');
+        const charCounter = document.getElementById('charCounter');
+        const maxChars = 1000;
+
+        function updateCharCount() {
+            const length = contentTextarea.value.length;
+            charCounter.textContent = `${length} / ${maxChars}`;
+            if (length > maxChars)
+                charCounter.classList.add('danger');
+            else if (length > maxChars * 0.9) {
+                charCounter.classList.add('warning');
+                charCounter.classList.remove('danger');
+            } else
+                charCounter.classList.remove('warning', 'danger');
+
+        }
+
+        contentTextarea.addEventListener('input', updateCharCount);
+        updateCharCount();
+
+        // File upload preview
+        const imageInput = document.getElementById('image');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const selectedFileName = document.getElementById('selectedFileName');
+        const imagePreview = document.getElementById('imagePreview');
+        const removeBtn = document.querySelector('[data-remove-image]');
+        const fileLabel = document.querySelector('.file-upload-label');
+
+        function removeFile() {
+            imageInput.value = '';
+            fileNameDisplay.style.display = 'none';
+            imagePreview.style.display = 'none';
+        }
+
+        function handleFileChange(e) {
+            const file = e.target.files[0];
+            if (file && imagePreview && fileNameDisplay && selectedFileName) {
+                selectedFileName.textContent = file.name;
+                fileNameDisplay.style.display = 'flex';
+
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    const img = imagePreview.querySelector('img');
+                    if (img) img.src = event.target.result;
+                    imagePreview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+
+                fileLabel.classList.add('success');
+                setTimeout(() => fileLabel.classList.remove('success'), 300);
+            }
+        }
+
+        imageInput.addEventListener('change', handleFileChange);
+        if (removeBtn) removeBtn.addEventListener('click', removeFile);
+
+        window.removeFile = removeFile;
+    })();
+</script>

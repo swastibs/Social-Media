@@ -1,0 +1,48 @@
+<div class="profile-list-container">
+    <div class="list-header">
+        <h2>Follow Requests</h2>
+        <a href="/profile/<%= user.id %>" class="back-link">← Back to Profile</a>
+    </div>
+
+    <% if (requests.length===0) { %>
+        <div class="empty-state">No pending follow requests.</div>
+        <% } else { %>
+            <div class="users-grid">
+                <% requests.forEach(req=> { %>
+                    <div class="user-card" data-href="/profile/<%= req.follower.id %>">
+                        <div class="user-card-avatar">
+                            <% if (req.follower.thumbnailUrl || req.follower.profilePictureUrl) { %>
+                                <img src="<%= req.follower.thumbnailUrl || req.follower.profilePictureUrl %>"
+                                    alt="<%= req.follower.name %>" class="img-cover">
+                                <% } else { %>
+                                    <div class="avatar-initials large">
+                                        <%= req.follower.name.substring(0,2).toUpperCase() %>
+                                    </div>
+                                    <% } %>
+                        </div>
+                        <div class="user-card-info">
+                            <h3 class="user-card-name">
+                                <%= req.follower.name %>
+                                    <% if (req.follower.isVerified) { %>
+                                        <span class="verified-badge-small" title="Verified User">✓</span>
+                                        <% } %>
+                            </h3>
+                            <p class="user-card-bio">
+                                <%= req.follower.bio || 'No bio' %>
+                            </p>
+                        </div>
+                        <div class="request-actions">
+                            <form method="POST" action="/follow-requests/<%= req.follower.id %>/accept"
+                                style="display:inline;">
+                                <button type="submit" class="btn-primary" style="padding:0.5rem 1rem;">Accept</button>
+                            </form>
+                            <form method="POST" action="/follow-requests/<%= req.follower.id %>/reject"
+                                style="display:inline;">
+                                <button type="submit" class="btn-secondary" style="padding:0.5rem 1rem;">Reject</button>
+                            </form>
+                        </div>
+                    </div>
+                    <% }) %>
+            </div>
+            <% } %>
+</div>
