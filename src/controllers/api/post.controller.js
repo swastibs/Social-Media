@@ -4,32 +4,40 @@ const { paginate } = require("../../utils/pagination");
 const { ROLES } = require("../../constant/role");
 
 const { Post, Comment, User, sequelize, PostLike } = require("../../models");
-const { getUser, getPost, getSafeUserInclude } = require("../../utils/dbHelper");
+const {
+  getUser,
+  getPost,
+  getSafeUserInclude,
+} = require("../../utils/dbHelper");
 const { setCache } = require("../../utils/cache");
-const { uploadToCloudinary } = require("../../utils/cloudinaryUpload");
+const { uploadToMinio, deleteFromMinioByUrl } = require("../../config/minio");
 
 // CREATE POST
 exports.createPost = async (req, res, next) => {
   const transaction = await sequelize.transaction();
-
   try {
     const { content } = req.body;
     const { user, file } = req;
 
-    let imageUrl = null;
-    let imagePublicId = null;
+    let imageUrl = null,
+      thumbnailUrl = null;
 
     if (file) {
-      const uploaded = await uploadToCloudinary(file, "postloop/posts");
-      imageUrl = uploaded.secure_url;
-      imagePublicId = uploaded.public_id;
+      const result = await uploadToMinio(
+        file.buffer,
+        file.originalname,
+        "posts",
+        { thumbnailSize: 400 }, // feed card thumbnail
+      );
+      imageUrl = result.url;
+      thumbnailUrl = result.thumbnailUrl;
     }
 
     const post = await Post.create(
       {
         content,
         imageUrl,
-        imagePublicId,
+        thumbnailUrl,
         userId: user.id,
         likeCount: 0,
         isDeleted: false,
@@ -38,7 +46,6 @@ exports.createPost = async (req, res, next) => {
     );
 
     await user.increment("postsCount", { transaction });
-
     await transaction.commit();
 
     return successResponse(res, {
@@ -75,13 +82,12 @@ exports.getAllPosts = async (req, res, next) => {
       include: [getSafeUserInclude()],
     });
 
-    if (req.cacheKey) {
+    if (req.cacheKey)
       await setCache(req.cacheKey, {
         data,
         meta: pagination,
         message: "Posts fetched successfully",
       });
-    }
 
     return successResponse(res, {
       message: "Posts fetched successfully",
@@ -105,12 +111,11 @@ exports.getPost = async (req, res, next) => {
 
     if (!post) throw new ApiError(404, "Post not found");
 
-    if (req.cacheKey) {
+    if (req.cacheKey)
       await setCache(req.cacheKey, {
         data: post,
         message: "Post fetched successfully",
       });
-    }
 
     return successResponse(res, {
       message: "Post fetched successfully",
@@ -125,27 +130,37 @@ exports.getPost = async (req, res, next) => {
 exports.updatePost = async (req, res, next) => {
   try {
     const { postId } = req.params;
-    const { content } = req.body;
-    const { user } = req;
+    const { content, removeImage } = req.body;
+    const { user, file } = req;
 
     const post = await getPost(postId);
-
     if (post.userId !== user.id) throw new ApiError(403, "Not authorized");
 
     const oldData = post.toJSON();
-
     if (content) post.content = content;
 
-    await post.save();
+    if (file) {
+      if (post.imageUrl) await deleteFromMinioByUrl(post.imageUrl);
+      const result = await uploadToMinio(
+        file.buffer,
+        file.originalname,
+        "posts",
+        { thumbnailSize: 400 },
+      );
+      post.imageUrl = result.url;
+      post.thumbnailUrl = result.thumbnailUrl;
+    }
 
+    if (removeImage === "true" && post.imageUrl) {
+      await deleteFromMinioByUrl(post.imageUrl);
+      post.imageUrl = null;
+      post.thumbnailUrl = null;
+    }
+
+    await post.save();
     const newData = post.toJSON();
 
-    req.activity = {
-      entity: "Post",
-      entityId: post.id,
-      oldData,
-      newData,
-    };
+    req.activity = { entity: "Post", entityId: post.id, oldData, newData };
 
     return successResponse(res, {
       message: "Post updated successfully",
@@ -170,13 +185,10 @@ exports.deletePost = async (req, res, next) => {
       lock: transaction.LOCK.UPDATE,
     });
 
-    if (!post) {
-      throw new ApiError(404, "Post not found");
-    }
+    if (!post) throw new ApiError(404, "Post not found");
 
-    if (user.role !== ROLES.ADMIN && post.userId !== user.id) {
+    if (user.role !== ROLES.ADMIN && post.userId !== user.id)
       throw new ApiError(403, "Not authorized");
-    }
 
     await post.update({ isDeleted: true, deletedBy: user.id }, { transaction });
 
@@ -187,9 +199,7 @@ exports.deletePost = async (req, res, next) => {
 
     // safer instance decrement
     const owner = await User.findByPk(post.userId, { transaction });
-    if (owner) {
-      await owner.decrement("postsCount", { transaction });
-    }
+    if (owner) await owner.decrement("postsCount", { transaction });
 
     await transaction.commit();
 
@@ -221,9 +231,7 @@ exports.likePost = async (req, res, next) => {
       lock: transaction.LOCK.UPDATE,
     });
 
-    if (!post) {
-      throw new ApiError(404, "Post not found");
-    }
+    if (!post) throw new ApiError(404, "Post not found");
 
     const [like, created] = await PostLike.findOrCreate({
       where: { userId, postId },
@@ -280,13 +288,12 @@ exports.getAllCommentsOfPost = async (req, res, next) => {
       include: [getSafeUserInclude()],
     });
 
-    if (req.cacheKey) {
+    if (req.cacheKey)
       await setCache(req.cacheKey, {
         data,
         meta: pagination,
         message: "Comments fetched successfully",
       });
-    }
 
     return successResponse(res, {
       message: "Comments fetched successfully",
@@ -315,12 +322,11 @@ exports.getCommentOfPost = async (req, res, next) => {
 
     if (!comment) throw new ApiError(404, "Comment not found");
 
-    if (req.cacheKey) {
+    if (req.cacheKey)
       await setCache(req.cacheKey, {
         data: comment,
         message: "Comment fetched successfully",
       });
-    }
 
     return successResponse(res, {
       message: "Comment fetched successfully",

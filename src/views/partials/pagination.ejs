@@ -1,0 +1,85 @@
+<% const buildExtraQuery=()=> {
+    if (typeof extraQuery === 'string') return extraQuery;
+    if (typeof query === 'undefined' || !query) return '';
+    const params = new URLSearchParams();
+    Object.entries(query).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+    params.set(key, value);
+    }
+    });
+    const queryString = params.toString();
+    return queryString ? `&${queryString}` : '';
+    };
+
+    const preservedQuery = buildExtraQuery();
+    const currentPage = Number(pagination.currentPage) || 1;
+    const totalPages = Number(pagination.totalPages) || 1;
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    if (endPage - startPage + 1 < maxVisiblePages) { startPage=Math.max(1, endPage - maxVisiblePages + 1); } const
+        pageHref=(page)=> `${baseUrl}?page=${page}${preservedQuery}`;
+        %>
+
+        <% if (totalPages> 1) { %>
+            <div class="pagination-container">
+                <ul class="pagination">
+                    <% if (currentPage> 1) { %>
+                        <li class="page-item">
+                            <a class="page-link" href="<%= pageHref(currentPage - 1) %>"
+                                aria-label="Previous">&laquo;</a>
+                        </li>
+                        <% } else { %>
+                            <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                            <% } %>
+
+                                <% if (startPage> 1) { %>
+                                    <li class="page-item"><a class="page-link" href="<%= pageHref(1) %>">1</a></li>
+                                    <% if (startPage> 2) { %>
+                                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                                        <% } %>
+                                            <% } %>
+
+                                                <% for (let i=startPage; i <=endPage; i++) { %>
+                                                    <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+                                                        <a class="page-link" href="<%= pageHref(i) %>">
+                                                            <%= i %>
+                                                        </a>
+                                                    </li>
+                                                    <% } %>
+
+                                                        <% if (endPage < totalPages) { %>
+                                                            <% if (endPage < totalPages - 1) { %>
+                                                                <li class="page-item disabled"><span
+                                                                        class="page-link">...</span></li>
+                                                                <% } %>
+                                                                    <li class="page-item"><a class="page-link"
+                                                                            href="<%= pageHref(totalPages) %>">
+                                                                            <%= totalPages %>
+                                                                        </a></li>
+                                                                    <% } %>
+
+                                                                        <% if (currentPage < totalPages) { %>
+                                                                            <li class="page-item">
+                                                                                <a class="page-link"
+                                                                                    href="<%= pageHref(currentPage + 1) %>"
+                                                                                    aria-label="Next">&raquo;</a>
+                                                                            </li>
+                                                                            <% } else { %>
+                                                                                <li class="page-item disabled"><span
+                                                                                        class="page-link">&raquo;</span>
+                                                                                </li>
+                                                                                <% } %>
+                </ul>
+                <div class="pagination-info">
+                    Page <strong>
+                        <%= currentPage %>
+                    </strong> of <strong>
+                        <%= totalPages %>
+                    </strong>
+                    (<strong>
+                        <%= pagination.totalRecords %>
+                    </strong> total)
+                </div>
+            </div>
+            <% } %>

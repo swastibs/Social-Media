@@ -1,3 +1,10 @@
+/**
+ * UserFollow Model (Sequelize)
+ *
+ * Junction table for user follow relationships with status field.
+ * Supports follow requests (pending) and accepted follows.
+ */
+
 const { DataTypes } = require("sequelize");
 const { sequelize } = require("../config/db");
 
@@ -9,10 +16,14 @@ const UserFollow = sequelize.define(
       primaryKey: true,
       allowNull: false,
     },
-
     followingId: {
       type: DataTypes.INTEGER,
       primaryKey: true,
+      allowNull: false,
+    },
+    status: {
+      type: DataTypes.ENUM("pending", "accepted", "rejected"),
+      defaultValue: "pending",
       allowNull: false,
     },
   },
@@ -22,6 +33,7 @@ const UserFollow = sequelize.define(
     indexes: [
       { unique: true, fields: ["followerId", "followingId"] },
       { fields: ["followerId"] },
+      { fields: ["followerId", "status"] },
       { fields: ["followingId"] },
     ],
   },

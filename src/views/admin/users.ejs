@@ -1,0 +1,161 @@
+<div class="admin-container">
+    <div class="admin-header">
+        <h1>Manage Users</h1>
+        <p>View and manage all registered users</p>
+    </div>
+
+    <!-- Search bar (always visible) -->
+    <div class="admin-filters">
+        <form method="GET" class="search-filter-form">
+            <div class="filter-group search-group">
+                <label for="user-search">Search</label>
+                <input id="user-search" class="filter-input" type="text" name="search" placeholder="Name or email"
+                    value="<%= searchQuery %>">
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="btn-primary">Search</button>
+                <% if (searchQuery || filters.role || filters.status || filters.deleted !=='all' ) { %>
+                    <a href="/admin/users" class="btn-secondary">Clear</a>
+                    <% } %>
+            </div>
+        </form>
+    </div>
+
+    <!-- Filter dropdown button -->
+    <div class="filter-dropdown">
+        <button type="button" class="filter-dropdown-btn" id="filterToggleBtn">
+            <i class="fa-solid fa-sliders-h"></i> Filters
+            <% if (filters.role || filters.status || filters.deleted !=='all' ) { %>
+                <span class="filter-active-badge">active</span>
+                <% } %>
+        </button>
+        <div class="filter-dropdown-content" id="filterDropdown">
+            <form method="GET" class="filter-form">
+                <div class="filter-group">
+                    <label for="user-role">Role</label>
+                    <select id="user-role" class="filter-select" name="role">
+                        <option value="">All roles</option>
+                        <option value="user" <%=filters.role==='user' ? 'selected' : '' %>>User</option>
+                        <option value="admin" <%=filters.role==='admin' ? 'selected' : '' %>>Admin</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="user-status">Status</label>
+                    <select id="user-status" class="filter-select" name="status">
+                        <option value="">All statuses</option>
+                        <option value="active" <%=filters.status==='active' ? 'selected' : '' %>>Active</option>
+                        <option value="inactive" <%=filters.status==='inactive' ? 'selected' : '' %>>Inactive</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="user-deleted">Visibility</label>
+                    <select id="user-deleted" class="filter-select" name="deleted">
+                        <option value="all" <%=filters.deleted==='all' ? 'selected' : '' %>>All users</option>
+                        <option value="active" <%=filters.deleted==='active' ? 'selected' : '' %>>Active only</option>
+                        <option value="deleted" <%=filters.deleted==='deleted' ? 'selected' : '' %>>Deleted only
+                        </option>
+                    </select>
+                </div>
+                <div class="filter-actions">
+                    <button type="submit" class="btn-primary">Apply Filters</button>
+                    <a href="/admin/users" class="btn-secondary">Reset</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="filter-summary">
+        <div class="results-count">
+            <strong>
+                <%= pagination.totalRecords %>
+            </strong> users found
+            <% if (searchQuery || filters.role || filters.status || filters.deleted !=='all' ) { %>
+                <span class="filter-badge">Filtered</span>
+                <% } %>
+        </div>
+    </div>
+
+    <div class="admin-grid">
+        <% users.forEach(user=> { %>
+            <div class="admin-card" data-href="/admin/user/<%= user.id %>">
+                <div class="card-content">
+                    <div class="card-header-row">
+                        <div class="avatar-sm">
+                            <% if (user.thumbnailUrl || user.profilePictureUrl) { %>
+                                <img src="<%= user.thumbnailUrl || user.profilePictureUrl %>" alt="">
+                                <% } else { %>
+                                    <div class="avatar-initials small">
+                                        <%= user.name.substring(0,2).toUpperCase() %>
+                                    </div>
+                                    <% } %>
+                        </div>
+                        <div>
+                            <div class="card-title-text">
+                                <%= user.name %>
+                            </div>
+                            <div class="card-subtitle">
+                                <%= user.email %>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div>Role: <span class="role-badge role-<%= user.role %>">
+                                <%= user.role %>
+                            </span></div>
+                        <div>Status: <span class="status-badge status-<%= user.isActive ? 'active' : 'inactive' %>">
+                                <%= user.isActive ? 'Active' : 'Inactive' %>
+                            </span></div>
+                    </div>
+                    <div class="card-actions">
+                        <% if (!user.isDeleted && user.role !=='admin' ) { %>
+                            <form method="POST" action="/admin/user/<%= user.id %>/activate" class="inline-action-form">
+                                <button type="submit" class="action-btn success">Activate</button>
+                            </form>
+                            <form method="POST" action="/admin/user/<%= user.id %>/deactivate"
+                                class="inline-action-form">
+                                <button type="submit" class="action-btn warning">Deactivate</button>
+                            </form>
+                            <form method="POST" action="/admin/user/<%= user.id %>/promote" class="inline-action-form">
+                                <button type="submit" class="action-btn primary">Promote</button>
+                            </form>
+                            <form method="POST" action="/admin/user/<%= user.id %>/delete" class="inline-action-form"
+                                onsubmit="return confirm('Delete user permanently?')">
+                                <button type="submit" class="action-btn danger">Delete</button>
+                            </form>
+                            <% } %>
+                                <a href="/admin/user/<%= user.id %>" class="action-btn info">View</a>
+                    </div>
+                </div>
+            </div>
+            <% }) %>
+    </div>
+
+    <%- include('../partials/pagination', { pagination, baseUrl: '/admin/users' , query: { search: searchQuery, role:
+        filters.role, status: filters.status, deleted: filters.deleted } }) %>
+</div>
+
+<script>
+    // Toggle filter dropdown
+    const toggleBtn = document.getElementById('filterToggleBtn');
+    const dropdown = document.getElementById('filterDropdown');
+    if (toggleBtn && dropdown) {
+        toggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.classList.toggle('show');
+        });
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!toggleBtn.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+    }
+
+    // Card click navigation
+    document.querySelectorAll('.admin-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            if (e.target.closest('.card-actions')) return;
+            window.location.href = card.dataset.href;
+        });
+    });
+</script>

@@ -1,0 +1,471 @@
+/* ========== SEARCH PAGE - UNIFORM CARD SIZING ========== */
+.search-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.search-header {
+  margin-bottom: 2rem;
+}
+
+.search-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.search-form {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.search-input-wrapper {
+  flex: 1;
+  position: relative;
+}
+
+.search-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.875rem 1rem 0.875rem 2.5rem;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  font-size: 1rem;
+  background: var(--bg-secondary);
+  color: var(--text-color);
+  transition: all 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.search-clear {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  padding: 0.25rem;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.search-clear:hover {
+  background: var(--bg-muted);
+  color: var(--error-color);
+}
+
+.search-submit {
+  padding: 0.875rem 1.5rem;
+  white-space: nowrap;
+}
+
+.search-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid var(--border-color);
+  overflow-x: auto;
+  flex-wrap: wrap;
+}
+
+.search-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.search-tab:hover {
+  color: var(--primary-color);
+  background: var(--bg-muted);
+}
+
+.search-tab.active {
+  color: var(--primary-color);
+  border-bottom-color: var(--primary-color);
+}
+
+.tab-count {
+  background: var(--bg-muted);
+  padding: 0.125rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+}
+
+/* ===== UNIFIED GRID STYLES (same width for all cards) ===== */
+.users-grid,
+.posts-grid,
+.comments-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.8rem;
+  margin-bottom: 2rem;
+}
+
+/* Make comments-list use grid layout */
+.comments-list {
+  display: grid;
+}
+
+/* ===== BASE CARD STYLES (shared by user-card, post-card, comment-card) ===== */
+.user-card,
+.post-card,
+.comment-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  overflow: hidden;
+  transition: all 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  cursor: pointer;
+}
+
+.user-card:hover,
+.post-card:hover,
+.comment-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary-color);
+}
+
+/* ===== USER CARD SPECIFICS ===== */
+.user-card-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--primary-color);
+  margin: 1rem auto 0.5rem;
+}
+
+.user-card-avatar img,
+.user-card-avatar .avatar-initials {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: white;
+}
+
+.avatar-initials.large {
+  font-size: 1.5rem;
+}
+
+.user-card-info {
+  padding: 0 1rem;
+  text-align: center;
+  flex: 1;
+}
+
+.user-card-name {
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+.user-card-bio {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.user-card-stats {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+/* ===== POST CARD SPECIFICS (reuse feed styles) ===== */
+.post-card .post-header {
+  padding: 1rem;
+}
+
+.post-card .post-author-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.post-card .post-author-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.post-card .post-author-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-decoration: none;
+  color: var(--text-color);
+}
+
+.post-card .post-time {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.post-card .post-image {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+
+.post-card .post-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.post-card .post-body {
+  padding: 1rem;
+  flex: 1;
+}
+
+.post-card .post-text {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--text-color);
+}
+
+.post-card .post-buttons {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-around;
+}
+
+.post-card .post-stats {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* ===== COMMENT CARD SPECIFICS ===== */
+.comment-card {
+  padding: 1rem;
+}
+
+.comment-card-header {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.comment-author-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.comment-author-info {
+  flex: 1;
+}
+
+.comment-author-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-decoration: none;
+  color: var(--text-color);
+  display: block;
+}
+
+.comment-time {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.comment-card-content {
+  margin-bottom: 0.75rem;
+}
+
+.comment-text {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text-color);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.comment-card-post {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ===== VERIFIED BADGE ===== */
+.verified-badge-small {
+  display: inline-block;
+  background: #38bdf8;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: bold;
+  width: 1rem;
+  height: 1rem;
+  line-height: 1rem;
+  text-align: center;
+  border-radius: 50%;
+  margin-left: 0.3rem;
+  vertical-align: middle;
+}
+
+/* ===== PAGINATION ===== */
+.pagination-container {
+  margin-top: 2rem;
+  padding: 1rem;
+  border-radius: 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.pagination {
+  display: flex;
+  gap: 0.5rem;
+  list-style: none;
+}
+
+.page-item .page-link {
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  background: var(--bg-muted);
+  color: var(--text-color);
+  text-decoration: none;
+  transition: 0.2s;
+}
+
+.page-item.active .page-link {
+  background: var(--primary-color);
+  color: white;
+}
+
+.page-item .page-link:hover {
+  background: var(--primary-color);
+  color: white;
+}
+
+.pagination-info {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* ===== EMPTY STATES ===== */
+.empty-results {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+}
+
+.empty-results i {
+  font-size: 4rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+.search-tips {
+  margin-top: 2rem;
+  text-align: left;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 1rem;
+  background: var(--bg-muted);
+  border-radius: 12px;
+}
+
+.search-tips h4 {
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.search-tips ul {
+  margin-left: 1.5rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .search-container {
+    padding: 1rem;
+  }
+  .search-form {
+    flex-direction: column;
+  }
+  .search-submit {
+    width: 100%;
+  }
+  .search-tabs {
+    flex-wrap: wrap;
+  }
+  .users-grid,
+  .posts-grid,
+  .comments-list {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .user-card,
+  .post-card,
+  .comment-card {
+    min-height: 340px;
+  }
+}

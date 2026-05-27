@@ -93,12 +93,10 @@ exports.getFollowingSchema = {
 
 exports.updateProfileSchema = {
   body: Joi.object({
-    bio: Joi.string().trim().max(150).allow(null, "").messages({
-      "string.base": "Bio must be a string",
-      "string.max": "Bio cannot exceed 500 characters",
+    name: Joi.string().trim().min(2).max(16).optional().messages({
+      "string.min": "Name must be at least 2 characters",
+      "string.max": "Name cannot exceed 16 characters",
     }),
+    bio: Joi.string().trim().max(150).allow(null, "").optional(),
   }).unknown(false),
-
-  params: Joi.object({}).unknown(false),
-  query: Joi.object({}).unknown(false),
 };

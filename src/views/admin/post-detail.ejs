@@ -1,0 +1,66 @@
+<div class="admin-container">
+    <div class="post-header">
+        <h1>Post by <%= post.User.name %>
+        </h1>
+        <div class="post-meta">
+            <span><i class="fa-regular fa-calendar"></i>
+                <%= new Date(post.createdAt).toLocaleDateString('en-GB') %>
+            </span>
+            <span><i class="fa-regular fa-heart"></i>
+                <%= post.likeCount %> likes
+            </span>
+        </div>
+        <div class="post-actions">
+            <form method="POST" action="/admin/post/<%= post.id %>/delete"
+                onsubmit="return confirm('Delete this post?')">
+                <button type="submit" class="btn-admin btn-delete">Delete Post</button>
+            </form>
+        </div>
+    </div>
+    <div class="post-content">
+        <p>
+            <%= post.content %>
+        </p>
+        <% if (post.imageUrl) { %>
+            <img src="<%= post.imageUrl %>" class="post-image-full">
+            <% } %>
+    </div>
+
+    <h2>Comments (<%= comments.length %>)</h2>
+    <div class="comments-list">
+        <% comments.forEach(comment=> { %>
+            <div class="comment-card">
+                <div class="comment-header">
+                    <div class="comment-author-avatar">
+                        <% if (comment.User?.thumbnailUrl) { %>
+                            <img src="<%= comment.User.thumbnailUrl %>" alt="<%= comment.User.name %>">
+                            <% } else { %>
+                                <div class="avatar-initials small">
+                                    <%= (comment.User?.name || 'U' ).substring(0,2).toUpperCase() %>
+                                </div>
+                                <% } %>
+                    </div>
+                    <div class="comment-author-info">
+                        <strong>
+                            <%= comment.User?.name || 'Unknown' %>
+                        </strong>
+                        <small>
+                            <%= new Date(comment.createdAt).toLocaleDateString('en-GB') %>
+                        </small>
+                    </div>
+                </div>
+                <div class="comment-body">
+                    <p>
+                        <%= comment.content %>
+                    </p>
+                </div>
+                <div class="comment-actions">
+                    <form method="POST" action="/admin/comment/<%= comment.id %>/delete"
+                        onsubmit="return confirm('Delete this comment?')">
+                        <button type="submit" class="btn-admin btn-delete">Delete Comment</button>
+                    </form>
+                </div>
+            </div>
+            <% }) %>
+    </div>
+</div>
