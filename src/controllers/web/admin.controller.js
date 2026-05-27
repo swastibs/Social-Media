@@ -627,6 +627,8 @@ exports.activateUser = async (req, res, next) => {
     await transaction.commit();
     await deleteByPattern(`web:cache:/profile/${user.id}*`);
     await deleteByPattern("web:cache:/admin/users*");
+    await deleteByPattern("web:cache:/feed*");
+    await deleteByPattern("web:cache:/search*");
     req.flash("success_msg", "User activated");
     return redirectBack(req, res, "/admin/users");
   } catch (err) {
@@ -653,6 +655,8 @@ exports.deactivateUser = async (req, res, next) => {
     await transaction.commit();
     await deleteByPattern(`web:cache:/profile/${user.id}*`);
     await deleteByPattern("web:cache:/admin/users*");
+    await deleteByPattern("web:cache:/feed*");
+    await deleteByPattern("web:cache:/search*");
     req.flash("success_msg", "User deactivated");
     return redirectBack(req, res, "/admin/users");
   } catch (err) {
@@ -676,6 +680,8 @@ exports.promoteToAdmin = async (req, res, next) => {
     user.isActive = true;
     await user.save({ transaction });
     await transaction.commit();
+    await deleteByPattern("web:cache:/feed*");
+    await deleteByPattern("web:cache:/search*");
     await deleteByPattern(`web:cache:/profile/${user.id}*`);
     await deleteByPattern("web:cache:/admin/users*");
     req.flash("success_msg", "User promoted to admin");
@@ -715,6 +721,8 @@ exports.deleteUser = async (req, res, next) => {
     await transaction.commit();
     await deleteByPattern(`web:cache:/profile/${user.id}*`);
     await deleteByPattern("web:cache:/admin/users*");
+    await deleteByPattern("web:cache:/feed*");
+    await deleteByPattern("web:cache:/search*");
     req.flash("success_msg", "User deleted");
     return res.redirect("/admin/users");
   } catch (err) {
@@ -749,6 +757,7 @@ exports.deletePost = async (req, res, next) => {
     await deleteByPattern("web:cache:/feed*");
     await deleteByPattern(`web:cache:/profile/${post.userId}*`);
     await deleteByPattern("web:cache:/admin/posts*");
+    await deleteByPattern("web:cache:/search*");
     req.flash("success_msg", "Post deleted");
     return res.redirect("/admin/posts");
   } catch (err) {
@@ -772,6 +781,7 @@ exports.deleteComment = async (req, res, next) => {
     await transaction.commit();
     await deleteByPattern(`web:cache:/post/${comment.postId}*`);
     await deleteByPattern("web:cache:/admin/comments*");
+    await deleteByPattern("web:cache:/search*");
     req.flash("success_msg", "Comment deleted");
     return redirectBack(req, res, "/admin/comments");
   } catch (err) {

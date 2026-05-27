@@ -13,7 +13,6 @@ const {
   logInSchema,
   changePasswordSchema,
 } = require("../../validations/api/auth.validation");
-const { invalidateCache } = require("../../middlewares/invalidate.middleware");
 const { authenticate } = require("../../middlewares/auth.middleware");
 const upload = require("../../middlewares/multer");
 
@@ -23,7 +22,6 @@ authRouter.post(
   rateLimiter(3600, 3, "signup"),
   upload.single("profilePicture"),
   validate(signUpSchema),
-  invalidateCache(["cache:/api/users*", "cache:/api/activities*"]),
   signUp,
 );
 

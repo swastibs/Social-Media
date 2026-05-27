@@ -122,27 +122,22 @@ exports.updateComment = async (req, res, next) => {
       });
     }
 
-    // Capture old data for activity log
     const oldData = comment.toJSON();
     comment.content = content;
     await comment.save({ transaction });
     await transaction.commit();
 
-    // After transaction.commit()
+    // Invalidate relevant caches
     await deleteByPattern(`web:cache:/post/${comment.postId}*`);
     await deleteByPattern("web:cache:/feed*");
     await deleteByPattern("web:cache:/search*");
 
-    // Attach activity data
     req.activity = {
       entity: "Comment",
       entityId: comment.id,
       oldData,
       newData: comment.toJSON(),
     };
-
-    // Invalidate post cache
-    await deleteByPattern(`web:cache:/post/${comment.postId}*`);
 
     return res.json({ success: true, message: "Comment updated", content });
   } catch (error) {
@@ -189,24 +184,19 @@ exports.deleteComment = async (req, res, next) => {
     );
     await transaction.commit();
 
-    // After transaction.commit()
+    // Invalidate caches
     await deleteByPattern(`web:cache:/post/${comment.postId}*`);
     await deleteByPattern("web:cache:/feed*");
     await deleteByPattern("web:cache:/search*");
 
-    // Attach activity data
     req.activity = {
       entity: "Comment",
       entityId: comment.id,
     };
 
-    // Get updated comment count
     const commentCount = await Comment.count({
       where: { postId: comment.postId, isDeleted: false },
     });
-
-    // Invalidate post cache
-    await deleteByPattern(`web:cache:/post/${comment.postId}*`);
 
     return res.json({
       success: true,
