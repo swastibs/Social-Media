@@ -88,6 +88,8 @@ exports.toggleFollow = async (req, res, next) => {
     // Invalidate caches for both profiles
     await deleteByPattern(`web:cache:/profile/${followerId}*`);
     await deleteByPattern(`web:cache:/profile/${followingId}*`);
+    await deleteByPattern("web:cache:/feed*");
+    await deleteByPattern("web:cache:/search*");
 
     return res.json({
       following: status === "accepted",
@@ -138,8 +140,9 @@ exports.acceptFollowRequest = async (req, res, next) => {
     await deleteByPattern(`web:cache:/profile/${followerId}*`);
     await deleteByPattern(`web:cache:/profile/${currentUserId}/followers*`);
     await deleteByPattern(`web:cache:/profile/${currentUserId}/following*`);
-    await deleteByPattern(`web:cache:/feed*`);
     await deleteByPattern(`web:cache:/follow-requests*`);
+    await deleteByPattern("web:cache:/feed*");
+    await deleteByPattern("web:cache:/search*");
 
     req.flash("success_msg", "Follow request accepted");
     res.redirect("/follow-requests");
@@ -169,6 +172,14 @@ exports.rejectFollowRequest = async (req, res, next) => {
 
     await follow.destroy({ transaction });
     await transaction.commit();
+
+    await deleteByPattern(`web:cache:/profile/${currentUserId}*`);
+    await deleteByPattern(`web:cache:/profile/${followerId}*`);
+    await deleteByPattern(`web:cache:/profile/${currentUserId}/followers*`);
+    await deleteByPattern(`web:cache:/profile/${currentUserId}/following*`);
+    await deleteByPattern(`web:cache:/follow-requests*`);
+    await deleteByPattern("web:cache:/feed*");
+    await deleteByPattern("web:cache:/search*");
 
     req.flash("success_msg", "Follow request rejected");
     res.redirect("/follow-requests");
@@ -271,6 +282,7 @@ exports.removeFollower = async (req, res, next) => {
     await deleteByPattern(`web:cache:/profile/${profileOwnerId}*`);
     await deleteByPattern(`web:cache:/profile/${profileOwnerId}/followers*`);
     await deleteByPattern(`web:cache:/profile/${followerId}*`);
+    await deleteByPattern("web:cache:/feed*");
 
     if (req.xhr)
       return res.json({

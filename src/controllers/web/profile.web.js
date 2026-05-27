@@ -421,6 +421,11 @@ exports.updateProfile = async (req, res, next) => {
 
     await user.save();
 
+    // After await user.save()
+    await deleteByPattern(`web:cache:/profile/${userId}*`);
+    await deleteByPattern("web:cache:/feed*"); // name/bio may appear in feed
+    await deleteByPattern("web:cache:/search*");
+
     if (file && oldPictureUrl) await deleteFromMinioByUrl(oldPictureUrl);
 
     // Invalidate cached profile pages
@@ -449,7 +454,11 @@ exports.togglePrivacy = async (req, res, next) => {
     user.isPrivate = isPrivate === true || isPrivate === "true";
     await user.save();
 
+    // After await user.save()
     await deleteByPattern(`web:cache:/profile/${userId}*`);
+    await deleteByPattern("web:cache:/feed*");
+    await deleteByPattern(`web:cache:/profile/${userId}/followers*`);
+    await deleteByPattern(`web:cache:/profile/${userId}/following*`);
 
     return res.json({ success: true, isPrivate: user.isPrivate });
   } catch (error) {

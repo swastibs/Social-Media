@@ -69,9 +69,9 @@ exports.createPost = async (req, res, next) => {
     await req.user.increment("postsCount", { transaction });
     await transaction.commit();
 
-    // Invalidate feed and profile caches
     await deleteByPattern("web:cache:/feed*");
     await deleteByPattern(`web:cache:/profile/${req.user.id}*`);
+    await deleteByPattern("web:cache:/search*");
 
     req.flash("success_msg", "Post created successfully");
     res.redirect(`/post/${post.id}`);
@@ -277,10 +277,11 @@ exports.updatePost = async (req, res, next) => {
       newData: post.toJSON(),
     };
 
-    // Invalidate caches
+    // After transaction.commit()
     await deleteByPattern(`web:cache:/post/${postId}*`);
     await deleteByPattern("web:cache:/feed*");
     await deleteByPattern(`web:cache:/profile/${post.userId}*`);
+    await deleteByPattern("web:cache:/search*");
 
     req.flash("success_msg", "Post updated successfully");
     res.redirect(`/post/${postId}`);
@@ -334,10 +335,11 @@ exports.deletePost = async (req, res, next) => {
       entityId: post.id,
     };
 
-    // Invalidate caches
+    // After transaction.commit()
     await deleteByPattern(`web:cache:/post/${postId}*`);
     await deleteByPattern("web:cache:/feed*");
     await deleteByPattern(`web:cache:/profile/${post.userId}*`);
+    await deleteByPattern("web:cache:/search*");
 
     req.flash("success_msg", "Post deleted successfully");
     res.redirect("/feed");
@@ -385,8 +387,10 @@ exports.toggleLike = async (req, res, next) => {
       await post.increment("likeCount", { transaction });
       await transaction.commit();
 
-      // Invalidate post cache
+      // After transaction.commit()
       await deleteByPattern(`web:cache:/post/${postId}*`);
+      await deleteByPattern("web:cache:/feed*");
+      await deleteByPattern(`web:cache:/profile/${post.userId}*`);
 
       return res.json({ liked: true, likeCount: post.likeCount + 1 });
     }

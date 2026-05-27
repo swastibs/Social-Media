@@ -144,6 +144,8 @@ exports.signup = async (req, res, next) => {
       followingCount: 0,
     });
 
+    await deleteByPattern(`web:cache:/profile/${user.id}*`);
+
     req.flash("success_msg", "Account created! Please log in.");
     res.redirect("/login");
   } catch (err) {
@@ -211,6 +213,9 @@ exports.changePassword = async (req, res, next) => {
     const hashedPassword = await hash(newPassword, 10);
     user.password = hashedPassword;
     await user.save();
+
+    await deleteByPattern(`web:cache:/profile/${userId}*`);
+    await deleteByPattern("web:cache:/feed*");
 
     await deleteAllUserTokens(userId);
     res.clearCookie("postloop_token");
