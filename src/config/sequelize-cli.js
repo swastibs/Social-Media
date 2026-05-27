@@ -16,7 +16,9 @@ module.exports = {
     username: process.env.DB_USER || "root",
     password: process.env.DB_PASS || "123",
     database: process.env.DB_NAME || "postloop",
-    host: process.env.DB_HOST || "localhost",
+    host:
+      process.env.DB_HOST ||
+      "postloop-8ofmkfndi-swastisunder-s-projects.vercel.app",
     dialect: "mysql",
     logging: false,
   },
@@ -24,7 +26,9 @@ module.exports = {
     username: process.env.DB_USER || "root",
     password: process.env.DB_PASS || "123",
     database: (process.env.DB_NAME || "postloop") + "_test",
-    host: process.env.DB_HOST || "localhost",
+    host:
+      process.env.DB_HOST ||
+      "postloop-8ofmkfndi-swastisunder-s-projects.vercel.app",
     dialect: "mysql",
     logging: false,
   },

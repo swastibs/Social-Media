@@ -13,7 +13,9 @@ const Redis = require("ioredis");
 // Support Upstash REST URL and token
 const urlString = process.env.UPSTASH_REDIS_REST_URL;
 if (!urlString) {
-  console.warn("UPSTASH_REDIS_REST_URL not set; defaulting to localhost Redis");
+  console.warn(
+    "UPSTASH_REDIS_REST_URL not set; defaulting to postloop-8ofmkfndi-swastisunder-s-projects.vercel.app Redis",
+  );
 }
 
 let redis;

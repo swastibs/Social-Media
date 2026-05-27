@@ -77,7 +77,7 @@ node src/seeds/createDummyData.js
 Swagger available at:
 
 ```
-http://localhost:8080/api-docs
+https://postloop-8ofmkfndi-swastisunder-s-projects.vercel.app/api-docs
 ```
 
 ---

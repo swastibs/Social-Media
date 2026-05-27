@@ -14,7 +14,9 @@ const sequelize = new Sequelize(
   process.env.DB_USER || "root",
   process.env.DB_PASS || "123",
   {
-    host: process.env.DB_HOST || "localhost",
+    host:
+      process.env.DB_HOST ||
+      "postloop-8ofmkfndi-swastisunder-s-projects.vercel.app",
     dialect: "mysql",
     logging: false, // Disable SQL query logging in console (optional: set to console.log for debugging)
     pool: {

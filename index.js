@@ -7,7 +7,9 @@ const PORT = process.env.PORT || 8080;
 if (require.main === module) {
   const server = http.createServer(app);
   server.listen(PORT, () => {
-    console.log(`🚀 Server is running at http://localhost:${PORT}`);
+    console.log(
+      `🚀 Server is running at https://postloop-8ofmkfndi-swastisunder-s-projects.vercel.app:${PORT}`,
+    );
     console.log(`📝 Environment: ${process.env.NODE_ENV || "development"}`);
   });
 

@@ -14,7 +14,8 @@ const mongoose = require("mongoose");
 const connectMongo = async () => {
   try {
     const mongoURI =
-      process.env.MONGO_URI || "mongodb://localhost:27017/postloop";
+      process.env.MONGO_URI ||
+      "mongodb://postloop-8ofmkfndi-swastisunder-s-projects.vercel.app:27017/postloop";
 
     await mongoose.connect(mongoURI, {
       // These options are now defaults in newer Mongoose versions, but kept for clarity

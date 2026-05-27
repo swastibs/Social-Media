@@ -6,8 +6,8 @@ const doc = {
     title: "PostLoop API",
     description: "API documentation for PostLoop",
   },
-  host: "localhost:8080",
-  schemes: ["http"],
+  host: "postloop-8ofmkfndi-swastisunder-s-projects.vercel.app",
+  schemes: ["https"],
   securityDefinitions: {
     BearerAuth: {
       type: "apiKey",
