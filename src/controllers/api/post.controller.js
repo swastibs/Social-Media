@@ -10,7 +10,10 @@ const {
   getSafeUserInclude,
 } = require("../../utils/dbHelper");
 const { setCache } = require("../../utils/cache");
-const { uploadToMinio, deleteFromMinioByUrl } = require("../../config/minio");
+const {
+  uploadToCloudinary,
+  deleteFromCloudinaryByUrl,
+} = require("../../config/cloudinary");
 
 // CREATE POST
 exports.createPost = async (req, res, next) => {
@@ -23,12 +26,9 @@ exports.createPost = async (req, res, next) => {
       thumbnailUrl = null;
 
     if (file) {
-      const result = await uploadToMinio(
-        file.buffer,
-        file.originalname,
-        "posts",
-        { thumbnailSize: 400 }, // feed card thumbnail
-      );
+      const result = await uploadToCloudinary(file.buffer, "posts", {
+        thumbnailSize: 400,
+      });
       imageUrl = result.url;
       thumbnailUrl = result.thumbnailUrl;
     }
@@ -140,8 +140,8 @@ exports.updatePost = async (req, res, next) => {
     if (content) post.content = content;
 
     if (file) {
-      if (post.imageUrl) await deleteFromMinioByUrl(post.imageUrl);
-      const result = await uploadToMinio(
+      if (post.imageUrl) await deleteFromCloudinaryByUrl(post.imageUrl);
+      const result = await uploadToCloudinary(
         file.buffer,
         file.originalname,
         "posts",
@@ -152,7 +152,7 @@ exports.updatePost = async (req, res, next) => {
     }
 
     if (removeImage === "true" && post.imageUrl) {
-      await deleteFromMinioByUrl(post.imageUrl);
+      await deleteFromCloudinaryByUrl(post.imageUrl);
       post.imageUrl = null;
       post.thumbnailUrl = null;
     }

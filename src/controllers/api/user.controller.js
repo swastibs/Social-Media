@@ -8,7 +8,10 @@ const { User, Post, Comment, UserFollow, sequelize } = require("../../models");
 const { getUser, getSafeUserInclude } = require("../../utils/dbHelper");
 const { setCache } = require("../../utils/cache");
 const { Op } = require("sequelize");
-const { uploadToMinio, deleteFromMinioByUrl } = require("../../config/minio");
+const {
+  uploadToCloudinary,
+  deleteFromCloudinaryByUrl,
+} = require("../../config/cloudinary");
 
 // GET ALL USERS
 exports.getAllUsers = async (req, res, next) => {
@@ -515,9 +518,8 @@ exports.updateProfile = async (req, res, next) => {
     const oldPictureUrl = user.profilePictureUrl;
 
     if (file) {
-      const { url, thumbnailUrl } = await uploadToMinio(
+      const { url, thumbnailUrl } = await uploadToCloudinary(
         file.buffer,
-        file.originalname,
         "profiles",
         { thumbnailSize: 80 },
       );
@@ -527,7 +529,7 @@ exports.updateProfile = async (req, res, next) => {
 
     await user.save();
 
-    if (file && oldPictureUrl) await deleteFromMinioByUrl(oldPictureUrl);
+    if (file && oldPictureUrl) await deleteFromCloudinaryByUrl(oldPictureUrl);
 
     return successResponse(res, {
       message: "Profile updated successfully",

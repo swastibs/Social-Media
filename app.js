@@ -15,6 +15,8 @@ const cookieParser = require("cookie-parser");
 const expressLayouts = require("express-ejs-layouts");
 const session = require("express-session");
 const flash = require("connect-flash");
+const RedisStore = require("connect-redis").default || require("connect-redis");
+const redisClient = require("./src/config/redis");
 
 // Configuration imports
 require("./src/config/passport");
@@ -57,6 +59,7 @@ app.use(
     secret: process.env.SESSION_SECRET || "your-secret-key",
     resave: false,
     saveUninitialized: false,
+    store: new RedisStore({ client: redisClient }),
     cookie: { maxAge: 1000 * 60 * 60 * 24 }, // 24 hours
   }),
 );

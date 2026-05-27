@@ -11,11 +11,9 @@ const {
   UserFollow,
 } = require("../models");
 const {
-  uploadToMinio,
-  deleteFromMinioByUrl,
-  minioClient,
-  BUCKET,
-} = require("../config/minio");
+  uploadToCloudinary,
+  deleteFromCloudinaryByUrl,
+} = require("../config/cloudinary");
 const { ROLES } = require("../constant/role");
 const flushAuthCache = require("../utils/flushAuthCache");
 
@@ -119,31 +117,7 @@ const getRandomDate = () => {
   return date;
 };
 
-/* =========================
-   MINIO CLEANUP
-========================= */
-
-async function cleanMinioBucket() {
-  console.log("\n🗑️ Cleaning MinIO bucket...");
-  const objects = [];
-  return new Promise((resolve, reject) => {
-    const stream = minioClient.listObjects(BUCKET, "", true);
-    stream.on("data", (obj) => objects.push(obj));
-    stream.on("error", reject);
-    stream.on("end", async () => {
-      if (objects.length === 0) {
-        console.log("   Bucket already empty");
-        return resolve();
-      }
-      console.log(`   Found ${objects.length} objects, deleting...`);
-      for (const obj of objects) {
-        await minioClient.removeObject(BUCKET, obj.name);
-      }
-      console.log(`   ✅ Deleted ${objects.length} objects from MinIO`);
-      resolve();
-    });
-  });
-}
+/* Using Cloudinary for image storage; MinIO cleanup not required here */
 
 /* =========================
    FETCH PICSIM IMAGES
@@ -179,11 +153,11 @@ async function fetchPicsumImages(limit) {
 }
 
 /* =========================
-   UPLOAD TO MINIO
+   UPLOAD TO CLOUDINARY
 ========================= */
 
-async function uploadImageToMinio(imageBuffer, originalName, folder) {
-  const { url } = await uploadToMinio(imageBuffer, originalName, folder);
+async function uploadImageToCloudinary(imageBuffer, originalName, folder) {
+  const { url } = await uploadToCloudinary(imageBuffer, folder);
   return url;
 }
 
@@ -198,8 +172,7 @@ const seed = async () => {
     await sequelize.authenticate();
     console.log("✅ Database connected");
 
-    // ----- CLEAN MINIO -----
-    await cleanMinioBucket();
+    // Using Cloudinary for uploads (no MinIO cleanup required)
 
     // ----- CLEAN DATABASE -----
     console.log("\n🧹 Cleaning database...");
@@ -228,7 +201,11 @@ const seed = async () => {
       try {
         const buffer = await fetchPicsumImageBuffer(profileImageUrls[i]);
         const originalName = `profile-${Date.now()}-${i}.jpg`;
-        const url = await uploadImageToMinio(buffer, originalName, "profiles");
+        const url = await uploadImageToCloudinary(
+          buffer,
+          originalName,
+          "profiles",
+        );
         uploadedProfileUrls.push(url);
         console.log(
           `   Profile image ${i + 1}/${profileImageUrls.length} uploaded`,
@@ -252,7 +229,11 @@ const seed = async () => {
       try {
         const buffer = await fetchPicsumImageBuffer(postImageUrls[i]);
         const originalName = `post-${Date.now()}-${i}.jpg`;
-        const url = await uploadImageToMinio(buffer, originalName, "posts");
+        const url = await uploadImageToCloudinary(
+          buffer,
+          originalName,
+          "posts",
+        );
         uploadedPostUrls.push(url);
         console.log(`   Post image ${i + 1}/${postImageUrls.length} uploaded`);
       } catch (err) {

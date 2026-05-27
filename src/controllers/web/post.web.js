@@ -18,7 +18,10 @@ const {
 const { getSafeUserInclude } = require("../../utils/dbHelper");
 const { Op } = require("sequelize");
 const { paginate } = require("../../utils/pagination");
-const { uploadToMinio, deleteFromMinioByUrl } = require("../../config/minio");
+const {
+  uploadToCloudinary,
+  deleteFromCloudinaryByUrl,
+} = require("../../config/cloudinary");
 const redirectBack = require("../../utils/redirectBack");
 const { deleteByPattern } = require("../../utils/cache");
 const { COMMENT_EDIT_WINDOW_MINUTES } = require("../../constant/editWindow");
@@ -44,12 +47,9 @@ exports.createPost = async (req, res, next) => {
     let thumbnailUrl = null;
 
     if (file) {
-      const result = await uploadToMinio(
-        file.buffer,
-        file.originalname,
-        "posts",
-        { thumbnailSize: 400 },
-      );
+      const result = await uploadToCloudinary(file.buffer, "posts", {
+        thumbnailSize: 400,
+      });
       imageUrl = result.url;
       thumbnailUrl = result.thumbnailUrl;
     }
@@ -248,9 +248,9 @@ exports.updatePost = async (req, res, next) => {
     post.content = content;
 
     if (file) {
-      if (post.imageUrl) await deleteFromMinioByUrl(post.imageUrl);
+      if (post.imageUrl) await deleteFromCloudinaryByUrl(post.imageUrl);
 
-      const result = await uploadToMinio(
+      const result = await uploadToCloudinary(
         file.buffer,
         file.originalname,
         "posts",
@@ -261,7 +261,7 @@ exports.updatePost = async (req, res, next) => {
     }
 
     if (shouldRemoveImage(removeImage) && post.imageUrl) {
-      await deleteFromMinioByUrl(post.imageUrl);
+      await deleteFromCloudinaryByUrl(post.imageUrl);
       post.imageUrl = null;
       post.thumbnailUrl = null;
     }

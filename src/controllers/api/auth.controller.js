@@ -12,7 +12,7 @@ const {
   deleteAllUserTokens,
   removeTokenFromUser,
 } = require("../../utils/authCache");
-const { uploadToMinio } = require("../../config/minio");
+const { uploadToCloudinary } = require("../../config/cloudinary");
 
 // SIGN UP
 exports.signUp = async (req, res, next) => {
@@ -29,11 +29,9 @@ exports.signUp = async (req, res, next) => {
     let profilePictureUrl = null;
 
     if (file) {
-      const { url } = await uploadToMinio(
-        file.buffer,
-        file.originalname,
-        "profiles",
-      );
+      const { url } = await uploadToCloudinary(file.buffer, "profiles", {
+        thumbnailSize: 80,
+      });
       profilePictureUrl = url;
     }
 
