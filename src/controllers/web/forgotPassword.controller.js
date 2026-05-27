@@ -190,6 +190,10 @@ exports.resetPassword = async (req, res, next) => {
       "success_msg",
       "Your password has been reset. Please log in with your new password.",
     );
+
+    await deleteByPattern(`web:cache:/profile/${user.id}*`);
+    await deleteByPattern("web:cache:/feed*");
+    
     res.redirect("/login");
   } catch (error) {
     console.error("Password reset error:", error);

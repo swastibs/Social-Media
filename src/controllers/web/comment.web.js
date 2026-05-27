@@ -44,6 +44,11 @@ exports.createComment = async (req, res, next) => {
     );
     await transaction.commit();
 
+    // After transaction.commit()
+    await deleteByPattern(`web:cache:/post/${postId}*`);
+    await deleteByPattern("web:cache:/feed*");
+    await deleteByPattern("web:cache:/search*");
+
     // Fetch the comment with user info for immediate display
     const newComment = await Comment.findByPk(comment.id, {
       include: [
@@ -63,9 +68,6 @@ exports.createComment = async (req, res, next) => {
     const commentCount = await Comment.count({
       where: { postId, isDeleted: false },
     });
-
-    // Invalidate post cache to reflect new comment count
-    await deleteByPattern(`web:cache:/post/${postId}*`);
 
     return res.json({
       success: true,
@@ -126,6 +128,11 @@ exports.updateComment = async (req, res, next) => {
     await comment.save({ transaction });
     await transaction.commit();
 
+    // After transaction.commit()
+    await deleteByPattern(`web:cache:/post/${comment.postId}*`);
+    await deleteByPattern("web:cache:/feed*");
+    await deleteByPattern("web:cache:/search*");
+
     // Attach activity data
     req.activity = {
       entity: "Comment",
@@ -181,6 +188,11 @@ exports.deleteComment = async (req, res, next) => {
       { transaction },
     );
     await transaction.commit();
+
+    // After transaction.commit()
+    await deleteByPattern(`web:cache:/post/${comment.postId}*`);
+    await deleteByPattern("web:cache:/feed*");
+    await deleteByPattern("web:cache:/search*");
 
     // Attach activity data
     req.activity = {
