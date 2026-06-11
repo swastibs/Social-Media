@@ -6,9 +6,20 @@ const { paginate } = require("../../utils/pagination");
 
 const { User, Post, Comment, UserFollow, sequelize } = require("../../models");
 const { getUser, getSafeUserInclude } = require("../../utils/dbHelper");
-const { setCache } = require("../../utils/cache");
+const {
+  setCache,
+  invalidateUserCache,
+  invalidateFollowCache,
+  invalidateFeedCache,
+} = require("../../utils/cache");
 const { Op } = require("sequelize");
 const { uploadToMinio, deleteFromMinioByUrl } = require("../../config/minio");
+const redis = require("../../config/redis");
+const {
+  getUserSessions,
+  deleteToken,
+  removeTokenFromUser,
+} = require("../../utils/authCache");
 
 // GET ALL USERS
 exports.getAllUsers = async (req, res, next) => {
@@ -17,10 +28,9 @@ exports.getAllUsers = async (req, res, next) => {
       query: { page = 1, limit = 10, email, name },
     } = req;
 
-    // ALWAYS exclude admin users from public responses
     const where = {
       isDeleted: false,
-      role: ROLES.USER, // Never return admin users
+      role: ROLES.USER,
       isActive: true,
     };
 
@@ -96,7 +106,6 @@ exports.deleteUser = async (req, res, next) => {
     });
 
     if (!targetUser) throw new ApiError(404, "User not found");
-
     if (targetUser.role === ROLES.ADMIN)
       throw new ApiError(403, "Cannot delete an admin");
 
@@ -135,6 +144,9 @@ exports.deleteUser = async (req, res, next) => {
 
     await transaction.commit();
 
+    // Invalidate caches
+    await invalidateUserCache(userId);
+
     req.activity = {
       entity: "User",
       entityId: targetUser.id,
@@ -149,7 +161,7 @@ exports.deleteUser = async (req, res, next) => {
   }
 };
 
-// UPDATE USER ACTION
+// UPDATE USER ACTION (Admin)
 exports.updateUserAction = async (req, res, next) => {
   try {
     const { userId, action } = req.params;
@@ -160,7 +172,6 @@ exports.updateUserAction = async (req, res, next) => {
       throw new ApiError(403, "You are not allowed to modify an admin user");
 
     const oldData = sanitizedUser(targetUser);
-
     let message = "";
 
     switch (action) {
@@ -168,17 +179,14 @@ exports.updateUserAction = async (req, res, next) => {
         targetUser.isActive = true;
         message = "User activated successfully";
         break;
-
       case "inactive":
         targetUser.isActive = false;
         message = "User deactivated successfully";
         break;
-
       case "promote":
         targetUser.role = "admin";
         message = "User promoted successfully";
         break;
-
       default:
         throw new ApiError(400, "Invalid action");
     }
@@ -186,6 +194,9 @@ exports.updateUserAction = async (req, res, next) => {
     await targetUser.save();
 
     const newData = sanitizedUser(targetUser);
+
+    // Invalidate caches
+    await invalidateUserCache(userId);
 
     req.activity = {
       entity: "User",
@@ -200,7 +211,7 @@ exports.updateUserAction = async (req, res, next) => {
   }
 };
 
-// USER POSTS
+// GET ALL POSTS OF USER
 exports.getAllPostsOfUser = async (req, res, next) => {
   try {
     const { userId } = req.params;
@@ -234,7 +245,7 @@ exports.getAllPostsOfUser = async (req, res, next) => {
   }
 };
 
-// SINGLE POST
+// GET SINGLE POST OF USER
 exports.getPostOfUser = async (req, res, next) => {
   try {
     const { userId, postId } = req.params;
@@ -264,7 +275,7 @@ exports.getPostOfUser = async (req, res, next) => {
   }
 };
 
-// USER COMMENTS
+// GET ALL COMMENTS OF USER
 exports.getAllCommentsOfUser = async (req, res, next) => {
   try {
     const { userId } = req.params;
@@ -301,7 +312,7 @@ exports.getAllCommentsOfUser = async (req, res, next) => {
   }
 };
 
-// SINGLE COMMENT
+// GET SINGLE COMMENT OF USER
 exports.getCommentOfUser = async (req, res, next) => {
   try {
     const { userId, commentId } = req.params;
@@ -334,7 +345,7 @@ exports.getCommentOfUser = async (req, res, next) => {
   }
 };
 
-// Follow/Unfollow USER
+// FOLLOW/UNFOLLOW USER
 exports.followUnfollowUser = async (req, res, next) => {
   const transaction = await sequelize.transaction();
 
@@ -369,7 +380,6 @@ exports.followUnfollowUser = async (req, res, next) => {
       transaction,
     });
 
-    // UNFOLLOW
     if (!created) {
       await relation.destroy({ transaction });
 
@@ -385,12 +395,15 @@ exports.followUnfollowUser = async (req, res, next) => {
 
       await transaction.commit();
 
+      // Invalidate caches
+      await invalidateFollowCache(followerId, followingId);
+      await invalidateFeedCache();
+
       req.activity = { entity: "Follow", entityId: followingId };
 
       return successResponse(res, { message: "User unfollowed successfully" });
     }
 
-    // FOLLOW
     await User.increment(
       { followingCount: 1 },
       { where: { id: followerId }, transaction },
@@ -402,6 +415,10 @@ exports.followUnfollowUser = async (req, res, next) => {
     );
 
     await transaction.commit();
+
+    // Invalidate caches
+    await invalidateFollowCache(followerId, followingId);
+    await invalidateFeedCache();
 
     req.activity = { entity: "Follow", entityId: followingId };
 
@@ -498,8 +515,7 @@ exports.getFollowing = async (req, res, next) => {
   }
 };
 
-// UPDATE PROFILE (bio + profilePicture)
-// UPDATE PROFILE (with thumbnail)
+// UPDATE PROFILE
 exports.updateProfile = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -529,6 +545,10 @@ exports.updateProfile = async (req, res, next) => {
 
     if (file && oldPictureUrl) await deleteFromMinioByUrl(oldPictureUrl);
 
+    // Invalidate user cache
+    await invalidateUserCache(userId);
+    await invalidateFeedCache();
+
     return successResponse(res, {
       message: "Profile updated successfully",
       data: {
@@ -540,6 +560,66 @@ exports.updateProfile = async (req, res, next) => {
         postsCount: user.postsCount,
       },
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// SESSION MANAGEMENT
+exports.getSessions = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const sessions = await getUserSessions(userId);
+    return successResponse(res, {
+      message: "Active sessions retrieved",
+      data: sessions,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.revokeSessionByToken = async (req, res, next) => {
+  try {
+    const { token } = req.body;
+    if (!token) throw new ApiError(400, "Token is required");
+
+    const userId = req.user.id;
+
+    const userTokens = await redis.smembers(`user:tokens:${userId}`);
+    if (!userTokens.includes(token)) {
+      throw new ApiError(403, "Token does not belong to you");
+    }
+
+    await deleteToken(token);
+    await removeTokenFromUser(userId, token);
+
+    return successResponse(res, { message: "Session revoked successfully" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.revokeOtherSessions = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const currentToken =
+      req.headers.authorization?.split(" ")[1] || req.cookies?.postloop_token;
+
+    if (!currentToken) {
+      throw new ApiError(400, "Current token not found");
+    }
+
+    const userTokens = await redis.smembers(`user:tokens:${userId}`);
+
+    for (const token of userTokens) {
+      if (token !== currentToken) {
+        await deleteToken(token);
+        await removeTokenFromUser(userId, token);
+      }
+    }
+
+    return successResponse(res, { message: "Other sessions revoked" });
   } catch (error) {
     next(error);
   }
