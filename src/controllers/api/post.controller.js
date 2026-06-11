@@ -3,14 +3,20 @@ const { successResponse } = require("../../utils/ApiResponse");
 const { paginate } = require("../../utils/pagination");
 const { ROLES } = require("../../constant/role");
 
-const { Post, Comment, User, sequelize, PostLike } = require("../../models");
+const { Post, Comment, User, sequelize, PostLike, UserFollow } = require("../../models");
 const {
   getUser,
   getPost,
   getSafeUserInclude,
 } = require("../../utils/dbHelper");
-const { setCache } = require("../../utils/cache");
+const {
+  setCache,
+  invalidatePostCache,
+  invalidateUserCache,
+  invalidateFeedCache,
+} = require("../../utils/cache");
 const { uploadToMinio, deleteFromMinioByUrl } = require("../../config/minio");
+const { Op } = require("sequelize");
 
 // CREATE POST
 exports.createPost = async (req, res, next) => {
@@ -47,6 +53,16 @@ exports.createPost = async (req, res, next) => {
 
     await user.increment("postsCount", { transaction });
     await transaction.commit();
+
+    // ✅ INVALIDATE ALL RELEVANT CACHES
+    await deleteByPattern(`cache:/api/users/${user.id}/posts*`);
+    await deleteByPattern(`cache:/api/users/${user.id}*`);
+    await deleteByPattern(`cache:/api/posts*`);
+    await deleteByPattern(`web:cache:/feed*`);
+    await deleteByPattern(`web:cache:/profile/${user.id}*`);
+    await deleteByPattern(`web:cache:/search*`);
+
+    console.log(`🗑️ Cache invalidated for user ${user.id} posts`);
 
     return successResponse(res, {
       statusCode: 201,
@@ -160,6 +176,16 @@ exports.updatePost = async (req, res, next) => {
     await post.save();
     const newData = post.toJSON();
 
+    // ✅ INVALIDATE ALL RELEVANT CACHES
+    await deleteByPattern(`cache:/api/users/${user.id}/posts*`);
+    await deleteByPattern(`cache:/api/users/${user.id}*`);
+    await deleteByPattern(`cache:/api/posts/${postId}`);
+    await deleteByPattern(`cache:/api/posts*`);
+    await deleteByPattern(`web:cache:/post/${postId}*`);
+    await deleteByPattern(`web:cache:/feed*`);
+    await deleteByPattern(`web:cache:/profile/${user.id}*`);
+    await deleteByPattern(`web:cache:/search*`);
+
     req.activity = { entity: "Post", entityId: post.id, oldData, newData };
 
     return successResponse(res, {
@@ -197,11 +223,22 @@ exports.deletePost = async (req, res, next) => {
       { where: { postId, isDeleted: false }, transaction },
     );
 
-    // safer instance decrement
     const owner = await User.findByPk(post.userId, { transaction });
     if (owner) await owner.decrement("postsCount", { transaction });
 
     await transaction.commit();
+
+    // ✅ INVALIDATE ALL RELEVANT CACHES
+    await deleteByPattern(`cache:/api/users/${post.userId}/posts*`);
+    await deleteByPattern(`cache:/api/users/${post.userId}*`);
+    await deleteByPattern(`cache:/api/posts/${postId}`);
+    await deleteByPattern(`cache:/api/posts*`);
+    await deleteByPattern(`web:cache:/post/${postId}*`);
+    await deleteByPattern(`web:cache:/feed*`);
+    await deleteByPattern(`web:cache:/profile/${post.userId}*`);
+    await deleteByPattern(`web:cache:/search*`);
+
+    console.log(`🗑️ Cache invalidated for post ${postId}`);
 
     req.activity = {
       entity: "Post",
@@ -242,10 +279,14 @@ exports.likePost = async (req, res, next) => {
     // UNLIKE
     if (!created) {
       await like.destroy({ transaction });
-
       await post.decrement("likeCount", { transaction });
-
       await transaction.commit();
+
+      // ✅ INVALIDATE CACHES
+      await deleteByPattern(`cache:/api/posts/${postId}`);
+      await deleteByPattern(`web:cache:/post/${postId}*`);
+      await deleteByPattern(`web:cache:/feed*`);
+      await deleteByPattern(`web:cache:/profile/${post.userId}*`);
 
       req.activity = { entity: "PostLike", entityId: postId };
 
@@ -257,8 +298,13 @@ exports.likePost = async (req, res, next) => {
 
     // LIKE
     await post.increment("likeCount", { transaction });
-
     await transaction.commit();
+
+    // ✅ INVALIDATE CACHES
+    await deleteByPattern(`cache:/api/posts/${postId}`);
+    await deleteByPattern(`web:cache:/post/${postId}*`);
+    await deleteByPattern(`web:cache:/feed*`);
+    await deleteByPattern(`web:cache:/profile/${post.userId}*`);
 
     req.activity = { entity: "PostLike", entityId: postId };
 
@@ -272,7 +318,66 @@ exports.likePost = async (req, res, next) => {
   }
 };
 
-// COMMENTS OF POST
+// GET FEED POSTS (from followed users)
+exports.getFeed = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { page = 1, limit = 10 } = req.query;
+
+    // Find users that the current user follows
+    const followedUsers = await UserFollow.findAll({
+      where: { followerId: userId },
+      attributes: ["followingId"],
+      raw: true,
+    });
+
+    const followingIds = followedUsers.map((f) => f.followingId);
+
+    // If not following anyone, return empty array
+    if (followingIds.length === 0) {
+      return successResponse(res, {
+        message: "Feed fetched successfully",
+        data: [],
+        meta: {
+          totalRecords: 0,
+          currentPage: 1,
+          totalPages: 1,
+          limit: parseInt(limit),
+        },
+      });
+    }
+
+    const { data, pagination } = await paginate({
+      model: Post,
+      where: {
+        userId: { [Op.in]: followingIds },
+        isDeleted: false,
+      },
+      page,
+      limit,
+      include: [getSafeUserInclude()],
+      order: [["createdAt", "DESC"]],
+    });
+
+    if (req.cacheKey) {
+      await setCache(req.cacheKey, {
+        data,
+        meta: pagination,
+        message: "Feed fetched successfully",
+      });
+    }
+
+    return successResponse(res, {
+      message: "Feed fetched successfully",
+      data,
+      meta: pagination,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// GET ALL COMMENTS OF POST
 exports.getAllCommentsOfPost = async (req, res, next) => {
   try {
     const { postId } = req.params;
@@ -305,7 +410,7 @@ exports.getAllCommentsOfPost = async (req, res, next) => {
   }
 };
 
-// SINGLE COMMENT OF POST
+// GET SINGLE COMMENT OF POST
 exports.getCommentOfPost = async (req, res, next) => {
   try {
     const { postId, commentId } = req.params;
