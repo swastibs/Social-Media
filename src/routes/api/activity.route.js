@@ -16,7 +16,7 @@ activityRouter.get(
   "/",
   authenticate,
   authorize(ROLES.ADMIN),
-  rateLimiter(60, 50, "activity-logs"),
+  // rateLimiter(60, 50, "activity-logs"),
   validate(getActivitiesSchema),
   cacheMiddleware(),
   getActivities,

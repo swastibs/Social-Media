@@ -137,7 +137,7 @@
 }
 
 .post-content-detailed {
-  padding: 1.5rem;
+  padding: 1rem 1.5rem;
   flex: 1;
   overflow-y: auto;
 }
@@ -160,8 +160,6 @@
   font-size: 1.1rem;
   line-height: 1.8;
   color: var(--text-color);
-  margin-bottom: 1.5rem;
-  white-space: pre-wrap;
   word-break: break-word;
 }
 

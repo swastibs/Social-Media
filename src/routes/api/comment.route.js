@@ -31,7 +31,7 @@ commentRouter.use(authenticate);
 commentRouter.post(
   "/",
   authorize(ROLES.USER),
-  rateLimiter(60, 30, "create-comment"),
+  // rateLimiter(60, 30, "create-comment"),
   validate(createCommentSchema),
   invalidateCache(["cache:/api/comments*", "cache:/api/activities*"]),
   createComment,
@@ -41,7 +41,7 @@ commentRouter.post(
 commentRouter.get(
   "/",
   authorize(ROLES.ADMIN),
-  rateLimiter(60, 100, "get-comments"),
+  // rateLimiter(60, 100, "get-comments"),
   validate(getAllCommentsSchema),
   cacheMiddleware(),
   getAllComments,
@@ -51,7 +51,7 @@ commentRouter.get(
 commentRouter.get(
   "/:commentId",
   authorize(ROLES.ADMIN, ROLES.USER),
-  rateLimiter(60, 100, "get-comment"),
+  // rateLimiter(60, 100, "get-comment"),
   validate(commentIdParamSchema),
   cacheMiddleware(),
   getComment,
@@ -61,7 +61,7 @@ commentRouter.get(
 commentRouter.put(
   "/:commentId",
   authorize(ROLES.USER),
-  rateLimiter(60, 30, "update-comment"),
+  // rateLimiter(60, 30, "update-comment"),
   validate(updateCommentSchema),
   invalidateCache(["cache:/api/comments*", "cache:/api/activities*"]),
   updateComment,
@@ -71,7 +71,7 @@ commentRouter.put(
 commentRouter.delete(
   "/:commentId",
   authorize(ROLES.ADMIN, ROLES.USER),
-  rateLimiter(60, 30, "delete-comment"),
+  // rateLimiter(60, 30, "delete-comment"),
   validate(commentIdParamSchema),
   invalidateCache(["cache:/api/comments*", "cache:/api/activities*"]),
   deleteComment,

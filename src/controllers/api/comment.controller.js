@@ -9,7 +9,11 @@ const {
   getComment,
   getSafeUserInclude,
 } = require("../../utils/dbHelper");
-const { setCache } = require("../../utils/cache");
+const {
+  setCache,
+  invalidateCommentCache,
+  invalidateUserCache,
+} = require("../../utils/cache");
 
 // CREATE COMMENT
 exports.createComment = async (req, res, next) => {
@@ -34,6 +38,10 @@ exports.createComment = async (req, res, next) => {
     );
 
     await transaction.commit();
+
+    // Invalidate caches
+    await invalidateCommentCache(comment.id, postId, user.id);
+    await invalidateUserCache(user.id);
 
     req.activity = {
       entity: "Comment",
@@ -139,6 +147,9 @@ exports.updateComment = async (req, res, next) => {
 
     const newData = targetComment.toJSON();
 
+    // Invalidate caches
+    await invalidateCommentCache(commentId, targetComment.postId, user.id);
+
     req.activity = {
       entity: "Comment",
       entityId: targetComment.id,
@@ -185,6 +196,9 @@ exports.deleteComment = async (req, res, next) => {
     );
 
     await transaction.commit();
+
+    // Invalidate caches
+    await invalidateCommentCache(commentId, targetComment.postId, user.id);
 
     req.activity = {
       entity: "Comment",
