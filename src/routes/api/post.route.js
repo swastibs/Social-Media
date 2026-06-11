@@ -15,6 +15,7 @@ const {
   likePost,
   getAllCommentsOfPost,
   getCommentOfPost,
+  getFeed,
 } = require("../../controllers/api/post.controller");
 
 const {
@@ -38,18 +39,27 @@ postRouter.use(authenticate);
 postRouter.post(
   "/",
   authorize(ROLES.USER),
-  rateLimiter(60, 20, "create-post"), // 20 requests per minute
+  // rateLimiter(60, 20, "create-post"), // 20 requests per minute
   upload.single("image"),
   validate(createPostSchema),
   invalidateCache(["cache:/api/posts*", "cache:/api/activities*"]),
   createPost,
 );
 
+// Get Feed Posts (from followed users)
+postRouter.get(
+  "/feed",
+  authorize(ROLES.ADMIN, ROLES.USER),
+  validate(getAllPostsSchema), // reuse same schema for pagination
+  cacheMiddleware(),
+  getFeed,
+);
+
 // Get All Posts
 postRouter.get(
   "/",
   authorize(ROLES.ADMIN, ROLES.USER),
-  rateLimiter(60, 100, "get-posts"), // 100 requests per minute
+  // rateLimiter(60, 100, "get-posts"), // 100 requests per minute
   validate(getAllPostsSchema),
   cacheMiddleware(),
   getAllPosts,
@@ -59,7 +69,7 @@ postRouter.get(
 postRouter.get(
   "/:postId",
   authorize(ROLES.ADMIN, ROLES.USER),
-  rateLimiter(60, 100, "get-post"), // 100 requests per minute
+  // rateLimiter(60, 100, "get-post"), // 100 requests per minute
   validate(postIdParamSchema),
   cacheMiddleware(),
   getPost,
@@ -69,7 +79,7 @@ postRouter.get(
 postRouter.put(
   "/:postId",
   authorize(ROLES.USER),
-  rateLimiter(60, 20, "update-post"), // 20 requests per minute
+  // rateLimiter(60, 20, "update-post"), // 20 requests per minute
   validate(updatePostSchema),
   invalidateCache(["cache:/api/posts*", "cache:/api/activities*"]),
   updatePost,
@@ -79,7 +89,7 @@ postRouter.put(
 postRouter.delete(
   "/:postId",
   authorize(ROLES.ADMIN, ROLES.USER),
-  rateLimiter(60, 20, "delete-post"), // 20 requests per minute
+  // rateLimiter(60, 20, "delete-post"), // 20 requests per minute
   validate(postIdParamSchema),
   invalidateCache(["cache:/api/posts*", "cache:/api/activities*"]),
   deletePost,
@@ -89,7 +99,7 @@ postRouter.delete(
 postRouter.put(
   "/:postId/like",
   authorize(ROLES.USER),
-  rateLimiter(60, 30, "like-post"), // 30 requests per minute
+  // rateLimiter(60, 30, "like-post"), // 30 requests per minute
   validate(likePostSchema),
   invalidateCache(["cache:/api/posts*", "cache:/api/activities*"]),
   likePost,
@@ -99,7 +109,7 @@ postRouter.put(
 postRouter.get(
   "/:postId/comments",
   authorize(ROLES.ADMIN, ROLES.USER),
-  rateLimiter(60, 100, "get-post-comments"), // 100 requests per minute
+  // rateLimiter(60, 100, "get-post-comments"), // 100 requests per minute
   validate(getAllCommentsOfPostSchema),
   cacheMiddleware(),
   getAllCommentsOfPost,
@@ -109,7 +119,7 @@ postRouter.get(
 postRouter.get(
   "/:postId/comments/:commentId",
   authorize(ROLES.ADMIN, ROLES.USER),
-  rateLimiter(60, 100, "get-post-comment"), // 100 requests per minute
+  // rateLimiter(60, 100, "get-post-comment"), // 100 requests per minute
   validate(getCommentOfPostSchema),
   cacheMiddleware(),
   getCommentOfPost,

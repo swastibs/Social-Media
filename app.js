@@ -15,8 +15,11 @@ const cookieParser = require("cookie-parser");
 const expressLayouts = require("express-ejs-layouts");
 const session = require("express-session");
 const flash = require("connect-flash");
+const swaggerUi = require("swagger-ui-express");
+const cors = require("cors");
 
 // Configuration imports
+const swaggerDocument = require("./src/config/swagger-output.json");
 require("./src/config/passport");
 const { connectDB } = require("./src/config/db");
 const connectMongo = require("./src/config/mongo");
@@ -31,6 +34,8 @@ const webRouter = require("./src/routes/web/web.route");
 const apiRouter = require("./src/routes/api/index.route");
 
 const app = express();
+
+app.use(cors());
 
 // COMPRESSION (gzip)
 app.use(compression());
@@ -92,7 +97,8 @@ app.use(attachUserIfLoggedIn);
 // Activity logger (logs POST/PUT/DELETE to MongoDB)
 app.use(activityLogger);
 
-// ROUTES (Web only)
+// ROUTES
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use("/", webRouter);
 app.use("/api", apiRouter);
 

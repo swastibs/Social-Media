@@ -82,6 +82,7 @@ const getComment = async (commentId) => {
  * @param {number} userId - Follower user ID
  * @returns {Promise<number[]>} - Array of followed user IDs
  */
+
 const getAcceptedFollowingIds = async (userId) => {
   const follows = await UserFollow.findAll({
     where: { followerId: userId, status: "accepted" },
