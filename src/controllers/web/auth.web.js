@@ -60,7 +60,7 @@ exports.signupForm = (req, res) => {
   });
 };
 
-// ========== Login ==========
+// ========== Login (Multi-device safe) ==========
 exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -72,7 +72,6 @@ exports.login = async (req, res, next) => {
       return res.redirect("/login");
     }
 
-    // GitHub-only accounts cannot use email/password
     if (!user.password) {
       req.flash(
         "error_msg",
@@ -94,6 +93,7 @@ exports.login = async (req, res, next) => {
       process.env.JWT_SECRET,
       { expiresIn: "1d" },
     );
+    // Store token – adds to user's session set, never deletes others
     await storeToken(token, user.id);
     res.cookie("postloop_token", token, {
       httpOnly: true,
@@ -215,6 +215,7 @@ exports.changePassword = async (req, res, next) => {
     await deleteByPattern(`web:cache:/profile/${userId}*`);
     await deleteByPattern("web:cache:/feed*");
 
+    // Revoke all sessions for security
     await deleteAllUserTokens(userId);
     res.clearCookie("postloop_token");
 

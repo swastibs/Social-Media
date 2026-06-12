@@ -1,6 +1,6 @@
 const Activity = require("../../models/activity.model");
 const { successResponse } = require("../../utils/ApiResponse");
-const { setCache } = require("../../utils/cache");
+const { setCache, invalidateActivityCache } = require("../../utils/cache");
 
 exports.getActivities = async (req, res, next) => {
   try {
@@ -34,11 +34,8 @@ exports.getActivities = async (req, res, next) => {
     const limitNum = Math.min(parseInt(limit) || 10, 50);
 
     const totalRecords = await Activity.countDocuments(query);
-
     const totalPages = Math.max(Math.ceil(totalRecords / limitNum), 1);
-
     const safePage = Math.min(pageNum, totalPages);
-
     const skip = (safePage - 1) * limitNum;
 
     const data = await Activity.find(query)

@@ -26,14 +26,14 @@ const flushAuthCache = require("../utils/flushAuthCache");
 const CONFIG = {
   ADMIN_EMAIL: "admin@gmail.com",
   ADMIN_NAME: "Admin",
-  REGULAR_USERS: 10,
-  POSTS_PER_USER: 10,
-  COMMENTS_PER_POST: 3,
-  LIKES_RATIO: 0.2,
-  MIN_FOLLOWING: 2,
-  MAX_FOLLOWING: 5,
-  PROFILE_IMAGES_TO_UPLOAD: 10,
-  POST_IMAGES_TO_UPLOAD: 50,
+  REGULAR_USERS: 100,
+  POSTS_PER_USER: 5,
+  COMMENTS_PER_POST: 10,
+  LIKES_RATIO: 0.5,
+  MIN_FOLLOWING: 10,
+  MAX_FOLLOWING: 50,
+  PROFILE_IMAGES_TO_UPLOAD: 100,
+  POST_IMAGES_TO_UPLOAD: 250,
 };
 
 /* =========================
