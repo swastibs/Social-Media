@@ -15,6 +15,7 @@ const cookieParser = require("cookie-parser");
 const expressLayouts = require("express-ejs-layouts");
 const session = require("express-session");
 const flash = require("connect-flash");
+const cors = require("cors");
 
 // Configuration imports
 require("./src/config/passport");
@@ -31,6 +32,8 @@ const webRouter = require("./src/routes/web/web.route");
 const apiRouter = require("./src/routes/api/index.route");
 
 const app = express();
+
+app.use(cors());
 
 // COMPRESSION (gzip)
 app.use(compression());
