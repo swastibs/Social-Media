@@ -3,7 +3,14 @@ const { successResponse } = require("../../utils/ApiResponse");
 const { paginate } = require("../../utils/pagination");
 const { ROLES } = require("../../constant/role");
 
-const { Post, Comment, User, sequelize, PostLike, UserFollow } = require("../../models");
+const {
+  Post,
+  Comment,
+  User,
+  sequelize,
+  PostLike,
+  UserFollow,
+} = require("../../models");
 const {
   getUser,
   getPost,
@@ -288,7 +295,10 @@ exports.likePost = async (req, res, next) => {
       lock: transaction.LOCK.UPDATE,
     });
 
-    if (!post) throw new ApiError(404, "Post not found");
+    if (!post) {
+      await transaction.rollback();
+      throw new ApiError(404, "Post not found");
+    }
 
     const [like, created] = await PostLike.findOrCreate({
       where: { userId, postId },
@@ -301,39 +311,26 @@ exports.likePost = async (req, res, next) => {
       await like.destroy({ transaction });
       await post.decrement("likeCount", { transaction });
       await transaction.commit();
-
-      // ✅ INVALIDATE CACHES
-      await deleteByPattern(`cache:/api/posts/${postId}`);
-      await deleteByPattern(`web:cache:/post/${postId}*`);
-      await deleteByPattern(`web:cache:/feed*`);
-      await deleteByPattern(`web:cache:/profile/${post.userId}*`);
-
       req.activity = { entity: "PostLike", entityId: postId };
-
       return successResponse(res, {
         message: "Post unliked",
-        data: { likeCount: post.likeCount - 1 },
+        data: { likeCount: post.likeCount - 1, liked: false },
       });
     }
 
     // LIKE
     await post.increment("likeCount", { transaction });
     await transaction.commit();
-
-    // ✅ INVALIDATE CACHES
-    await deleteByPattern(`cache:/api/posts/${postId}`);
-    await deleteByPattern(`web:cache:/post/${postId}*`);
-    await deleteByPattern(`web:cache:/feed*`);
-    await deleteByPattern(`web:cache:/profile/${post.userId}*`);
-
     req.activity = { entity: "PostLike", entityId: postId };
-
     return successResponse(res, {
       message: "Post liked",
-      data: { likeCount: post.likeCount + 1 },
+      data: { likeCount: post.likeCount + 1, liked: true },
     });
   } catch (error) {
-    await transaction.rollback();
+    // Only rollback if the transaction is still active
+    if (transaction && !transaction.finished) {
+      await transaction.rollback();
+    }
     next(error);
   }
 };
