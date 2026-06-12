@@ -5,6 +5,10 @@ const postRouter = require("./post.route");
 const commentRouter = require("./comment.route");
 const activityRouter = require("./activity.route");
 const paymentRouter = require("./payment.route");
+
+// router.use(rateLimiter(60, 200, "api-global"));
+
+// API Routes
 const feedRouter = require("./feed.route"); // 👈 ADD THIS
 
 router.use("/auth", authRouter);

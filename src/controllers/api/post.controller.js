@@ -98,16 +98,36 @@ exports.getAllPosts = async (req, res, next) => {
       include: [getSafeUserInclude()],
     });
 
+    // --- ADD THIS BLOCK: add liked flag for current user ---
+    let likedMap = {};
+    if (user && data.length) {
+      const postIds = data.map((p) => p.id);
+      const likes = await PostLike.findAll({
+        where: { userId: user.id, postId: { [Op.in]: postIds } },
+        attributes: ["postId"],
+      });
+      likedMap = likes.reduce((map, like) => {
+        map[like.postId] = true;
+        return map;
+      }, {});
+    }
+
+    const postsWithLiked = data.map((post) => ({
+      ...post.toJSON(),
+      liked: likedMap[post.id] || false,
+    }));
+    // --- END ADD ---
+
     if (req.cacheKey)
       await setCache(req.cacheKey, {
-        data,
+        data: postsWithLiked,
         meta: pagination,
         message: "Posts fetched successfully",
       });
 
     return successResponse(res, {
       message: "Posts fetched successfully",
-      data,
+      data: postsWithLiked,
       meta: pagination,
     });
   } catch (error) {

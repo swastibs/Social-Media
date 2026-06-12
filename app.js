@@ -15,8 +15,8 @@ const cookieParser = require("cookie-parser");
 const expressLayouts = require("express-ejs-layouts");
 const session = require("express-session");
 const flash = require("connect-flash");
-const swaggerUi = require("swagger-ui-express");
 const cors = require("cors");
+const swaggerUi = require("swagger-ui-express");
 
 // Configuration imports
 const swaggerDocument = require("./src/config/swagger-output.json");

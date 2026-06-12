@@ -1,6 +1,6 @@
 const { validate } = require("express-validation");
 const authRouter = require("express").Router();
-const rateLimiter = require("../../middlewares/rateLimiter.middleware");
+// const rateLimiter = require("../../middlewares/rateLimiter.middleware");
 
 const {
   signUp,
@@ -19,7 +19,7 @@ const upload = require("../../middlewares/multer");
 // Public endpoints with strict limits
 authRouter.post(
   "/signup",
-  // // rateLimiter(3600, 3, "signup"),
+  // rateLimiter(3600, 3, "signup"),
   upload.single("profilePicture"),
   validate(signUpSchema),
   signUp,
@@ -27,7 +27,7 @@ authRouter.post(
 
 authRouter.post(
   "/login",
-  // // rateLimiter(300, 5, "login"),
+  // rateLimiter(300, 5, "login"),
   validate(logInSchema),
   logIn,
 );
