@@ -8,7 +8,7 @@ const commentRouter = require("./comment.route");
 const activityRouter = require("./activity.route");
 const paymentRouter = require("./payment.route");
 
-router.use(rateLimiter(60, 200, "api-global"));
+// router.use(rateLimiter(60, 200, "api-global"));
 
 // API Routes
 

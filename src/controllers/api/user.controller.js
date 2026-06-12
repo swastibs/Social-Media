@@ -365,47 +365,59 @@ exports.followUnfollowUser = async (req, res, next) => {
 
     const [relation, created] = await UserFollow.findOrCreate({
       where: { followerId, followingId },
-      defaults: { followerId, followingId },
+      defaults: { followerId, followingId, status: "pending" },
       transaction,
     });
 
-    // UNFOLLOW
     if (!created) {
+      // Unfollow
       await relation.destroy({ transaction });
 
-      await User.increment(
-        { followingCount: -1 },
-        { where: { id: followerId }, transaction },
-      );
-
-      await User.increment(
-        { followersCount: -1 },
-        { where: { id: followingId }, transaction },
-      );
+      // Safely decrement counts
+      const follower = await User.findByPk(followerId, { transaction });
+      const followed = await User.findByPk(followingId, { transaction });
+      if (follower && follower.followingCount > 0) {
+        follower.followingCount -= 1;
+        await follower.save({ transaction });
+      }
+      if (followed && followed.followersCount > 0) {
+        followed.followersCount -= 1;
+        await followed.save({ transaction });
+      }
 
       await transaction.commit();
-
       req.activity = { entity: "Follow", entityId: followingId };
-
-      return successResponse(res, { message: "User unfollowed successfully" });
+      return successResponse(res, {
+        message: "User unfollowed successfully",
+        data: { following: false },
+      });
+    } else {
+      // New follow request
+      let status = targetUser.isPrivate ? "pending" : "accepted";
+      if (status === "accepted") {
+        relation.status = "accepted";
+        await relation.save({ transaction });
+      }
+      if (status === "accepted") {
+        await User.increment(
+          { followingCount: 1 },
+          { where: { id: followerId }, transaction },
+        );
+        await User.increment(
+          { followersCount: 1 },
+          { where: { id: followingId }, transaction },
+        );
+      }
+      await transaction.commit();
+      req.activity = { entity: "Follow", entityId: followingId };
+      return successResponse(res, {
+        message:
+          status === "accepted"
+            ? "User followed successfully"
+            : "Follow request sent",
+        data: { following: status === "accepted", status },
+      });
     }
-
-    // FOLLOW
-    await User.increment(
-      { followingCount: 1 },
-      { where: { id: followerId }, transaction },
-    );
-
-    await User.increment(
-      { followersCount: 1 },
-      { where: { id: followingId }, transaction },
-    );
-
-    await transaction.commit();
-
-    req.activity = { entity: "Follow", entityId: followingId };
-
-    return successResponse(res, { message: "User followed successfully" });
   } catch (error) {
     await transaction.rollback();
     next(error);
