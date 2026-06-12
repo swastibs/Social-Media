@@ -345,7 +345,7 @@ exports.getCommentOfUser = async (req, res, next) => {
   }
 };
 
-// FOLLOW/UNFOLLOW USER
+// Follow/Unfollow USER (corrected)
 exports.followUnfollowUser = async (req, res, next) => {
   const transaction = await sequelize.transaction();
 
@@ -374,6 +374,7 @@ exports.followUnfollowUser = async (req, res, next) => {
       throw new ApiError(403, "User inactive");
     }
 
+    // Find or create the follow record (default status = 'pending')
     const [relation, created] = await UserFollow.findOrCreate({
       where: { followerId, followingId },
       defaults: { followerId, followingId, status: "pending" },
@@ -381,79 +382,49 @@ exports.followUnfollowUser = async (req, res, next) => {
     });
 
     if (!created) {
-      // Unfollow
+      // UNFOLLOW: delete the record and decrement counts
       await relation.destroy({ transaction });
-
-      // Safely decrement counts
-      const follower = await User.findByPk(followerId, { transaction });
-      const followed = await User.findByPk(followingId, { transaction });
-      if (follower && follower.followingCount > 0) {
-        follower.followingCount -= 1;
-        await follower.save({ transaction });
-      }
-      if (followed && followed.followersCount > 0) {
-        followed.followersCount -= 1;
-        await followed.save({ transaction });
-      }
-
+      await User.decrement("followingCount", {
+        by: 1,
+        where: { id: followerId },
+        transaction,
+      });
+      await User.decrement("followersCount", {
+        by: 1,
+        where: { id: followingId },
+        transaction,
+      });
       await transaction.commit();
-
-      // Invalidate caches
-      await invalidateFollowCache(followerId, followingId);
-      await invalidateFeedCache();
-
-      req.activity = { entity: "Follow", entityId: followingId };
       return successResponse(res, {
         message: "User unfollowed successfully",
         data: { following: false },
       });
     } else {
-      // New follow request
-      let status = targetUser.isPrivate ? "pending" : "accepted";
-      if (status === "accepted") {
+      // NEW FOLLOW: determine final status based on privacy
+      let finalStatus = targetUser.isPrivate ? "pending" : "accepted";
+      if (finalStatus === "accepted") {
         relation.status = "accepted";
         await relation.save({ transaction });
-      }
-      if (status === "accepted") {
-        await User.increment(
-          { followingCount: 1 },
-          { where: { id: followerId }, transaction },
-        );
-        await User.increment(
-          { followersCount: 1 },
-          { where: { id: followingId }, transaction },
-        );
+        await User.increment("followingCount", {
+          by: 1,
+          where: { id: followerId },
+          transaction,
+        });
+        await User.increment("followersCount", {
+          by: 1,
+          where: { id: followingId },
+          transaction,
+        });
       }
       await transaction.commit();
-      req.activity = { entity: "Follow", entityId: followingId };
       return successResponse(res, {
         message:
-          status === "accepted"
+          finalStatus === "accepted"
             ? "User followed successfully"
             : "Follow request sent",
-        data: { following: status === "accepted", status },
+        data: { following: finalStatus === "accepted", status: finalStatus },
       });
     }
-
-    await User.increment(
-      { followingCount: 1 },
-      { where: { id: followerId }, transaction },
-    );
-
-    await User.increment(
-      { followersCount: 1 },
-      { where: { id: followingId }, transaction },
-    );
-
-    await transaction.commit();
-
-    // Invalidate caches
-    await invalidateFollowCache(followerId, followingId);
-    await invalidateFeedCache();
-
-    req.activity = { entity: "Follow", entityId: followingId };
-
-    return successResponse(res, { message: "User followed successfully" });
   } catch (error) {
     await transaction.rollback();
     next(error);
