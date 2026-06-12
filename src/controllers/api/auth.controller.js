@@ -13,6 +13,7 @@ const {
   removeTokenFromUser,
 } = require("../../utils/authCache");
 const { uploadToMinio } = require("../../config/minio");
+const { invalidateUserCache } = require("../../utils/cache");
 
 // SIGN UP
 exports.signUp = async (req, res, next) => {
@@ -67,7 +68,7 @@ exports.signUp = async (req, res, next) => {
   }
 };
 
-// LOGIN
+// LOGIN (MULTI-DEVICE SAFE)
 exports.logIn = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -76,11 +77,9 @@ exports.logIn = async (req, res, next) => {
       where: { email, isDeleted: false },
     });
 
-    // After finding user
     if (!user) throw new ApiError(404, "User not exist");
     if (!user.isActive) throw new ApiError(403, "User is inactive");
 
-    // ❌ Reject if password is null (GitHub-only user)
     if (!user.password)
       throw new ApiError(
         401,
@@ -118,16 +117,17 @@ exports.changePassword = async (req, res, next) => {
     const user = await User.findByPk(userId);
     if (!user) throw new ApiError(404, "User not found");
 
-    // Verify old password
     const isMatch = await compare(oldPassword, user.password);
     if (!isMatch) throw new ApiError(401, "Old password is incorrect");
 
-    // Hash and update new password
     const hashedPassword = await hash(newPassword, 10);
     user.password = hashedPassword;
     await user.save();
 
     await deleteAllUserTokens(userId);
+
+    // Invalidate user cache
+    await invalidateUserCache(userId);
 
     return successResponse(res, {
       message: "Password changed successfully. Please login again.",
@@ -137,7 +137,7 @@ exports.changePassword = async (req, res, next) => {
   }
 };
 
-// Then inside logOut:
+// LOGOUT
 exports.logOut = async (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
@@ -145,7 +145,7 @@ exports.logOut = async (req, res, next) => {
 
     if (token) {
       await deleteToken(token);
-      if (userId) await removeTokenFromUser(userId, token); // ✅ use imported function
+      if (userId) await removeTokenFromUser(userId, token);
     }
 
     return successResponse(res, { message: "Logout successful" });
