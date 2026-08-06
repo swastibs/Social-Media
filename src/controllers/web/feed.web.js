@@ -166,14 +166,16 @@ exports.renderFeed = async (req, res, next) => {
         authorIds.map((id) => [id, acceptedSet.has(id)]),
       );
     }
-    posts = posts.map((post) => ({
+    let enrichedPosts = posts.map((post) => ({
       ...post,
       isFollowing: followStatusMap[post.userId] || false,
     }));
+    posts = null;
+    followStatusMap = null;
 
     // ----- Suggested users (exclude accepted follows and self, also exclude private users) -----
     const excludeSuggestionIds = [...acceptedFollowingIds, currentUser.id];
-    const suggestedUsers = await User.findAll({
+    let suggestedUsers = await User.findAll({
       where: {
         id: { [Op.notIn]: excludeSuggestionIds },
         isDeleted: false,
@@ -187,7 +189,7 @@ exports.renderFeed = async (req, res, next) => {
     });
 
     // Fetch current user with counts for sidebar
-    const userWithCounts = await User.findByPk(currentUser.id, {
+    let userWithCounts = await User.findByPk(currentUser.id, {
       attributes: [
         "id",
         "name",
@@ -207,7 +209,7 @@ exports.renderFeed = async (req, res, next) => {
       user: userWithCounts,
       currentUser: userWithCounts,
       suggestedUsers,
-      posts,
+      posts: enrichedPosts,
       pagination: {
         currentPage: page,
         totalPages,
@@ -218,6 +220,10 @@ exports.renderFeed = async (req, res, next) => {
       },
       pageCss: "feed.css",
     });
+
+    userWithCounts = null;
+    suggestedUsers = null;
+    enrichedPosts = null;
   } catch (error) {
     next(error);
   }

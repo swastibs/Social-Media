@@ -154,10 +154,12 @@ exports.getFeed = async (req, res, next) => {
         authorIds.map((id) => [id, acceptedSet.has(id)]),
       );
     }
-    posts = posts.map((post) => ({
+    const enrichedPosts = posts.map((post) => ({
       ...post,
       isFollowing: followStatusMap[post.userId] || false,
     }));
+    posts = null;
+    followStatusMap = null;
 
     // Suggested users (exclude accepted follows and self, public only)
     const excludeSuggestionIds = [...acceptedFollowingIds, currentUser.id];
@@ -181,11 +183,11 @@ exports.getFeed = async (req, res, next) => {
       order: sequelize.random(),
     });
 
-    const responsePayload = {
+    let responsePayload = {
       success: true,
       message: "Feed fetched successfully",
       data: {
-        posts,
+        posts: enrichedPosts,
         suggestedUsers,
         pagination: {
           currentPage: page,
@@ -203,7 +205,9 @@ exports.getFeed = async (req, res, next) => {
       await setCache(req.cacheKey, responsePayload);
     }
 
-    return successResponse(res, responsePayload);
+    const responseResult = successResponse(res, responsePayload);
+    responsePayload = null;
+    return responseResult;
   } catch (error) {
     next(error);
   }

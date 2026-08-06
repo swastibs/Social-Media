@@ -55,8 +55,41 @@ body {
     color 0.2s ease;
 }
 
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes gentleFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
 a {
   text-decoration: none !important;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease,
+    background-color 0.2s ease;
 }
 
 /* ========== GLOBAL BUTTONS ========== */
@@ -88,6 +121,7 @@ a {
 .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(14, 165, 233, 0.3);
+  animation: gentleFloat 1.6s ease-in-out infinite;
 }
 
 .btn-primary:active {
@@ -104,6 +138,16 @@ a {
   background: var(--bg-muted);
   border-color: var(--primary-color);
   transform: translateY(-2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ========== LAYOUT ========== */

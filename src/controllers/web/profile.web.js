@@ -67,7 +67,7 @@ exports.renderProfile = async (req, res, next) => {
     const limit = 12;
     const offset = (page - 1) * limit;
 
-    const profileUser = await User.findByPk(profileUserId, {
+    let profileUser = await User.findByPk(profileUserId, {
       attributes: [
         "id",
         "name",
@@ -144,11 +144,14 @@ exports.renderProfile = async (req, res, next) => {
         );
       }
 
-      posts = rows.map((post) => ({
+      let enrichedPosts = rows.map((post) => ({
         ...post.toJSON(),
         liked: currentUser ? likedSet.has(post.id) : false,
         commentCount: commentCountMap[post.id] || 0,
       }));
+      likedSet = null;
+      commentCountMap = null;
+      posts = enrichedPosts;
     }
 
     let viewerFollows = false;
@@ -184,6 +187,12 @@ exports.renderProfile = async (req, res, next) => {
       },
       pageCss: ["profile.css", "feed.css"],
     });
+
+    profileUser = null;
+    posts = null;
+    followStatus = null;
+    viewerFollows = null;
+    canViewPosts = null;
   } catch (error) {
     next(error);
   }
@@ -233,7 +242,8 @@ exports.renderFollowers = async (req, res, next) => {
       distinct: true,
     });
 
-    const followers = follows.map((f) => f.follower).filter(Boolean);
+    let followers = follows.map((f) => f.follower).filter(Boolean);
+    follows = null;
 
     // Build follow status map for current user
     let followStatusMap = {};
@@ -271,6 +281,10 @@ exports.renderFollowers = async (req, res, next) => {
       type: "followers",
       pageCss: "profile.css",
     });
+
+    profileUser = null;
+    followers = null;
+    followStatusMap = null;
   } catch (error) {
     next(error);
   }
@@ -320,7 +334,8 @@ exports.renderFollowing = async (req, res, next) => {
       distinct: true,
     });
 
-    const following = follows.map((f) => f.following).filter(Boolean);
+    let following = follows.map((f) => f.following).filter(Boolean);
+    follows = null;
 
     // Build follow status map for current user
     let followStatusMap = {};
@@ -358,6 +373,10 @@ exports.renderFollowing = async (req, res, next) => {
       type: "following",
       pageCss: "profile.css",
     });
+
+    profileUser = null;
+    following = null;
+    followStatusMap = null;
   } catch (error) {
     next(error);
   }

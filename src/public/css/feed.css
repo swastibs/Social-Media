@@ -58,6 +58,7 @@
   max-width: 140px;
   height: 220px;
   padding: 1rem 0.8rem;
+  animation: fadeUp 0.45s ease both;
   border-radius: 24px;
   display: flex;
   flex-direction: column;
@@ -153,6 +154,7 @@
 
 /* Post card (feed version) */
 .post-card {
+  animation: fadeUp 0.5s ease both;
   background: linear-gradient(
     135deg,
     rgba(255, 255, 255, 0.88),

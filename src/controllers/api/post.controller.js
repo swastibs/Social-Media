@@ -123,6 +123,7 @@ exports.getAllPosts = async (req, res, next) => {
       ...post.toJSON(),
       liked: likedMap[post.id] || false,
     }));
+    likedMap = null;
     // --- END ADD ---
 
     if (req.cacheKey)

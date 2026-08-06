@@ -84,7 +84,7 @@ async function searchPosts(searchTerm, limit, offset, currentUserId) {
     group: ["postId"],
     raw: true,
   });
-  const commentCountMap = Object.fromEntries(
+  let commentCountMap = Object.fromEntries(
     commentCounts.map((cc) => [cc.postId, parseInt(cc.commentCount)]),
   );
 
@@ -93,6 +93,8 @@ async function searchPosts(searchTerm, limit, offset, currentUserId) {
     liked: likedPostIds.has(post.id),
     commentCount: commentCountMap[post.id] || 0,
   }));
+  likedPostIds = null;
+  commentCountMap = null;
 
   return {
     data: postsWithDetails,
@@ -175,6 +177,10 @@ exports.searchPage = async (req, res, next) => {
       },
       pageCss: "search.css",
     });
+
+    results = null;
+    activeTab = null;
+    currentPage = null;
   } catch (error) {
     next(error);
   }
