@@ -3,13 +3,40 @@ const mongoose = require("mongoose");
 const redis = require("../../config/redis");
 
 /**
+ * Format uptime in seconds to a human-readable string
+ * e.g. "1y, 2d, 3h, 4min, 5sec"
+ */
+const formatUptime = (seconds) => {
+  let remaining = Math.floor(seconds);
+  const years = Math.floor(remaining / (365 * 24 * 60 * 60));
+  remaining %= 365 * 24 * 60 * 60;
+  const days = Math.floor(remaining / 86400);
+  remaining %= 86400;
+  const hours = Math.floor(remaining / 3600);
+  remaining %= 3600;
+  const minutes = Math.floor(remaining / 60);
+  const secs = remaining % 60;
+
+  const parts = [];
+  if (years) parts.push(`${years}y`);
+  if (days || years) parts.push(`${days}d`);
+  if (hours || days || years) parts.push(`${hours}h`);
+  if (minutes || hours || days || years) parts.push(`${minutes}min`);
+  parts.push(`${secs}sec`);
+
+  return parts.join(", ");
+};
+
+/**
  * GET /api/health
- * Returns health status of all services
+ * Returns health status of all services and human‑readable uptime
  */
 exports.healthCheck = async (req, res) => {
   const start = Date.now();
+
+  // Build status object
   const status = {
-    uptime: process.uptime(),
+    uptime: formatUptime(process.uptime()), // human‑readable
     timestamp: new Date().toISOString(),
     services: {
       mysql: { status: "unknown" },
@@ -61,7 +88,6 @@ exports.healthCheck = async (req, res) => {
   status.success = allOk;
   status.responseTime = Date.now() - start;
 
-  // Return 200 if all services are healthy, otherwise 503
   const httpStatus = allOk ? 200 : 503;
   res.status(httpStatus).json(status);
 };
