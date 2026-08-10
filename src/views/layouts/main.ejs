@@ -90,6 +90,36 @@
             });
         }
     </script>
+
+    <!-- Mobile hamburger menu toggle -->
+    <script>
+        (function () {
+            const hamburger = document.getElementById('hamburgerBtn');
+            const sidebar = document.querySelector('.modern-sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            if (hamburger && sidebar && overlay) {
+                function toggleSidebar() {
+                    sidebar.classList.toggle('open');
+                    overlay.classList.toggle('open');
+                }
+
+                hamburger.addEventListener('click', toggleSidebar);
+                overlay.addEventListener('click', toggleSidebar);
+
+                // Close sidebar when clicking a link inside (on mobile)
+                sidebar.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', () => {
+                        if (window.innerWidth <= 900) {
+                            sidebar.classList.remove('open');
+                            overlay.classList.remove('open');
+                        }
+                    });
+                });
+            }
+        })();
+    </script>
+
     <div class="page-loader" id="pageLoader" aria-hidden="true"></div>
     <script src="/js/spa.js" defer></script>
 </body>
