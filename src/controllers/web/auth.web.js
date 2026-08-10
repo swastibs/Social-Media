@@ -17,8 +17,8 @@ const {
   deleteAllUserTokens,
   removeTokenFromUser,
 } = require("../../utils/authCache");
-const { uploadToMinio } = require("../../config/minio");
 const { deleteByPattern } = require("../../utils/cache");
+const { uploadToCloudinary } = require("../../utils/cloudinaryUpload");
 
 // ========== Landing & Tab Switching ==========
 exports.landing = (req, res) => {
@@ -124,9 +124,8 @@ exports.signup = async (req, res, next) => {
       thumbnailUrl = null;
 
     if (req.file) {
-      const result = await uploadToMinio(
+      const result = await uploadToCloudinary(
         req.file.buffer,
-        req.file.originalname,
         "profiles",
         { thumbnailSize: 80 },
       );

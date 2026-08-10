@@ -19,7 +19,11 @@ const {
 const { ROLES } = require("../../constant/role");
 const { Op } = require("sequelize");
 const { getSafeUserInclude } = require("../../utils/dbHelper");
-const { uploadToMinio, deleteFromMinioByUrl } = require("../../config/minio");
+const {
+  uploadToCloudinary,
+  deleteFromCloudinary,
+  getPublicIdFromUrl,
+} = require("../../utils/cloudinaryUpload");
 const redirectBack = require("../../utils/redirectBack");
 const { deleteByPattern } = require("../../utils/cache");
 
@@ -422,9 +426,8 @@ exports.updateProfile = async (req, res, next) => {
     const oldPictureUrl = user.profilePictureUrl;
 
     if (file) {
-      const result = await uploadToMinio(
+      const result = await uploadToCloudinary(
         file.buffer,
-        file.originalname,
         "profiles",
         { thumbnailSize: 80 },
       );
@@ -433,7 +436,8 @@ exports.updateProfile = async (req, res, next) => {
     }
 
     if (removeImage === "true" && user.profilePictureUrl) {
-      await deleteFromMinioByUrl(user.profilePictureUrl);
+      const publicId = getPublicIdFromUrl(user.profilePictureUrl);
+      if (publicId) await deleteFromCloudinary(publicId);
       user.profilePictureUrl = null;
       user.thumbnailUrl = null;
     }
@@ -445,7 +449,10 @@ exports.updateProfile = async (req, res, next) => {
     await deleteByPattern("web:cache:/feed*"); // name/bio may appear in feed
     await deleteByPattern("web:cache:/search*");
 
-    if (file && oldPictureUrl) await deleteFromMinioByUrl(oldPictureUrl);
+    if (file && oldPictureUrl) {
+      const oldPublicId = getPublicIdFromUrl(oldPictureUrl);
+      if (oldPublicId) await deleteFromCloudinary(oldPublicId);
+    }
 
     req.flash("success_msg", "Profile updated successfully");
     res.redirect(`/profile/${userId}`);

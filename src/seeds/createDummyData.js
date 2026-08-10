@@ -10,12 +10,6 @@ const {
   PostLike,
   UserFollow,
 } = require("../models");
-const {
-  uploadToMinio,
-  deleteFromMinioByUrl,
-  minioClient,
-  BUCKET,
-} = require("../config/minio");
 const { ROLES } = require("../constant/role");
 const flushAuthCache = require("../utils/flushAuthCache");
 
@@ -120,41 +114,8 @@ const getRandomDate = () => {
 };
 
 /* =========================
-   MINIO CLEANUP
-========================= */
-
-async function cleanMinioBucket() {
-  console.log("\n🗑️ Cleaning MinIO bucket...");
-  const objects = [];
-  return new Promise((resolve, reject) => {
-    const stream = minioClient.listObjects(BUCKET, "", true);
-    stream.on("data", (obj) => objects.push(obj));
-    stream.on("error", reject);
-    stream.on("end", async () => {
-      if (objects.length === 0) {
-        console.log("   Bucket already empty");
-        return resolve();
-      }
-      console.log(`   Found ${objects.length} objects, deleting...`);
-      for (const obj of objects) {
-        await minioClient.removeObject(BUCKET, obj.name);
-      }
-      console.log(`   ✅ Deleted ${objects.length} objects from MinIO`);
-      resolve();
-    });
-  });
-}
-
-/* =========================
    FETCH PICSIM IMAGES
 ========================= */
-
-async function fetchPicsumImageBuffer(url) {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`Failed to fetch ${url}`);
-  const buffer = await response.arrayBuffer();
-  return Buffer.from(buffer);
-}
 
 async function fetchPicsumImages(limit) {
   console.log(`📸 Fetching ${limit} Picsum image URLs...`);
@@ -179,15 +140,6 @@ async function fetchPicsumImages(limit) {
 }
 
 /* =========================
-   UPLOAD TO MINIO
-========================= */
-
-async function uploadImageToMinio(imageBuffer, originalName, folder) {
-  const { url } = await uploadToMinio(imageBuffer, originalName, folder);
-  return url;
-}
-
-/* =========================
    MAIN SEEDER
 ========================= */
 
@@ -197,9 +149,6 @@ const seed = async () => {
   try {
     await sequelize.authenticate();
     console.log("✅ Database connected");
-
-    // ----- CLEAN MINIO -----
-    await cleanMinioBucket();
 
     // ----- CLEAN DATABASE -----
     console.log("\n🧹 Cleaning database...");
@@ -221,46 +170,13 @@ const seed = async () => {
     );
     if (!profileImageUrls.length) throw new Error("No profile images fetched");
 
-    // ----- UPLOAD PROFILE IMAGES -----
-    console.log("\n🖼️ Uploading profile images to MinIO...");
-    const uploadedProfileUrls = [];
-    for (let i = 0; i < profileImageUrls.length; i++) {
-      try {
-        const buffer = await fetchPicsumImageBuffer(profileImageUrls[i]);
-        const originalName = `profile-${Date.now()}-${i}.jpg`;
-        const url = await uploadImageToMinio(buffer, originalName, "profiles");
-        uploadedProfileUrls.push(url);
-        console.log(
-          `   Profile image ${i + 1}/${profileImageUrls.length} uploaded`,
-        );
-      } catch (err) {
-        console.log(`   ⚠️ Failed profile image ${i + 1}: ${err.message}`);
-      }
-    }
-    if (!uploadedProfileUrls.length)
-      throw new Error("No profile images uploaded");
-    console.log(`✅ Uploaded ${uploadedProfileUrls.length} profile images`);
+    const uploadedProfileUrls = profileImageUrls;
+    console.log(`✅ Using ${uploadedProfileUrls.length} profile image URLs`);
 
     // ----- FETCH POST IMAGES -----
-    const postImageUrls = await fetchPicsumImages(CONFIG.POST_IMAGES_TO_UPLOAD);
-    if (!postImageUrls.length) throw new Error("No post images fetched");
-
-    // ----- UPLOAD POST IMAGES -----
-    console.log("\n🖼️ Uploading post images to MinIO...");
-    const uploadedPostUrls = [];
-    for (let i = 0; i < postImageUrls.length; i++) {
-      try {
-        const buffer = await fetchPicsumImageBuffer(postImageUrls[i]);
-        const originalName = `post-${Date.now()}-${i}.jpg`;
-        const url = await uploadImageToMinio(buffer, originalName, "posts");
-        uploadedPostUrls.push(url);
-        console.log(`   Post image ${i + 1}/${postImageUrls.length} uploaded`);
-      } catch (err) {
-        console.log(`   ⚠️ Failed post image ${i + 1}: ${err.message}`);
-      }
-    }
-    if (!uploadedPostUrls.length) throw new Error("No post images uploaded");
-    console.log(`✅ Uploaded ${uploadedPostUrls.length} post images`);
+    const uploadedPostUrls = await fetchPicsumImages(CONFIG.POST_IMAGES_TO_UPLOAD);
+    if (!uploadedPostUrls.length) throw new Error("No post images fetched");
+    console.log(`✅ Using ${uploadedPostUrls.length} post image URLs`);
 
     // ----- TRANSACTION -----
     transaction = await sequelize.transaction();

@@ -2,7 +2,7 @@
  * Post Controller (Web)
  *
  * Handles:
- * - Creating / editing / deleting posts (with image upload to MinIO)
+ * - Creating / editing / deleting posts (with image upload support)
  * - Viewing a single post with its comments (paginated)
  * - Liking / unliking a post (AJAX)
  */
@@ -18,7 +18,11 @@ const {
 const { getSafeUserInclude } = require("../../utils/dbHelper");
 const { Op } = require("sequelize");
 const { paginate } = require("../../utils/pagination");
-const { uploadToMinio, deleteFromMinioByUrl } = require("../../config/minio");
+const {
+  uploadToCloudinary,
+  deleteFromCloudinary,
+  getPublicIdFromUrl,
+} = require("../../utils/cloudinaryUpload");
 const redirectBack = require("../../utils/redirectBack");
 const { deleteByPattern } = require("../../utils/cache");
 const { COMMENT_EDIT_WINDOW_MINUTES } = require("../../constant/editWindow");
@@ -44,12 +48,9 @@ exports.createPost = async (req, res, next) => {
     let thumbnailUrl = null;
 
     if (file) {
-      const result = await uploadToMinio(
-        file.buffer,
-        file.originalname,
-        "posts",
-        { thumbnailSize: 400 },
-      );
+      const result = await uploadToCloudinary(file.buffer, "posts", {
+        thumbnailSize: 400,
+      });
       imageUrl = result.url;
       thumbnailUrl = result.thumbnailUrl;
     }
@@ -248,20 +249,21 @@ exports.updatePost = async (req, res, next) => {
     post.content = content;
 
     if (file) {
-      if (post.imageUrl) await deleteFromMinioByUrl(post.imageUrl);
+      if (post.imageUrl) {
+        const oldPublicId = getPublicIdFromUrl(post.imageUrl);
+        if (oldPublicId) await deleteFromCloudinary(oldPublicId);
+      }
 
-      const result = await uploadToMinio(
-        file.buffer,
-        file.originalname,
-        "posts",
-        { thumbnailSize: 400 },
-      );
+      const result = await uploadToCloudinary(file.buffer, "posts", {
+        thumbnailSize: 400,
+      });
       post.imageUrl = result.url;
       post.thumbnailUrl = result.thumbnailUrl;
     }
 
     if (shouldRemoveImage(removeImage) && post.imageUrl) {
-      await deleteFromMinioByUrl(post.imageUrl);
+      const oldPublicId = getPublicIdFromUrl(post.imageUrl);
+      if (oldPublicId) await deleteFromCloudinary(oldPublicId);
       post.imageUrl = null;
       post.thumbnailUrl = null;
     }

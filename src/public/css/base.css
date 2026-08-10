@@ -165,6 +165,56 @@ select {
   transition: margin-left 0.3s ease;
 }
 
+#main-content {
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease;
+}
+
+#main-content.spa-leaving {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+#main-content.spa-entering {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.page-loader {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.2);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  z-index: 9999;
+}
+
+.page-loader::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4rem;
+  height: 4rem;
+  margin: -2rem 0 0 -2rem;
+  border-radius: 50%;
+  border: 4px solid rgba(255, 255, 255, 0.25);
+  border-top-color: var(--primary-color);
+  animation: spin 1s linear infinite;
+}
+
+body.spa-loading .page-loader {
+  opacity: 1;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* ========== MODERN SIDEBAR ========== */
 .modern-sidebar {
   position: fixed;

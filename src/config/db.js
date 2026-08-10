@@ -15,8 +15,19 @@ const sequelize = new Sequelize(
   process.env.DB_PASS || "123",
   {
     host: process.env.DB_HOST || "localhost",
+    port: parseInt(process.env.DB_PORT, 10) || 3306,
     dialect: "mysql",
     logging: false, // Disable SQL query logging in console (optional: set to console.log for debugging)
+    dialectOptions: {
+      ssl:
+        process.env.DB_SSL === "true" ||
+        (process.env.DB_HOST && !/^(localhost|127\.0\.0\.1)$/i.test(process.env.DB_HOST))
+          ? {
+              require: true,
+              rejectUnauthorized: false,
+            }
+          : false,
+    },
     pool: {
       max: 10, // Maximum number of connection in pool
       min: 0, // Minimum number of connection in pool

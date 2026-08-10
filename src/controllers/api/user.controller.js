@@ -13,13 +13,18 @@ const {
   invalidateFeedCache,
 } = require("../../utils/cache");
 const { Op } = require("sequelize");
-const { uploadToMinio, deleteFromMinioByUrl } = require("../../config/minio");
 const redis = require("../../config/redis");
 const {
   getUserSessions,
   deleteToken,
   removeTokenFromUser,
 } = require("../../utils/authCache");
+
+const {
+  uploadToCloudinary,
+  deleteFromCloudinary,
+  getPublicIdFromUrl,
+} = require("../../utils/cloudinaryUpload");
 
 // GET ALL USERS
 exports.getAllUsers = async (req, res, next) => {
@@ -533,9 +538,13 @@ exports.updateProfile = async (req, res, next) => {
     const oldPictureUrl = user.profilePictureUrl;
 
     if (file) {
-      const { url, thumbnailUrl } = await uploadToMinio(
+      // Delete old profile picture if exists
+      if (oldPictureUrl) {
+        const oldPublicId = getPublicIdFromUrl(oldPictureUrl);
+        if (oldPublicId) await deleteFromCloudinary(oldPublicId);
+      }
+      const { url, thumbnailUrl } = await uploadToCloudinary(
         file.buffer,
-        file.originalname,
         "profiles",
         { thumbnailSize: 80 },
       );
@@ -545,9 +554,7 @@ exports.updateProfile = async (req, res, next) => {
 
     await user.save();
 
-    if (file && oldPictureUrl) await deleteFromMinioByUrl(oldPictureUrl);
-
-    // Invalidate user cache
+    // Invalidate caches
     await invalidateUserCache(userId);
     await invalidateFeedCache();
 

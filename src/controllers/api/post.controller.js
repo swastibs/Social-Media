@@ -22,7 +22,11 @@ const {
   invalidateUserCache,
   invalidateFeedCache,
 } = require("../../utils/cache");
-const { uploadToMinio, deleteFromMinioByUrl } = require("../../config/minio");
+const {
+  uploadToCloudinary,
+  deleteFromCloudinary,
+  getPublicIdFromUrl,
+} = require("../../utils/cloudinaryUpload");
 const { Op } = require("sequelize");
 
 // CREATE POST
@@ -36,12 +40,9 @@ exports.createPost = async (req, res, next) => {
       thumbnailUrl = null;
 
     if (file) {
-      const result = await uploadToMinio(
-        file.buffer,
-        file.originalname,
-        "posts",
-        { thumbnailSize: 400 }, // feed card thumbnail
-      );
+      const result = await uploadToCloudinary(file.buffer, "posts", {
+        thumbnailSize: 400,
+      });
       imageUrl = result.url;
       thumbnailUrl = result.thumbnailUrl;
     }
@@ -61,15 +62,13 @@ exports.createPost = async (req, res, next) => {
     await user.increment("postsCount", { transaction });
     await transaction.commit();
 
-    // ✅ INVALIDATE ALL RELEVANT CACHES
+    // Invalidate caches
     await deleteByPattern(`cache:/api/users/${user.id}/posts*`);
     await deleteByPattern(`cache:/api/users/${user.id}*`);
     await deleteByPattern(`cache:/api/posts*`);
     await deleteByPattern(`web:cache:/feed*`);
     await deleteByPattern(`web:cache:/profile/${user.id}*`);
     await deleteByPattern(`web:cache:/search*`);
-
-    console.log(`🗑️ Cache invalidated for user ${user.id} posts`);
 
     return successResponse(res, {
       statusCode: 201,
@@ -184,19 +183,20 @@ exports.updatePost = async (req, res, next) => {
     if (content) post.content = content;
 
     if (file) {
-      if (post.imageUrl) await deleteFromMinioByUrl(post.imageUrl);
-      const result = await uploadToMinio(
-        file.buffer,
-        file.originalname,
-        "posts",
-        { thumbnailSize: 400 },
-      );
+      // Delete old image if exists
+      if (post.imageUrl) {
+        const oldPublicId = getPublicIdFromUrl(post.imageUrl);
+        if (oldPublicId) await deleteFromCloudinary(oldPublicId);
+      }
+      const result = await uploadToCloudinary(file.buffer, "posts", {
+        thumbnailSize: 400,
+      });
       post.imageUrl = result.url;
       post.thumbnailUrl = result.thumbnailUrl;
     }
-
     if (removeImage === "true" && post.imageUrl) {
-      await deleteFromMinioByUrl(post.imageUrl);
+      const oldPublicId = getPublicIdFromUrl(post.imageUrl);
+      if (oldPublicId) await deleteFromCloudinary(oldPublicId);
       post.imageUrl = null;
       post.thumbnailUrl = null;
     }
@@ -204,7 +204,7 @@ exports.updatePost = async (req, res, next) => {
     await post.save();
     const newData = post.toJSON();
 
-    // ✅ INVALIDATE ALL RELEVANT CACHES
+    // Invalidate caches
     await deleteByPattern(`cache:/api/users/${user.id}/posts*`);
     await deleteByPattern(`cache:/api/users/${user.id}*`);
     await deleteByPattern(`cache:/api/posts/${postId}`);
@@ -240,9 +240,10 @@ exports.deletePost = async (req, res, next) => {
     });
 
     if (!post) throw new ApiError(404, "Post not found");
-
     if (user.role !== ROLES.ADMIN && post.userId !== user.id)
       throw new ApiError(403, "Not authorized");
+
+    const imageUrl = post.imageUrl;
 
     await post.update({ isDeleted: true, deletedBy: user.id }, { transaction });
 
@@ -256,7 +257,17 @@ exports.deletePost = async (req, res, next) => {
 
     await transaction.commit();
 
-    // ✅ INVALIDATE ALL RELEVANT CACHES
+    // Delete image from Cloudinary
+    if (imageUrl) {
+      try {
+        const publicId = getPublicIdFromUrl(imageUrl);
+        if (publicId) await deleteFromCloudinary(publicId);
+      } catch (cloudinaryError) {
+        console.error("Cloudinary delete error:", cloudinaryError);
+      }
+    }
+
+    // Invalidate caches
     await deleteByPattern(`cache:/api/users/${post.userId}/posts*`);
     await deleteByPattern(`cache:/api/users/${post.userId}*`);
     await deleteByPattern(`cache:/api/posts/${postId}`);
@@ -266,18 +277,13 @@ exports.deletePost = async (req, res, next) => {
     await deleteByPattern(`web:cache:/profile/${post.userId}*`);
     await deleteByPattern(`web:cache:/search*`);
 
-    console.log(`🗑️ Cache invalidated for post ${postId}`);
-
-    req.activity = {
-      entity: "Post",
-      entityId: post.id,
-    };
+    req.activity = { entity: "Post", entityId: post.id };
 
     return successResponse(res, {
       message: "Post deleted successfully",
     });
   } catch (error) {
-    await transaction.rollback();
+    if (!transaction.finished) await transaction.rollback();
     next(error);
   }
 };

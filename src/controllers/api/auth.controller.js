@@ -12,7 +12,7 @@ const {
   deleteAllUserTokens,
   removeTokenFromUser,
 } = require("../../utils/authCache");
-const { uploadToMinio } = require("../../config/minio");
+const { uploadToCloudinary } = require("../../utils/cloudinaryUpload");
 const { invalidateUserCache } = require("../../utils/cache");
 
 // SIGN UP
@@ -22,7 +22,6 @@ exports.signUp = async (req, res, next) => {
     const file = req.file;
 
     const existingUser = await User.findOne({ where: { email } });
-
     if (existingUser) throw new ApiError(409, "Email already exists");
 
     const hashedPassword = await hash(password, 10);
@@ -30,12 +29,13 @@ exports.signUp = async (req, res, next) => {
     let profilePictureUrl = null;
 
     if (file) {
-      const { url } = await uploadToMinio(
+      const { url, thumbnailUrl } = await uploadToCloudinary(
         file.buffer,
-        file.originalname,
         "profiles",
+        { thumbnailSize: 80 },
       );
       profilePictureUrl = url;
+      // thumbnailUrl is returned but not stored in your model – you may add a column later
     }
 
     const user = await User.create({

@@ -1,25 +1,15 @@
-/**
- * Redis Configuration
- *
- * Sets up the Redis client for caching and authentication token storage.
- * Used for:
- * - HTML page caching (webCache middleware)
- * - JWT token blacklist / session invalidation
- * - Rate limiting counters
- */
-
 const Redis = require("ioredis");
 
-// Create Redis client with configuration from .env
-const redis = new Redis({
+const isRemoteRedis =
+  process.env.REDIS_HOST &&
+  !/^(localhost|127\.0\.0\.1)$/i.test(process.env.REDIS_HOST);
+
+const redisOptions = {
   host: process.env.REDIS_HOST || "127.0.0.1",
-  port: process.env.REDIS_PORT || 6379,
-  // Optional: add password if set in .env
-  // password: process.env.REDIS_PASSWORD || undefined,
-  // Optional: database index (default 0)
-  // db: 0,
+  port: parseInt(process.env.REDIS_PORT, 10) || 6379,
+  username: process.env.REDIS_USERNAME || (isRemoteRedis ? "default" : undefined),
+  password: process.env.REDIS_PASSWORD || undefined, // ← for ArcticKey
   retryStrategy: (times) => {
-    // Reconnect after 3 seconds, but stop after 10 attempts
     const delay = Math.min(times * 100, 3000);
     if (times > 10) {
       console.error("Redis: Max retries reached, giving up");
@@ -27,10 +17,27 @@ const redis = new Redis({
     }
     return delay;
   },
-});
+};
 
-// Event handlers
-redis.on("connect", () => console.log("✅ Redis connected"));
-redis.on("error", (err) => console.error("❌ Redis error:", err.message));
+if (process.env.REDIS_URL) {
+  const redis = new Redis(process.env.REDIS_URL, redisOptions);
 
-module.exports = redis;
+  redis.once("connect", () => console.log("✅ Redis connected"));
+  redis.on("error", (err) => console.error("❌ Redis error:", err.message));
+
+  module.exports = redis;
+} else {
+  if (process.env.REDIS_TLS === "true" || isRemoteRedis) {
+    redisOptions.tls = {
+      rejectUnauthorized: false,
+      servername: process.env.REDIS_HOST,
+    };
+  }
+
+  const redis = new Redis(redisOptions);
+
+  redis.once("connect", () => console.log("✅ Redis connected"));
+  redis.on("error", (err) => console.error("❌ Redis error:", err.message));
+
+  module.exports = redis;
+}

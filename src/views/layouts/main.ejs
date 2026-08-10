@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PostLoop</title>
-    <script>
+    <script data-spa-global>
         (function () {
             const savedTheme = localStorage.getItem('theme');
             let theme = savedTheme;
@@ -61,8 +61,8 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js" data-spa-global></script>
+    <script data-spa-global>
         document.documentElement.classList.add('transition');
         document.querySelectorAll('.toast').forEach(el => {
             setTimeout(() => el.style.display = 'none', 2000);
@@ -90,6 +90,8 @@
             });
         }
     </script>
+    <div class="page-loader" id="pageLoader" aria-hidden="true"></div>
+    <script src="/js/spa.js" defer></script>
 </body>
 
 </html>
