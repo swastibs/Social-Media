@@ -15,6 +15,7 @@ const {
   invalidateUserCache,
 } = require("../../utils/cache");
 
+// CREATE COMMENT
 exports.createComment = async (req, res, next) => {
   const transaction = await sequelize.transaction();
 
@@ -38,6 +39,7 @@ exports.createComment = async (req, res, next) => {
 
     await transaction.commit();
 
+    // Invalidate caches
     await invalidateCommentCache(comment.id, postId, user.id);
     await invalidateUserCache(user.id);
 
@@ -57,6 +59,7 @@ exports.createComment = async (req, res, next) => {
   }
 };
 
+// GET ALL COMMENTS
 exports.getAllComments = async (req, res, next) => {
   try {
     const { page = 1, limit = 10 } = req.query;
@@ -89,6 +92,7 @@ exports.getAllComments = async (req, res, next) => {
   }
 };
 
+// GET SINGLE COMMENT
 exports.getComment = async (req, res, next) => {
   try {
     const { commentId } = req.params;
@@ -118,6 +122,7 @@ exports.getComment = async (req, res, next) => {
   }
 };
 
+// UPDATE COMMENT
 exports.updateComment = async (req, res, next) => {
   const transaction = await sequelize.transaction();
 
@@ -142,6 +147,7 @@ exports.updateComment = async (req, res, next) => {
 
     const newData = targetComment.toJSON();
 
+    // Invalidate caches
     await invalidateCommentCache(commentId, targetComment.postId, user.id);
 
     req.activity = {
@@ -161,6 +167,7 @@ exports.updateComment = async (req, res, next) => {
   }
 };
 
+// DELETE COMMENT
 exports.deleteComment = async (req, res, next) => {
   const transaction = await sequelize.transaction();
 
@@ -190,6 +197,7 @@ exports.deleteComment = async (req, res, next) => {
 
     await transaction.commit();
 
+    // Invalidate caches
     await invalidateCommentCache(commentId, targetComment.postId, user.id);
 
     req.activity = {

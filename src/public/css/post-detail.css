@@ -1,3 +1,4 @@
+/* ========== POST DETAIL (FIXED HEIGHT) ========== */
 .post-detail-wrapper {
   height: calc(100vh - 80px);
   max-width: 1400px;
@@ -237,6 +238,7 @@
   color: var(--text-muted);
 }
 
+/* Right column - comments */
 .comments-column {
   height: 100%;
   display: flex;

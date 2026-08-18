@@ -5,16 +5,19 @@
     </div>
 
     <form action="/profile/edit" method="POST" enctype="multipart/form-data" class="profile-edit-form">
+        <!-- Name -->
         <div class="form-group">
             <label for="name">Username</label>
             <input type="text" id="name" name="name" value="<%= user.name %>" required class="form-input">
         </div>
 
+        <!-- Bio -->
         <div class="form-group">
             <label for="bio">Bio</label>
             <textarea id="bio" name="bio" rows="4" class="form-textarea"><%= user.bio || '' %></textarea>
         </div>
 
+        <!-- Profile Picture Section -->
         <div class="form-group">
             <label>Profile Picture</label>
             <div class="profile-picture-section">
@@ -42,6 +45,7 @@
             </div>
         </div>
 
+        <!-- Privacy Toggle (public/private) -->
         <div class="form-group">
             <label class="checkbox-label">
                 <input type="checkbox" name="isPrivate" value="true" <%=user.isPrivate ? 'checked' : '' %>>
@@ -50,6 +54,7 @@
             <small class="form-text text-muted">Only approved followers can see your posts and follow you.</small>
         </div>
 
+        <!-- Form Actions -->
         <div class="form-actions">
             <a href="/profile/<%= user.id %>" class="btn-secondary">Cancel</a>
             <button type="submit" class="btn-primary">Save Changes</button>

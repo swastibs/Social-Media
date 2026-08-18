@@ -1,8 +1,20 @@
+/**
+ * Comment Controller (Web)
+ *
+ * Handles:
+ * - Creating a comment (AJAX)
+ * - Updating a comment (AJAX) – allowed within 15 minutes of creation
+ * - Deleting a comment (AJAX) – allowed for comment owner, post owner, or admin
+ */
+
 const { Comment, Post, sequelize } = require("../../models");
 const { getSafeUserInclude } = require("../../utils/dbHelper");
 const { deleteByPattern } = require("../../utils/cache");
 const { COMMENT_EDIT_WINDOW_MINUTES } = require("../../constant/editWindow");
 
+/**
+ * Helper: Check if comment is still editable (within 15 minutes of creation)
+ */
 const isEditable = (commentCreatedAt) => {
   const now = new Date();
   const createdAt = new Date(commentCreatedAt);
@@ -10,12 +22,14 @@ const isEditable = (commentCreatedAt) => {
   return diffMinutes <= COMMENT_EDIT_WINDOW_MINUTES;
 };
 
+// ========== CREATE COMMENT (AJAX) ==========
 exports.createComment = async (req, res, next) => {
   const transaction = await sequelize.transaction();
   try {
     const { postId, content } = req.body;
     const userId = req.user.id;
 
+    // Check if post exists
     const post = await Post.findByPk(postId, { transaction });
     if (!post || post.isDeleted) {
       await transaction.rollback();
@@ -30,10 +44,12 @@ exports.createComment = async (req, res, next) => {
     );
     await transaction.commit();
 
+    // After transaction.commit()
     await deleteByPattern(`web:cache:/post/${postId}*`);
     await deleteByPattern("web:cache:/feed*");
     await deleteByPattern("web:cache:/search*");
 
+    // Fetch the comment with user info for immediate display
     const newComment = await Comment.findByPk(comment.id, {
       include: [
         getSafeUserInclude({
@@ -48,6 +64,7 @@ exports.createComment = async (req, res, next) => {
       ],
     });
 
+    // Get updated comment count for the post
     const commentCount = await Comment.count({
       where: { postId, isDeleted: false },
     });
@@ -71,6 +88,7 @@ exports.createComment = async (req, res, next) => {
   }
 };
 
+// ========== UPDATE COMMENT (AJAX) – 15‑minute edit window ==========
 exports.updateComment = async (req, res, next) => {
   const transaction = await sequelize.transaction();
   try {
@@ -109,6 +127,7 @@ exports.updateComment = async (req, res, next) => {
     await comment.save({ transaction });
     await transaction.commit();
 
+    // Invalidate relevant caches
     await deleteByPattern(`web:cache:/post/${comment.postId}*`);
     await deleteByPattern("web:cache:/feed*");
     await deleteByPattern("web:cache:/search*");
@@ -127,6 +146,7 @@ exports.updateComment = async (req, res, next) => {
   }
 };
 
+// ========== DELETE COMMENT (AJAX) ==========
 exports.deleteComment = async (req, res, next) => {
   const transaction = await sequelize.transaction();
   try {
@@ -164,6 +184,7 @@ exports.deleteComment = async (req, res, next) => {
     );
     await transaction.commit();
 
+    // Invalidate caches
     await deleteByPattern(`web:cache:/post/${comment.postId}*`);
     await deleteByPattern("web:cache:/feed*");
     await deleteByPattern("web:cache:/search*");

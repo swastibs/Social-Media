@@ -1,3 +1,12 @@
+/**
+ * Payment Controller (Web)
+ *
+ * Handles Razorpay payment integration for user verification:
+ * - Create order (AJAX)
+ * - Verify payment after successful checkout (AJAX)
+ * - Webhook for asynchronous payment events (JSON endpoint)
+ */
+
 const crypto = require("crypto");
 const razorpayInstance = require("../../config/razorpay");
 const { Payment, User } = require("../../models");
@@ -5,10 +14,11 @@ const ApiError = require("../../utils/ApiError");
 const { successResponse } = require("../../utils/ApiResponse");
 const { deleteByPattern } = require("../../utils/cache");
 
+// ========== Create Razorpay Order (AJAX) ==========
 exports.createOrder = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const amount = 50000;
+    const amount = 50000; // ₹500.00 in paise
 
     const options = {
       amount: amount,
@@ -21,6 +31,7 @@ exports.createOrder = async (req, res, next) => {
 
     const order = await razorpayInstance.orders.create(options);
 
+    // Store order details in database
     await Payment.create({
       userId,
       razorpayOrderId: order.id,
@@ -43,6 +54,7 @@ exports.createOrder = async (req, res, next) => {
   }
 };
 
+// ========== Verify Payment (AJAX) ==========
 exports.verifyPayment = async (req, res, next) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
@@ -82,11 +94,13 @@ exports.verifyPayment = async (req, res, next) => {
       status: "paid",
     });
 
+    // Mark user as verified
     const user = await User.findByPk(userId);
     if (!user) throw new ApiError(404, "User not found");
     user.isVerified = true;
     await user.save();
 
+    // Invalidate profile page cache for this user
     await deleteByPattern(`web:cache:/profile/${userId}*`);
 
     return successResponse(res, {
@@ -97,10 +111,12 @@ exports.verifyPayment = async (req, res, next) => {
   }
 };
 
+// ========== Razorpay Webhook (JSON endpoint) ==========
 exports.razorpayWebhook = async (req, res) => {
   const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
   const signature = req.headers["x-razorpay-signature"];
 
+  // Verify webhook signature
   const generatedSignature = crypto
     .createHmac("sha256", webhookSecret)
     .update(JSON.stringify(req.body))
@@ -118,6 +134,7 @@ exports.razorpayWebhook = async (req, res) => {
       const orderId = payment.order_id;
       const paymentId = payment.id;
 
+      // Update payment record in database
       const paymentRecord = await Payment.findOne({
         where: { razorpayOrderId: orderId },
       });
@@ -129,11 +146,13 @@ exports.razorpayWebhook = async (req, res) => {
           paymentDetails: JSON.stringify(payment),
         });
 
+        // Mark user as verified if not already
         await User.update(
           { isVerified: true },
           { where: { id: paymentRecord.userId } },
         );
 
+        // Invalidate profile cache
         await deleteByPattern(`web:cache:/profile/${paymentRecord.userId}*`);
       }
     }

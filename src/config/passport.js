@@ -1,3 +1,10 @@
+/**
+ * Passport Configuration (Authentication)
+ *
+ * Configures Passport.js with JWT and GitHub OAuth strategies.
+ * JWT is used for cookie‑based authentication, GitHub for social login.
+ */
+
 const passport = require("passport");
 const { Strategy: JwtStrategy, ExtractJwt } = require("passport-jwt");
 const GitHubStrategy = require("passport-github2").Strategy;
@@ -5,6 +12,8 @@ const { isTokenValid } = require("../utils/authCache");
 const { User } = require("../models");
 const bcrypt = require("bcrypt");
 
+// ----- JWT STRATEGY -----
+// Extract token from cookie (httpOnly) or Authorization header
 const cookieExtractor = (req) => {
   let token = null;
   if (req && req.cookies) token = req.cookies.postloop_token;
@@ -37,6 +46,7 @@ passport.use(
   }),
 );
 
+// ----- GITHUB OAUTH STRATEGY -----
 passport.use(
   new GitHubStrategy(
     {
@@ -94,6 +104,7 @@ passport.use(
   ),
 );
 
+// ----- SERIALIZATION (required for sessions with OAuth) -----
 passport.serializeUser((user, done) => {
   done(null, user.id);
 });

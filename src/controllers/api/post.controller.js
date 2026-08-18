@@ -29,6 +29,7 @@ const {
 } = require("../../utils/cloudinaryUpload");
 const { Op } = require("sequelize");
 
+// CREATE POST
 exports.createPost = async (req, res, next) => {
   const transaction = await sequelize.transaction();
   try {
@@ -61,6 +62,7 @@ exports.createPost = async (req, res, next) => {
     await user.increment("postsCount", { transaction });
     await transaction.commit();
 
+    // Invalidate caches
     await deleteByPattern(`cache:/api/users/${user.id}/posts*`);
     await deleteByPattern(`cache:/api/users/${user.id}*`);
     await deleteByPattern(`cache:/api/posts*`);
@@ -79,6 +81,7 @@ exports.createPost = async (req, res, next) => {
   }
 };
 
+// GET ALL POSTS
 exports.getAllPosts = async (req, res, next) => {
   try {
     const {
@@ -101,6 +104,7 @@ exports.getAllPosts = async (req, res, next) => {
       include: [getSafeUserInclude()],
     });
 
+    // --- ADD THIS BLOCK: add liked flag for current user ---
     let likedMap = {};
     if (user && data.length) {
       const postIds = data.map((p) => p.id);
@@ -119,6 +123,7 @@ exports.getAllPosts = async (req, res, next) => {
       liked: likedMap[post.id] || false,
     }));
     likedMap = null;
+    // --- END ADD ---
 
     if (req.cacheKey)
       await setCache(req.cacheKey, {
@@ -137,6 +142,7 @@ exports.getAllPosts = async (req, res, next) => {
   }
 };
 
+// GET SINGLE POST
 exports.getPost = async (req, res, next) => {
   try {
     const { postId } = req.params;
@@ -163,6 +169,7 @@ exports.getPost = async (req, res, next) => {
   }
 };
 
+// UPDATE POST
 exports.updatePost = async (req, res, next) => {
   try {
     const { postId } = req.params;
@@ -176,6 +183,7 @@ exports.updatePost = async (req, res, next) => {
     if (content) post.content = content;
 
     if (file) {
+      // Delete old image if exists
       if (post.imageUrl) {
         const oldPublicId = getPublicIdFromUrl(post.imageUrl);
         if (oldPublicId) await deleteFromCloudinary(oldPublicId);
@@ -196,6 +204,7 @@ exports.updatePost = async (req, res, next) => {
     await post.save();
     const newData = post.toJSON();
 
+    // Invalidate caches
     await deleteByPattern(`cache:/api/users/${user.id}/posts*`);
     await deleteByPattern(`cache:/api/users/${user.id}*`);
     await deleteByPattern(`cache:/api/posts/${postId}`);
@@ -216,6 +225,7 @@ exports.updatePost = async (req, res, next) => {
   }
 };
 
+// DELETE POST
 exports.deletePost = async (req, res, next) => {
   const transaction = await sequelize.transaction();
 
@@ -247,6 +257,7 @@ exports.deletePost = async (req, res, next) => {
 
     await transaction.commit();
 
+    // Delete image from Cloudinary
     if (imageUrl) {
       try {
         const publicId = getPublicIdFromUrl(imageUrl);
@@ -256,6 +267,7 @@ exports.deletePost = async (req, res, next) => {
       }
     }
 
+    // Invalidate caches
     await deleteByPattern(`cache:/api/users/${post.userId}/posts*`);
     await deleteByPattern(`cache:/api/users/${post.userId}*`);
     await deleteByPattern(`cache:/api/posts/${postId}`);
@@ -276,6 +288,7 @@ exports.deletePost = async (req, res, next) => {
   }
 };
 
+// LIKE / UNLIKE POST (OPTIMIZED)
 exports.likePost = async (req, res, next) => {
   const transaction = await sequelize.transaction();
 
@@ -300,6 +313,7 @@ exports.likePost = async (req, res, next) => {
       transaction,
     });
 
+    // UNLIKE
     if (!created) {
       await like.destroy({ transaction });
       await post.decrement("likeCount", { transaction });
@@ -311,6 +325,7 @@ exports.likePost = async (req, res, next) => {
       });
     }
 
+    // LIKE
     await post.increment("likeCount", { transaction });
     await transaction.commit();
     req.activity = { entity: "PostLike", entityId: postId };
@@ -319,6 +334,7 @@ exports.likePost = async (req, res, next) => {
       data: { likeCount: post.likeCount + 1, liked: true },
     });
   } catch (error) {
+    // Only rollback if the transaction is still active
     if (transaction && !transaction.finished) {
       await transaction.rollback();
     }
@@ -326,11 +342,13 @@ exports.likePost = async (req, res, next) => {
   }
 };
 
+// GET FEED POSTS (from followed users)
 exports.getFeed = async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { page = 1, limit = 10 } = req.query;
 
+    // Find users that the current user follows
     const followedUsers = await UserFollow.findAll({
       where: { followerId: userId },
       attributes: ["followingId"],
@@ -339,6 +357,7 @@ exports.getFeed = async (req, res, next) => {
 
     const followingIds = followedUsers.map((f) => f.followingId);
 
+    // If not following anyone, return empty array
     if (followingIds.length === 0) {
       return successResponse(res, {
         message: "Feed fetched successfully",
@@ -382,6 +401,7 @@ exports.getFeed = async (req, res, next) => {
   }
 };
 
+// GET ALL COMMENTS OF POST
 exports.getAllCommentsOfPost = async (req, res, next) => {
   try {
     const { postId } = req.params;
@@ -414,6 +434,7 @@ exports.getAllCommentsOfPost = async (req, res, next) => {
   }
 };
 
+// GET SINGLE COMMENT OF POST
 exports.getCommentOfPost = async (req, res, next) => {
   try {
     const { postId, commentId } = req.params;

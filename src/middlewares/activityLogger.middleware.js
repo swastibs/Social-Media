@@ -1,3 +1,10 @@
+/**
+ * Activity Logger Middleware
+ *
+ * Logs mutation requests (POST/PUT/DELETE) to MongoDB.
+ * Captures request/response metadata, changes (for PUT/PATCH), and entity info.
+ */
+
 const Activity = require("../models/activity.model");
 
 const activityLogger = (req, res, next) => {

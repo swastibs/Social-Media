@@ -1,3 +1,14 @@
+/**
+ * Sequelize CLI Configuration
+ *
+ * This file is used by the Sequelize CLI tool (npx sequelize-cli) for:
+ * - Migrations (npx sequelize-cli db:migrate)
+ * - Seeders (npx sequelize-cli db:seed:all)
+ * - Generating models/migrations
+ *
+ * It loads environment variables from .env for different environments.
+ */
+
 require("dotenv").config();
 
 module.exports = {

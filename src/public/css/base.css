@@ -1,3 +1,4 @@
+/* ========== BASE – Light & Dark Variables ========== */
 :root {
   --primary-color: #0ea5e9;
   --primary-hover: #0284c7;
@@ -91,6 +92,7 @@ select {
     background-color 0.2s ease;
 }
 
+/* ========== GLOBAL BUTTONS ========== */
 .btn-primary,
 .btn-secondary {
   padding: 0.75rem 1.5rem;
@@ -148,6 +150,7 @@ select {
   }
 }
 
+/* ========== LAYOUT ========== */
 .container {
   max-width: 1400px;
   margin: 0 auto;
@@ -189,7 +192,7 @@ select {
 }
 
 .page-loader::before {
-  content: "";
+  content: '';
   position: absolute;
   top: 50%;
   left: 50%;
@@ -212,6 +215,7 @@ body.spa-loading .page-loader {
   }
 }
 
+/* ========== MODERN SIDEBAR ========== */
 .modern-sidebar {
   position: fixed;
   inset: 0 auto 0 0;
@@ -493,6 +497,7 @@ body.spa-loading .page-loader {
   transform: translateY(-2px);
 }
 
+/* Hamburger & mobile */
 .hamburger-btn {
   display: none;
   position: fixed;
@@ -538,6 +543,7 @@ body.spa-loading .page-loader {
   }
 }
 
+/* ========== PAGINATION ========== */
 .pagination-container {
   margin-top: 3rem;
   padding: 1.5rem;
@@ -633,6 +639,7 @@ body.spa-loading .page-loader {
   text-align: center;
 }
 
+/* ========== TOAST MESSAGES ========== */
 .toast-container {
   position: fixed;
   top: 20px;
@@ -657,6 +664,7 @@ body.spa-loading .page-loader {
   border-color: var(--error-color);
 }
 
+/* ========== UTILITIES ========== */
 .avatar-circle {
   width: 40px;
   height: 40px;
@@ -695,6 +703,7 @@ body.spa-loading .page-loader {
   font-weight: 700;
 }
 
+/* Reserve space for lazy-loaded images to prevent CLS */
 img {
   display: block;
   max-width: 100%;

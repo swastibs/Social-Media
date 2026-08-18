@@ -1,3 +1,12 @@
+/**
+ * Post Controller (Web)
+ *
+ * Handles:
+ * - Creating / editing / deleting posts (with image upload support)
+ * - Viewing a single post with its comments (paginated)
+ * - Liking / unliking a post (AJAX)
+ */
+
 const {
   Post,
   Comment,
@@ -20,6 +29,7 @@ const { COMMENT_EDIT_WINDOW_MINUTES } = require("../../constant/editWindow");
 
 const shouldRemoveImage = (value) => value === true || value === "true";
 
+// ========== CREATE POST ==========
 exports.createPostForm = (req, res) => {
   res.render("create-post", {
     title: "Create Post",
@@ -72,6 +82,7 @@ exports.createPost = async (req, res, next) => {
   }
 };
 
+// ========== SINGLE POST (with comments) ==========
 exports.postDetail = async (req, res, next) => {
   try {
     res.setHeader(
@@ -95,7 +106,9 @@ exports.postDetail = async (req, res, next) => {
       return redirectBack(req, res, "/feed");
     }
 
+    // PRIVACY CHECK: If post author's account is private
     if (post.User && post.User.isPrivate) {
+      // If not logged in, cannot view
       if (!req.user) {
         req.flash(
           "error_msg",
@@ -103,7 +116,7 @@ exports.postDetail = async (req, res, next) => {
         );
         return redirectBack(req, res, "/feed");
       }
-
+      // If logged in but not the author and not admin, check follow status
       if (req.user.id !== post.userId && req.user.role !== "admin") {
         const follow = await UserFollow.findOne({
           where: {
@@ -176,6 +189,7 @@ exports.postDetail = async (req, res, next) => {
   }
 };
 
+// ========== EDIT POST ==========
 exports.editPostForm = async (req, res, next) => {
   try {
     const postId = req.params.postId;
@@ -230,6 +244,7 @@ exports.updatePost = async (req, res, next) => {
       return res.redirect(`/post/${postId}`);
     }
 
+    // Capture old data for activity log
     const oldData = post.toJSON();
     post.content = content;
 
@@ -256,6 +271,7 @@ exports.updatePost = async (req, res, next) => {
     await post.save({ transaction });
     await transaction.commit();
 
+    // Attach activity data
     req.activity = {
       entity: "Post",
       entityId: post.id,
@@ -263,6 +279,7 @@ exports.updatePost = async (req, res, next) => {
       newData: post.toJSON(),
     };
 
+    // After transaction.commit()
     await deleteByPattern(`web:cache:/post/${postId}*`);
     await deleteByPattern("web:cache:/feed*");
     await deleteByPattern(`web:cache:/profile/${post.userId}*`);
@@ -276,6 +293,7 @@ exports.updatePost = async (req, res, next) => {
   }
 };
 
+// ========== DELETE POST ==========
 exports.deletePost = async (req, res, next) => {
   const transaction = await sequelize.transaction();
   try {
@@ -307,6 +325,7 @@ exports.deletePost = async (req, res, next) => {
       { where: { postId, isDeleted: false }, transaction },
     );
 
+    // Decrement postsCount of the author
     const author = await User.findByPk(post.userId, { transaction });
     if (author) await author.decrement("postsCount", { transaction });
 
@@ -317,6 +336,7 @@ exports.deletePost = async (req, res, next) => {
       entityId: post.id,
     };
 
+    // After transaction.commit()
     await deleteByPattern(`web:cache:/post/${postId}*`);
     await deleteByPattern("web:cache:/feed*");
     await deleteByPattern(`web:cache:/profile/${post.userId}*`);
@@ -330,6 +350,7 @@ exports.deletePost = async (req, res, next) => {
   }
 };
 
+// ========== LIKE / UNLIKE (AJAX) ==========
 exports.toggleLike = async (req, res, next) => {
   const transaction = await sequelize.transaction();
   try {
@@ -352,20 +373,24 @@ exports.toggleLike = async (req, res, next) => {
     });
 
     if (existing) {
+      // Unlike
       await existing.destroy({ transaction });
       await post.decrement("likeCount", { transaction });
       await transaction.commit();
 
+      // After transaction.commit()
       await deleteByPattern(`web:cache:/post/${postId}*`);
       await deleteByPattern("web:cache:/feed*");
       await deleteByPattern(`web:cache:/profile/${post.userId}*`);
 
       return res.json({ liked: false, likeCount: post.likeCount - 1 });
     } else {
+      // Like
       await PostLike.create({ userId, postId }, { transaction });
       await post.increment("likeCount", { transaction });
       await transaction.commit();
 
+      // After transaction.commit()
       await deleteByPattern(`web:cache:/post/${postId}*`);
       await deleteByPattern("web:cache:/feed*");
       await deleteByPattern(`web:cache:/profile/${post.userId}*`);

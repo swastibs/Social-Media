@@ -1,3 +1,10 @@
+/**
+ * UserFollow Model (Sequelize)
+ *
+ * Junction table for user follow relationships with status field.
+ * Supports follow requests (pending) and accepted follows.
+ */
+
 const { DataTypes } = require("sequelize");
 const { sequelize } = require("../config/db");
 

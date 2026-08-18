@@ -1,9 +1,19 @@
+/**
+ * Forgot Password Controller (Web)
+ *
+ * Handles:
+ * - Displaying forgot password form
+ * - Sending password reset email with secure token
+ * - Validating reset token and updating password
+ */
+
 const crypto = require("crypto");
 const { User } = require("../../models");
 const transporter = require("../../config/email");
 const { Op } = require("sequelize");
 const { hash } = require("bcrypt");
 
+// ========== Show forgot password form ==========
 exports.showForgotForm = (req, res) => {
   res.render("forgot-password", {
     title: "Forgot Password",
@@ -12,6 +22,7 @@ exports.showForgotForm = (req, res) => {
   });
 };
 
+// ========== Handle reset request (send email) ==========
 exports.requestReset = async (req, res, next) => {
   const { email } = req.body;
   const genericMessage =
@@ -21,12 +32,13 @@ exports.requestReset = async (req, res, next) => {
     const user = await User.findOne({ where: { email, isDeleted: false } });
 
     if (user) {
+      // Generate secure token
       const token = crypto.randomBytes(32).toString("hex");
       const hashedToken = crypto
         .createHash("sha256")
         .update(token)
         .digest("hex");
-      const expires = new Date(Date.now() + 60 * 60 * 1000);
+      const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
       await user.update({
         resetPasswordToken: hashedToken,
@@ -90,6 +102,7 @@ exports.requestReset = async (req, res, next) => {
   }
 };
 
+// ========== Show reset password form (with token) ==========
 exports.showResetForm = (req, res) => {
   const { token } = req.query;
   if (!token) {
@@ -104,6 +117,7 @@ exports.showResetForm = (req, res) => {
   });
 };
 
+// ========== Handle password reset (validate token, update password) ==========
 exports.resetPassword = async (req, res, next) => {
   const { token, password } = req.body;
 
@@ -134,6 +148,7 @@ exports.resetPassword = async (req, res, next) => {
       resetPasswordExpires: null,
     });
 
+    // Send confirmation email
     await transporter
       .sendMail({
         to: user.email,
@@ -178,7 +193,7 @@ exports.resetPassword = async (req, res, next) => {
 
     await deleteByPattern(`web:cache:/profile/${user.id}*`);
     await deleteByPattern("web:cache:/feed*");
-
+    
     res.redirect("/login");
   } catch (error) {
     console.error("Password reset error:", error);

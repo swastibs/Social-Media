@@ -1,3 +1,9 @@
+/**
+ * Post Validations (Web)
+ *
+ * Joi schemas for creating, updating, and deleting posts.
+ */
+
 const { Joi } = require("express-validation");
 
 const removeImage = Joi.boolean()

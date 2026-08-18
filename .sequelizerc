@@ -1,11 +1,15 @@
 const path = require("path");
 
 module.exports = {
+  // Path to Sequelize CLI config file
   config: path.resolve("src/config", "sequelize-cli.js"),
 
+  // Path where models are stored
   "models-path": path.resolve("src/models"),
 
+  // Path where seeders are stored
   "seeders-path": path.resolve("src/seeders"),
 
+  // Path where migrations are stored
   "migrations-path": path.resolve("src/migrations"),
 };

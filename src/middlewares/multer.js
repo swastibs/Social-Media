@@ -1,3 +1,10 @@
+/**
+ * Multer Configuration
+ *
+ * Handles file uploads with memory storage.
+ * Accepts only image files (JPEG, PNG, WebP) up to 2MB.
+ */
+
 const multer = require("multer");
 const ApiError = require("../utils/ApiError");
 
@@ -12,5 +19,7 @@ const fileFilter = (req, file, cb) => {
 module.exports = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 2 * 1024 * 1024 },
+  limits: {
+    fileSize: 2 * 1024 * 1024, // 2MB
+  },
 });

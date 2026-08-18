@@ -15,6 +15,10 @@ const {
 const { successResponse } = require("../../utils/ApiResponse");
 const { setCache } = require("../../utils/cache");
 
+/**
+ * Helper: Get all public user IDs (isPrivate = false, active, not deleted, role = user).
+ * Excludes given IDs (self + already followed).
+ */
 const getPublicUserIds = async (excludeIds = []) => {
   const users = await User.findAll({
     where: {
@@ -30,15 +34,23 @@ const getPublicUserIds = async (excludeIds = []) => {
   return users.map((u) => u.id);
 };
 
+/**
+ * Core feed posts retrieval.
+ * Combines posts from:
+ *   1. Users that current user follows (status = accepted)
+ *   2. Public users (isPrivate = false) that current user does NOT follow (and not themselves)
+ */
 const getFeedPosts = async (
   currentUserId,
   limit,
   offset,
   acceptedFollowingIds,
 ) => {
+  // 1. Get all public user IDs (excluding current user and already followed)
   const excludeFromPublic = [...acceptedFollowingIds, currentUserId];
   const publicUserIds = await getPublicUserIds(excludeFromPublic);
 
+  // 2. Build WHERE clause for posts:
   const userIdCondition = {
     [Op.or]: [
       { userId: { [Op.in]: acceptedFollowingIds } },
@@ -57,6 +69,7 @@ const getFeedPosts = async (
     offset,
   });
 
+  // 3. Enrich with like status and comment counts
   const postIds = posts.map((p) => p.id);
   const likedPosts = await PostLike.findAll({
     where: { userId: currentUserId, postId: { [Op.in]: postIds } },
@@ -85,6 +98,10 @@ const getFeedPosts = async (
   }));
 };
 
+/**
+ * GET /api/feed
+ * Returns feed posts, suggested users, pagination.
+ */
 exports.getFeed = async (req, res, next) => {
   try {
     const currentUser = req.user;
@@ -92,6 +109,7 @@ exports.getFeed = async (req, res, next) => {
     const limit = 12;
     const offset = (page - 1) * limit;
 
+    // Only accepted follows matter for feed
     const acceptedFollowingIds = await getAcceptedFollowingIds(currentUser.id);
     let posts = await getFeedPosts(
       currentUser.id,
@@ -100,6 +118,7 @@ exports.getFeed = async (req, res, next) => {
       acceptedFollowingIds,
     );
 
+    // Count total posts for pagination
     const excludeFromPublic = [...acceptedFollowingIds, currentUser.id];
     const publicUserIds = await getPublicUserIds(excludeFromPublic);
     const totalPostsCount = await Post.count({
@@ -113,6 +132,7 @@ exports.getFeed = async (req, res, next) => {
     });
     const totalPages = Math.ceil(totalPostsCount / limit);
 
+    // Determine follow status for post authors (to show "Follow"/"Following" button)
     const authorIds = [
       ...new Set(
         posts.map((p) => p.userId).filter((id) => id && id !== currentUser.id),
@@ -141,6 +161,7 @@ exports.getFeed = async (req, res, next) => {
     posts = null;
     followStatusMap = null;
 
+    // Suggested users (exclude accepted follows and self, public only)
     const excludeSuggestionIds = [...acceptedFollowingIds, currentUser.id];
     const suggestedUsers = await User.findAll({
       where: {
@@ -179,6 +200,7 @@ exports.getFeed = async (req, res, next) => {
       },
     };
 
+    // Cache the full response
     if (req.cacheKey) {
       await setCache(req.cacheKey, responsePayload);
     }

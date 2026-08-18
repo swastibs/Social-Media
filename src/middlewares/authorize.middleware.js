@@ -1,3 +1,10 @@
+/**
+ * Authorization Middleware
+ *
+ * Checks if logged-in user has one of the allowed roles.
+ * Throws ApiError if not authorized.
+ */
+
 const ApiError = require("../utils/ApiError");
 
 exports.authorize = (...allowedRoles) => {

@@ -1,5 +1,12 @@
+/**
+ * Profile Validations (Web)
+ *
+ * Joi schemas for userId parameter and profile update form.
+ */
+
 const { Joi } = require("express-validation");
 
+// For userId parameter validation
 exports.userIdParamSchema = {
   params: Joi.object({
     userId: Joi.number().integer().positive().required().messages({
@@ -11,6 +18,7 @@ exports.userIdParamSchema = {
   }),
 };
 
+// For update profile validation
 exports.updateProfileSchema = {
   body: Joi.object({
     name: Joi.string().trim().min(2).max(16).required().messages({

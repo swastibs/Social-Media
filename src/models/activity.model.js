@@ -1,3 +1,10 @@
+/**
+ * Activity Model (MongoDB / Mongoose)
+ *
+ * Logs user actions (POST/PUT/DELETE) for audit trails.
+ * Auto-expires after 90 days (TTL index).
+ */
+
 const mongoose = require("mongoose");
 
 const activitySchema = new mongoose.Schema(
@@ -61,6 +68,7 @@ const activitySchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+// Auto-delete documents older than 90 days
 activitySchema.index(
   { createdAt: 1 },
   { expireAfterSeconds: 60 * 60 * 24 * 90 },

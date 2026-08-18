@@ -1,3 +1,13 @@
+/**
+ * Profile Controller (Web)
+ *
+ * Handles:
+ * - Viewing user profile (with privacy and follow logic)
+ * - Followers / Following lists
+ * - Editing profile (name, bio, profile picture, privacy)
+ * - Toggle account privacy (public/private)
+ */
+
 const {
   User,
   Post,
@@ -17,6 +27,10 @@ const {
 const redirectBack = require("../../utils/redirectBack");
 const { deleteByPattern } = require("../../utils/cache");
 
+/**
+ * Helper: Get detailed follow relationship status between two users.
+ * Returns 'accepted', 'pending', or null.
+ */
 const getFollowStatus = async (followerId, followingId) => {
   if (!followerId || followerId === followingId) return null;
   const follow = await UserFollow.findOne({
@@ -26,11 +40,17 @@ const getFollowStatus = async (followerId, followingId) => {
   return follow ? follow.status : null;
 };
 
+/**
+ * Helper: Check if current user is following target user (accepted only).
+ */
 const isFollowing = async (followerId, followingId) => {
   const status = await getFollowStatus(followerId, followingId);
   return status === "accepted";
 };
 
+/**
+ * Helper: Get list of user IDs that a user follows with status = 'accepted'.
+ */
 const getAcceptedFollowingIds = async (userId) => {
   const follows = await UserFollow.findAll({
     where: { followerId: userId, status: "accepted" },
@@ -40,6 +60,9 @@ const getAcceptedFollowingIds = async (userId) => {
   return follows.map((f) => f.followingId);
 };
 
+// ================================
+// Render Profile Page
+// ================================
 exports.renderProfile = async (req, res, next) => {
   try {
     const currentUser = req.user;
@@ -179,6 +202,9 @@ exports.renderProfile = async (req, res, next) => {
   }
 };
 
+// ================================
+// Render Followers List (users who follow profileUser)
+// ================================
 exports.renderFollowers = async (req, res, next) => {
   try {
     const currentUser = req.user;
@@ -193,6 +219,7 @@ exports.renderFollowers = async (req, res, next) => {
       return redirectBack(req, res, "/feed");
     }
 
+    // Get paginated list of UserFollow records where profileUser is the following (target)
     const { count, rows: follows } = await UserFollow.findAndCountAll({
       where: { followingId: profileUserId, status: "accepted" },
       include: [
@@ -222,6 +249,7 @@ exports.renderFollowers = async (req, res, next) => {
     let followers = follows.map((f) => f.follower).filter(Boolean);
     follows = null;
 
+    // Build follow status map for current user
     let followStatusMap = {};
     if (currentUser && followers.length) {
       const followerIds = followers.map((f) => f.id);
@@ -266,6 +294,9 @@ exports.renderFollowers = async (req, res, next) => {
   }
 };
 
+// ================================
+// Render Following List (users profileUser follows)
+// ================================
 exports.renderFollowing = async (req, res, next) => {
   try {
     const currentUser = req.user;
@@ -280,6 +311,7 @@ exports.renderFollowing = async (req, res, next) => {
       return redirectBack(req, res, "/feed");
     }
 
+    // Get paginated list of UserFollow records where profileUser is the follower
     const { count, rows: follows } = await UserFollow.findAndCountAll({
       where: { followerId: profileUserId, status: "accepted" },
       include: [
@@ -309,6 +341,7 @@ exports.renderFollowing = async (req, res, next) => {
     let following = follows.map((f) => f.following).filter(Boolean);
     follows = null;
 
+    // Build follow status map for current user
     let followStatusMap = {};
     if (currentUser && following.length) {
       const followingIds = following.map((f) => f.id);
@@ -353,6 +386,9 @@ exports.renderFollowing = async (req, res, next) => {
   }
 };
 
+// ================================
+// Render Edit Profile Form
+// ================================
 exports.renderEditProfile = async (req, res, next) => {
   try {
     const user = req.user;
@@ -367,6 +403,9 @@ exports.renderEditProfile = async (req, res, next) => {
   }
 };
 
+// ================================
+// Update Profile (name, bio, picture, privacy)
+// ================================
 exports.updateProfile = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -387,9 +426,11 @@ exports.updateProfile = async (req, res, next) => {
     const oldPictureUrl = user.profilePictureUrl;
 
     if (file) {
-      const result = await uploadToCloudinary(file.buffer, "profiles", {
-        thumbnailSize: 80,
-      });
+      const result = await uploadToCloudinary(
+        file.buffer,
+        "profiles",
+        { thumbnailSize: 80 },
+      );
       user.profilePictureUrl = result.url;
       user.thumbnailUrl = result.thumbnailUrl;
     }
@@ -403,8 +444,9 @@ exports.updateProfile = async (req, res, next) => {
 
     await user.save();
 
+    // After await user.save()
     await deleteByPattern(`web:cache:/profile/${userId}*`);
-    await deleteByPattern("web:cache:/feed*");
+    await deleteByPattern("web:cache:/feed*"); // name/bio may appear in feed
     await deleteByPattern("web:cache:/search*");
 
     if (file && oldPictureUrl) {
@@ -419,6 +461,9 @@ exports.updateProfile = async (req, res, next) => {
   }
 };
 
+// ================================
+// Toggle account privacy (public/private) via AJAX
+// ================================
 exports.togglePrivacy = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -432,6 +477,7 @@ exports.togglePrivacy = async (req, res, next) => {
     user.isPrivate = isPrivate === true || isPrivate === "true";
     await user.save();
 
+    // After await user.save()
     await deleteByPattern(`web:cache:/profile/${userId}*`);
     await deleteByPattern("web:cache:/feed*");
     await deleteByPattern(`web:cache:/profile/${userId}/followers*`);

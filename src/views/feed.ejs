@@ -1,5 +1,6 @@
 <div class="feed-layout">
     <div class="feed-main-column">
+        <!-- Suggested users horizontal scroll -->
         <div class="suggestions-horizontal">
             <div class="suggestions-horizontal-header">
                 <h3>Suggested for you</h3>
@@ -29,6 +30,7 @@
             </div>
         </div>
 
+        <!-- Feed posts grid -->
         <% if (posts.length===0) { %>
             <div class="empty-feed">
                 <i class="fa-regular fa-newspaper"></i>
@@ -44,6 +46,7 @@
                 </div>
                 <% } %>
 
+                    <!-- Pagination -->
                     <% if (pagination.totalPages> 1) { %>
                         <div class="pagination-container">
                             <ul class="pagination">
@@ -115,6 +118,7 @@
             }
         }
 
+        // Optimistic follow handler
         async function followClickHandler(e) {
             const followBtn = e.target.closest('.suggestion-horizontal-follow-btn, .post-follow-btn');
             if (!followBtn) return;
@@ -164,6 +168,7 @@
             }
         }
 
+        // Optimistic like handler
         async function likeClickHandler(e) {
             const likeBtn = e.target.closest('.like-action');
             if (!likeBtn) return;

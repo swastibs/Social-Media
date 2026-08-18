@@ -1,3 +1,4 @@
+/* ========== SEARCH PAGE - UNIFORM CARD SIZING ========== */
 .search-container {
   max-width: 1400px;
   margin: 0 auto;
@@ -117,6 +118,7 @@
   font-size: 0.75rem;
 }
 
+/* ===== UNIFIED GRID STYLES (same width for all cards) ===== */
 .users-grid,
 .posts-grid,
 .comments-list {
@@ -126,10 +128,12 @@
   margin-bottom: 2rem;
 }
 
+/* Make comments-list use grid layout */
 .comments-list {
   display: grid;
 }
 
+/* ===== BASE CARD STYLES (shared by user-card, post-card, comment-card) ===== */
 .user-card,
 .post-card,
 .comment-card {
@@ -153,6 +157,7 @@
   border-color: var(--primary-color);
 }
 
+/* ===== USER CARD SPECIFICS ===== */
 .user-card-avatar {
   width: 64px;
   height: 64px;
@@ -212,6 +217,7 @@
   padding-bottom: 0.5rem;
 }
 
+/* ===== POST CARD SPECIFICS (reuse feed styles) ===== */
 .post-card .post-header {
   padding: 1rem;
 }
@@ -283,6 +289,7 @@
   color: var(--text-muted);
 }
 
+/* ===== COMMENT CARD SPECIFICS ===== */
 .comment-card {
   padding: 1rem;
 }
@@ -342,6 +349,7 @@
   gap: 0.5rem;
 }
 
+/* ===== VERIFIED BADGE ===== */
 .verified-badge-small {
   display: inline-block;
   background: #38bdf8;
@@ -357,6 +365,7 @@
   vertical-align: middle;
 }
 
+/* ===== PAGINATION ===== */
 .pagination-container {
   margin-top: 2rem;
   padding: 1rem;
@@ -400,6 +409,7 @@
   color: var(--text-muted);
 }
 
+/* ===== EMPTY STATES ===== */
 .empty-results {
   text-align: center;
   padding: 4rem 2rem;
@@ -436,6 +446,7 @@
   color: var(--text-muted);
 }
 
+/* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .search-container {
     padding: 1rem;

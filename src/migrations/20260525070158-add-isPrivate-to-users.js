@@ -1,3 +1,4 @@
+// src/migrations/XXXX-add-isPrivate-to-users.js
 "use strict";
 module.exports = {
   async up(queryInterface, Sequelize) {
