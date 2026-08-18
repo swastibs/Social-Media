@@ -14,7 +14,6 @@
     <section class="hero-section">
         <div class="hero-overlay"></div>
 
-        <!-- NAVBAR -->
         <header class="landing-navbar">
             <a href="/" class="landing-logo">
                 <div class="logo-circle">
@@ -24,9 +23,7 @@
             </a>
         </header>
 
-        <!-- HERO CONTENT -->
         <div class="landing-container">
-            <!-- LEFT COLUMN (text) -->
             <div class="hero-left">
                 <div class="hero-badge">
                     <i class="fa-solid fa-fire"></i> Social platform for creators & communities
@@ -55,16 +52,13 @@
                 </div>
             </div>
 
-            <!-- RIGHT COLUMN (auth switcher) -->
             <div class="hero-right">
                 <div class="auth-switcher">
-                    <!-- TABS -->
                     <div class="auth-tabs">
                         <a href="/login" class="auth-tab <%= mode === 'login' ? 'active' : '' %>">Login</a>
                         <a href="/signup" class="auth-tab <%= mode === 'signup' ? 'active' : '' %>">Sign Up</a>
                     </div>
 
-                    <!-- LOGIN PANEL -->
                     <div class="auth-panel <%= mode === 'login' ? 'active' : '' %>" id="loginPanel">
                         <div class="modern-auth-card">
                             <div class="auth-top">
@@ -101,7 +95,6 @@
                         </div>
                     </div>
 
-                    <!-- SIGNUP PANEL -->
                     <div class="auth-panel <%= mode === 'signup' ? 'active' : '' %>" id="signupPanel">
                         <div class="modern-auth-card signup-card">
                             <div class="auth-top">
@@ -189,7 +182,6 @@
             signupTab.addEventListener('click', showSignup);
         }
 
-        // Cleanup for potential SPA navigation
         function cleanupLanding() {
             if (tabs.length === 2) {
                 const loginTab = tabs[0];

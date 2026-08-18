@@ -1,9 +1,3 @@
-/**
- * Payment Model (Sequelize)
- *
- * Stores Razorpay payment information for user verification purchases.
- */
-
 const { DataTypes } = require("sequelize");
 const { sequelize } = require("../config/db");
 

@@ -11,12 +11,10 @@ const {
   getActivitiesSchema,
 } = require("../../validations/api/activity.validation");
 
-// Get Activity Logs
 activityRouter.get(
   "/",
   authenticate,
   authorize(ROLES.ADMIN),
-  // rateLimiter(60, 50, "activity-logs"),
   validate(getActivitiesSchema),
   cacheMiddleware(),
   getActivities,

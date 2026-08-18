@@ -1,8 +1,3 @@
-/**
- * Admin Controller (Web)
- * Full-featured admin panel with user/post/comment/activity management.
- */
-
 const { Op } = require("sequelize");
 const { User, Post, Comment, sequelize } = require("../../models");
 const Activity = require("../../models/activity.model");
@@ -11,7 +6,6 @@ const ApiError = require("../../utils/ApiError");
 const { ROLES } = require("../../constant/role");
 const { deleteByPattern } = require("../../utils/cache");
 
-// ========== Helper Functions ==========
 const adminUserInclude = {
   model: User,
   attributes: ["id", "name", "thumbnailUrl", "profilePictureUrl", "isVerified"],
@@ -137,7 +131,6 @@ const countCommentsForPosts = async (posts) => {
   }));
 };
 
-// ========== Dashboard ==========
 exports.dashboard = async (req, res, next) => {
   try {
     const totalUsers = await User.count();
@@ -181,7 +174,6 @@ exports.dashboard = async (req, res, next) => {
   }
 };
 
-// ========== Users List ==========
 exports.users = async (req, res, next) => {
   try {
     const {
@@ -244,7 +236,6 @@ exports.users = async (req, res, next) => {
   }
 };
 
-// ========== Posts List ==========
 exports.posts = async (req, res, next) => {
   try {
     const {
@@ -330,7 +321,6 @@ exports.posts = async (req, res, next) => {
   }
 };
 
-// ========== Comments List ==========
 exports.comments = async (req, res, next) => {
   try {
     const {
@@ -386,7 +376,6 @@ exports.comments = async (req, res, next) => {
   }
 };
 
-// ========== Activities List ==========
 exports.activities = async (req, res, next) => {
   try {
     const {
@@ -466,7 +455,6 @@ exports.activities = async (req, res, next) => {
   }
 };
 
-// ========== Global Search ==========
 exports.search = async (req, res, next) => {
   try {
     const { q } = req.query;
@@ -543,7 +531,6 @@ exports.search = async (req, res, next) => {
   }
 };
 
-// ========== User Profile (Admin View) ==========
 exports.userProfile = async (req, res, next) => {
   try {
     const userId = req.params.userId;
@@ -577,7 +564,6 @@ exports.userProfile = async (req, res, next) => {
   }
 };
 
-// ========== Post Detail (Admin View) ==========
 exports.postDetail = async (req, res, next) => {
   try {
     const postId = req.params.postId;
@@ -606,7 +592,6 @@ exports.postDetail = async (req, res, next) => {
   }
 };
 
-// ========== Admin Actions ==========
 exports.activateUser = async (req, res, next) => {
   const transaction = await sequelize.transaction();
   try {

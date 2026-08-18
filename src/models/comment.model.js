@@ -1,9 +1,3 @@
-/**
- * Comment Model (Sequelize)
- *
- * Represents comments on posts. Soft-delete capable.
- */
-
 const { DataTypes } = require("sequelize");
 const { sequelize } = require("../config/db");
 

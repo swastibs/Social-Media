@@ -1,10 +1,3 @@
-/**
- * Post Model (Sequelize)
- *
- * Represents user posts. Includes content, optional image URLs,
- * like count, and soft-delete support.
- */
-
 const { DataTypes } = require("sequelize");
 const { sequelize } = require("../config/db");
 

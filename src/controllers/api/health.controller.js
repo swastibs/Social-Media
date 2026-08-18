@@ -2,10 +2,6 @@ const { sequelize } = require("../../models");
 const mongoose = require("mongoose");
 const redis = require("../../config/redis");
 
-/**
- * Format uptime in seconds to a human-readable string
- * e.g. "1y, 2d, 3h, 4min, 5sec"
- */
 const formatUptime = (seconds) => {
   let remaining = Math.floor(seconds);
   const years = Math.floor(remaining / (365 * 24 * 60 * 60));
@@ -27,16 +23,11 @@ const formatUptime = (seconds) => {
   return parts.join(", ");
 };
 
-/**
- * GET /api/health
- * Returns health status of all services and human‑readable uptime
- */
 exports.healthCheck = async (req, res) => {
   const start = Date.now();
 
-  // Build status object
   const status = {
-    uptime: formatUptime(process.uptime()), // human‑readable
+    uptime: formatUptime(process.uptime()),
     timestamp: new Date().toISOString(),
     services: {
       mysql: { status: "unknown" },
@@ -45,7 +36,6 @@ exports.healthCheck = async (req, res) => {
     },
   };
 
-  // Check MySQL
   try {
     await sequelize.authenticate();
     status.services.mysql.status = "ok";
@@ -54,7 +44,6 @@ exports.healthCheck = async (req, res) => {
     status.services.mysql.error = err.message;
   }
 
-  // Check MongoDB
   try {
     const state = mongoose.connection.readyState;
     if (state === 1) {
@@ -67,7 +56,6 @@ exports.healthCheck = async (req, res) => {
     status.services.mongodb.error = err.message;
   }
 
-  // Check Redis
   try {
     const pong = await redis.ping();
     if (pong === "PONG") {

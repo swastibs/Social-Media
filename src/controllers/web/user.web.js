@@ -1,20 +1,7 @@
-/**
- * User Controller (Web) – Follow management
- *
- * Handles:
- * - Follow / Unfollow user (with pending/accept flow for private accounts)
- * - Accept / Reject follow requests
- * - Show follow requests list
- * - Remove a follower (profile owner only)
- */
-
 const { UserFollow, User, sequelize } = require("../../models");
 const { Op } = require("sequelize");
 const { deleteByPattern } = require("../../utils/cache");
 
-// ================================
-// Follow / Unfollow (AJAX)
-// ================================
 exports.toggleFollow = async (req, res, next) => {
   const transaction = await sequelize.transaction();
   try {
@@ -31,11 +18,9 @@ exports.toggleFollow = async (req, res, next) => {
       transaction,
     });
 
-    // If already following (accepted) -> unfollow
     if (existing && existing.status === "accepted") {
       await existing.destroy({ transaction });
 
-      // Safely decrement counts
       const follower = await User.findByPk(followerId, { transaction });
       const followed = await User.findByPk(followingId, { transaction });
 
@@ -52,7 +37,6 @@ exports.toggleFollow = async (req, res, next) => {
       return res.json({ following: false, status: null });
     }
 
-    // If a pending request exists -> cancel it
     if (existing && existing.status === "pending") {
       await existing.destroy({ transaction });
       await transaction.commit();
@@ -63,7 +47,6 @@ exports.toggleFollow = async (req, res, next) => {
       });
     }
 
-    // New follow request
     const status = targetUser.isPrivate ? "pending" : "accepted";
     await UserFollow.create(
       { followerId, followingId, status },
@@ -85,7 +68,6 @@ exports.toggleFollow = async (req, res, next) => {
 
     await transaction.commit();
 
-    // Invalidate caches for both profiles
     await deleteByPattern(`web:cache:/profile/${followerId}*`);
     await deleteByPattern(`web:cache:/profile/${followingId}*`);
     await deleteByPattern("web:cache:/feed*");
@@ -102,9 +84,6 @@ exports.toggleFollow = async (req, res, next) => {
   }
 };
 
-// ================================
-// Accept Follow Request
-// ================================
 exports.acceptFollowRequest = async (req, res, next) => {
   const transaction = await sequelize.transaction();
   try {
@@ -152,9 +131,6 @@ exports.acceptFollowRequest = async (req, res, next) => {
   }
 };
 
-// ================================
-// Reject Follow Request
-// ================================
 exports.rejectFollowRequest = async (req, res, next) => {
   const transaction = await sequelize.transaction();
   try {
@@ -189,9 +165,6 @@ exports.rejectFollowRequest = async (req, res, next) => {
   }
 };
 
-// ================================
-// Show Follow Requests Page
-// ================================
 exports.showFollowRequests = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -216,9 +189,6 @@ exports.showFollowRequests = async (req, res, next) => {
   }
 };
 
-// ================================
-// Remove a Follower (Profile owner only)
-// ================================
 exports.removeFollower = async (req, res, next) => {
   const transaction = await sequelize.transaction();
   try {
@@ -226,7 +196,6 @@ exports.removeFollower = async (req, res, next) => {
     const profileOwnerId = parseInt(req.params.userId, 10);
     const followerId = parseInt(req.params.followerId, 10);
 
-    // Security: only the profile owner can remove their own followers
     if (loggedInUserId !== profileOwnerId) {
       if (req.xhr)
         return res.status(403).json({ success: false, message: "Forbidden" });
@@ -263,7 +232,6 @@ exports.removeFollower = async (req, res, next) => {
 
     await follow.destroy({ transaction });
 
-    // Safely decrement counts
     const profileOwner = await User.findByPk(profileOwnerId, { transaction });
     const followerUser = await User.findByPk(followerId, { transaction });
 
@@ -278,7 +246,6 @@ exports.removeFollower = async (req, res, next) => {
 
     await transaction.commit();
 
-    // Invalidate caches
     await deleteByPattern(`web:cache:/profile/${profileOwnerId}*`);
     await deleteByPattern(`web:cache:/profile/${profileOwnerId}/followers*`);
     await deleteByPattern(`web:cache:/profile/${followerId}*`);

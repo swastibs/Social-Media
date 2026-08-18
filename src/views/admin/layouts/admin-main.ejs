@@ -34,7 +34,6 @@
                 hamburger.addEventListener('click', toggleSidebar);
                 overlay.addEventListener('click', toggleSidebar);
 
-                // Optional: close sidebar when clicking a link inside it
                 sidebar.querySelectorAll('a').forEach(link => {
                     link.addEventListener('click', () => {
                         if (window.innerWidth <= 900) {

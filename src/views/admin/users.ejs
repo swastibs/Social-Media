@@ -4,7 +4,6 @@
         <p>View and manage all registered users</p>
     </div>
 
-    <!-- Search bar (always visible) -->
     <div class="admin-filters">
         <form method="GET" class="search-filter-form">
             <div class="filter-group search-group">
@@ -21,7 +20,6 @@
         </form>
     </div>
 
-    <!-- Filter dropdown button -->
     <div class="filter-dropdown">
         <button type="button" class="filter-dropdown-btn" id="filterToggleBtn">
             <i class="fa-solid fa-sliders-h"></i> Filters
@@ -135,7 +133,6 @@
 </div>
 
 <script>
-    // Toggle filter dropdown
     const toggleBtn = document.getElementById('filterToggleBtn');
     const dropdown = document.getElementById('filterDropdown');
     if (toggleBtn && dropdown) {
@@ -143,7 +140,6 @@
             e.stopPropagation();
             dropdown.classList.toggle('show');
         });
-        // Close dropdown when clicking outside
         document.addEventListener('click', (e) => {
             if (!toggleBtn.contains(e.target) && !dropdown.contains(e.target)) {
                 dropdown.classList.remove('show');
@@ -151,7 +147,6 @@
         });
     }
 
-    // Card click navigation
     document.querySelectorAll('.admin-card').forEach(card => {
         card.addEventListener('click', (e) => {
             if (e.target.closest('.card-actions')) return;

@@ -1,13 +1,3 @@
-/**
- * Authentication Controller (Web)
- *
- * Handles:
- * - Landing page (login/signup tabs)
- * - Login / Signup forms with flash messages
- * - Logout (clears JWT cookie and Redis session)
- * - Password change (with old password verification)
- */
-
 const { User } = require("../../models");
 const { compare, hash } = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -20,7 +10,6 @@ const {
 const { deleteByPattern } = require("../../utils/cache");
 const { uploadToCloudinary } = require("../../utils/cloudinaryUpload");
 
-// ========== Landing & Tab Switching ==========
 exports.landing = (req, res) => {
   if (req.user)
     return res.redirect(
@@ -60,7 +49,6 @@ exports.signupForm = (req, res) => {
   });
 };
 
-// ========== Login (Multi-device safe) ==========
 exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -93,7 +81,7 @@ exports.login = async (req, res, next) => {
       process.env.JWT_SECRET,
       { expiresIn: "1d" },
     );
-    // Store token – adds to user's session set, never deletes others
+
     await storeToken(token, user.id);
     res.cookie("postloop_token", token, {
       httpOnly: true,
@@ -108,7 +96,6 @@ exports.login = async (req, res, next) => {
   }
 };
 
-// ========== Signup ==========
 exports.signup = async (req, res, next) => {
   try {
     const { name, email, password, bio } = req.body;
@@ -124,11 +111,9 @@ exports.signup = async (req, res, next) => {
       thumbnailUrl = null;
 
     if (req.file) {
-      const result = await uploadToCloudinary(
-        req.file.buffer,
-        "profiles",
-        { thumbnailSize: 80 },
-      );
+      const result = await uploadToCloudinary(req.file.buffer, "profiles", {
+        thumbnailSize: 80,
+      });
       profilePictureUrl = result.url;
       thumbnailUrl = result.thumbnailUrl;
     }
@@ -154,7 +139,6 @@ exports.signup = async (req, res, next) => {
   }
 };
 
-// ========== Logout ==========
 exports.logout = async (req, res) => {
   const token = req.cookies.postloop_token;
   const userId = req.user?.id;
@@ -170,7 +154,6 @@ exports.logout = async (req, res) => {
   res.redirect("/");
 };
 
-// ========== Change Password ==========
 exports.changePasswordForm = (req, res) => {
   res.render("auth/change-password", {
     title: "Change Password",
@@ -214,7 +197,6 @@ exports.changePassword = async (req, res, next) => {
     await deleteByPattern(`web:cache:/profile/${userId}*`);
     await deleteByPattern("web:cache:/feed*");
 
-    // Revoke all sessions for security
     await deleteAllUserTokens(userId);
     res.clearCookie("postloop_token");
 

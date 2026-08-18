@@ -1,12 +1,6 @@
-# ======================================
-# DEPENDENCIES
-# ======================================
 node_modules/
 jspm_packages/
 
-# ======================================
-# LOGS
-# ======================================
 logs/
 *.log
 npm-debug.log*
@@ -16,26 +10,17 @@ lerna-debug.log*
 
 query.sql
 
-# ======================================
-# RUNTIME DATA
-# ======================================
 pids/
 *.pid
 *.seed
 *.pid.lock
 
-# ======================================
-# COVERAGE & INSTRUMENTATION
-# ======================================
 lib-cov/
 coverage/
 *.lcov
 .nyc_output/
 .grunt/
 
-# ======================================
-# COMPILED BINARIES & BUILD OUTPUTS
-# ======================================
 build/Release/
 web_modules/
 *.tsbuildinfo
@@ -44,9 +29,6 @@ dist/
 .output/
 .next/
 
-# ======================================
-# CACHE FILES
-# ======================================
 .cache/
 .parcel-cache/
 .temp/
@@ -57,31 +39,19 @@ dist/
 .firebase/
 .vscode-test/
 
-# ======================================
-# ENVIRONMENT & CONFIG FILES
-# ======================================
 .env
 .env.*
 !.env.example
 .vercel
 .netlify
 
-# ======================================
-# UPLOADS (user-generated content)
-# ======================================
 uploads/
 src/public/uploads/
 
-# ======================================
-# DATABASE & STORAGE
-# ======================================
 *.sqlite
 *.sqlite3
 *.db
 
-# ======================================
-# IDE & EDITOR FILES
-# ======================================
 .vscode/
 .idea/
 *.swp
@@ -90,9 +60,6 @@ src/public/uploads/
 .DS_Store
 Thumbs.db
 
-# ======================================
-# MISC
-# ======================================
 *.tgz
 .yarn-integrity
 .pnpm-store/
@@ -104,9 +71,6 @@ Thumbs.db
 !.yarn/sdks
 !.yarn/versions
 
-# ======================================
-# PROJECT-SPECIFIC
-# ======================================
 a.js
 allcode.txt
-package-lock.json   # optional – keep if you prefer.env
+package-lock.json   

@@ -1,11 +1,3 @@
-/**
- * User Model (Sequelize)
- *
- * Represents application users. Contains authentication fields,
- * profile information, social stats (posts/followers/following),
- * and soft-delete support.
- */
-
 const { DataTypes } = require("sequelize");
 const { sequelize } = require("../config/db");
 const { ROLES } = require("../constant/role");
@@ -30,7 +22,7 @@ const User = sequelize.define(
     },
     password: {
       type: DataTypes.STRING,
-      allowNull: true, // null for GitHub OAuth users
+      allowNull: true,
     },
     bio: {
       type: DataTypes.TEXT,

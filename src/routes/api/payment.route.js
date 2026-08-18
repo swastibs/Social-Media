@@ -6,7 +6,6 @@ const {
   verifyPayment,
 } = require("../../controllers/api/payment.controller");
 
-// Protected routes (require authentication)
 paymentRouter.post("/create-order", authenticate, createOrder);
 paymentRouter.post("/verify-payment", authenticate, verifyPayment);
 

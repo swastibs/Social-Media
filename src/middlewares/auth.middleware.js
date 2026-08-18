@@ -1,19 +1,10 @@
-/**
- * Authentication Middlewares
- *
- * isAuthenticated: Redirects to login if user not logged in.
- * redirectIfLoggedIn: Redirects to feed/admin if already logged in.
- */
-
 const passport = require("passport");
 const jwt = require("jsonwebtoken");
 const { isTokenValid } = require("../utils/authCache");
 const { User } = require("../models");
 
-// Passport JWT authentication (for API-like endpoints)
 exports.authenticate = passport.authenticate("jwt", { session: false });
 
-// Web route authentication – redirects to login if not authenticated
 exports.isAuthenticated = async (req, res, next) => {
   const token = req.cookies?.postloop_token;
   if (!token) {
@@ -42,7 +33,6 @@ exports.isAuthenticated = async (req, res, next) => {
   }
 };
 
-// Redirect if already logged in (for login/signup pages)
 exports.redirectIfLoggedIn = async (req, res, next) => {
   res.set("Cache-Control", "no-store, no-cache, must-revalidate, private");
   const token = req.cookies?.postloop_token;

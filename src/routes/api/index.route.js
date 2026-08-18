@@ -9,13 +9,10 @@ const rateLimiter = require("../../middlewares/rateLimiter.middleware");
 const feedRouter = require("./feed.route");
 const healthController = require("../../controllers/api/health.controller");
 
-// ─── PUBLIC HEALTH ROUTE (NO RATE LIMIT) ───
 router.get("/health", healthController.healthCheck);
 
-// ─── RATE LIMITER FOR ALL OTHER API ROUTES ───
 router.use(rateLimiter(60, 200, "api-global"));
 
-// ─── OTHER ROUTES ───
 router.use("/auth", authRouter);
 router.use("/users", userRouter);
 router.use("/posts", postRouter);

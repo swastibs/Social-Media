@@ -1,10 +1,3 @@
-/**
- * Global Error Handler
- *
- * Catches all errors, distinguishes between API (JSON) and web (HTML) responses.
- * Handles validation errors, custom ApiErrors, and unexpected errors.
- */
-
 const ApiError = require("../utils/ApiError");
 const multer = require("multer");
 
@@ -47,7 +40,6 @@ exports.globalErrorHandler = (err, req, res, next) => {
     return renderWebError(422, "Upload Error", message);
   }
 
-  // Validation errors from express-validation
   if (err.name === "ValidationError") {
     const details = err.details || {};
     const firstError =
@@ -71,7 +63,6 @@ exports.globalErrorHandler = (err, req, res, next) => {
     return renderWebError(400, "Validation Error", firstError);
   }
 
-  // Custom ApiError
   if (err instanceof ApiError) {
     if (isApi)
       return res.status(err.statusCode).json({
@@ -86,7 +77,6 @@ exports.globalErrorHandler = (err, req, res, next) => {
     return renderWebError(err.statusCode, "Error", err.message);
   }
 
-  // Unexpected errors (500)
   console.error("Unhandled error:", err);
   if (isApi)
     return res.status(500).json({

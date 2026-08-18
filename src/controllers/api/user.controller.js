@@ -26,7 +26,6 @@ const {
   getPublicIdFromUrl,
 } = require("../../utils/cloudinaryUpload");
 
-// GET ALL USERS
 exports.getAllUsers = async (req, res, next) => {
   try {
     const {
@@ -68,7 +67,6 @@ exports.getAllUsers = async (req, res, next) => {
   }
 };
 
-// GET SINGLE USER
 exports.getUser = async (req, res, next) => {
   try {
     const { userId } = req.params;
@@ -96,7 +94,6 @@ exports.getUser = async (req, res, next) => {
   }
 };
 
-// DELETE USER
 exports.deleteUser = async (req, res, next) => {
   const transaction = await sequelize.transaction();
 
@@ -149,7 +146,6 @@ exports.deleteUser = async (req, res, next) => {
 
     await transaction.commit();
 
-    // Invalidate caches
     await invalidateUserCache(userId);
 
     req.activity = {
@@ -166,7 +162,6 @@ exports.deleteUser = async (req, res, next) => {
   }
 };
 
-// UPDATE USER ACTION (Admin)
 exports.updateUserAction = async (req, res, next) => {
   try {
     const { userId, action } = req.params;
@@ -200,7 +195,6 @@ exports.updateUserAction = async (req, res, next) => {
 
     const newData = sanitizedUser(targetUser);
 
-    // Invalidate caches
     await invalidateUserCache(userId);
 
     req.activity = {
@@ -216,7 +210,6 @@ exports.updateUserAction = async (req, res, next) => {
   }
 };
 
-// GET ALL POSTS OF USER
 exports.getAllPostsOfUser = async (req, res, next) => {
   try {
     const { userId } = req.params;
@@ -250,7 +243,6 @@ exports.getAllPostsOfUser = async (req, res, next) => {
   }
 };
 
-// GET SINGLE POST OF USER
 exports.getPostOfUser = async (req, res, next) => {
   try {
     const { userId, postId } = req.params;
@@ -280,7 +272,6 @@ exports.getPostOfUser = async (req, res, next) => {
   }
 };
 
-// GET ALL COMMENTS OF USER
 exports.getAllCommentsOfUser = async (req, res, next) => {
   try {
     const { userId } = req.params;
@@ -317,7 +308,6 @@ exports.getAllCommentsOfUser = async (req, res, next) => {
   }
 };
 
-// GET SINGLE COMMENT OF USER
 exports.getCommentOfUser = async (req, res, next) => {
   try {
     const { userId, commentId } = req.params;
@@ -350,7 +340,6 @@ exports.getCommentOfUser = async (req, res, next) => {
   }
 };
 
-// Follow/Unfollow USER (corrected)
 exports.followUnfollowUser = async (req, res, next) => {
   const transaction = await sequelize.transaction();
 
@@ -379,7 +368,6 @@ exports.followUnfollowUser = async (req, res, next) => {
       throw new ApiError(403, "User inactive");
     }
 
-    // Find or create the follow record (default status = 'pending')
     const [relation, created] = await UserFollow.findOrCreate({
       where: { followerId, followingId },
       defaults: { followerId, followingId, status: "pending" },
@@ -387,7 +375,6 @@ exports.followUnfollowUser = async (req, res, next) => {
     });
 
     if (!created) {
-      // UNFOLLOW: delete the record and decrement counts
       await relation.destroy({ transaction });
       await User.decrement("followingCount", {
         by: 1,
@@ -405,7 +392,6 @@ exports.followUnfollowUser = async (req, res, next) => {
         data: { following: false },
       });
     } else {
-      // NEW FOLLOW: determine final status based on privacy
       let finalStatus = targetUser.isPrivate ? "pending" : "accepted";
       if (finalStatus === "accepted") {
         relation.status = "accepted";
@@ -436,7 +422,6 @@ exports.followUnfollowUser = async (req, res, next) => {
   }
 };
 
-// GET FOLLOWERS OF USER
 exports.getFollowers = async (req, res, next) => {
   try {
     const { userId } = req.params;
@@ -480,7 +465,6 @@ exports.getFollowers = async (req, res, next) => {
   }
 };
 
-// GET FOLLOWING OF USER
 exports.getFollowing = async (req, res, next) => {
   try {
     const { userId } = req.params;
@@ -522,7 +506,6 @@ exports.getFollowing = async (req, res, next) => {
   }
 };
 
-// UPDATE PROFILE
 exports.updateProfile = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -538,7 +521,6 @@ exports.updateProfile = async (req, res, next) => {
     const oldPictureUrl = user.profilePictureUrl;
 
     if (file) {
-      // Delete old profile picture if exists
       if (oldPictureUrl) {
         const oldPublicId = getPublicIdFromUrl(oldPictureUrl);
         if (oldPublicId) await deleteFromCloudinary(oldPublicId);
@@ -554,7 +536,6 @@ exports.updateProfile = async (req, res, next) => {
 
     await user.save();
 
-    // Invalidate caches
     await invalidateUserCache(userId);
     await invalidateFeedCache();
 
@@ -574,7 +555,6 @@ exports.updateProfile = async (req, res, next) => {
   }
 };
 
-// SESSION MANAGEMENT
 exports.getSessions = async (req, res, next) => {
   try {
     const userId = req.user.id;

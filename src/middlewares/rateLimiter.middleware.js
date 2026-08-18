@@ -1,10 +1,3 @@
-/**
- * Rate Limiter Middleware
- *
- * Limits requests per IP/user per time window using Redis.
- * Returns JSON for API calls, flashes error and redirects for web.
- */
-
 const redis = require("../config/redis");
 
 const rateLimiter = (windowSeconds, maxRequests, prefix = "rate") => {
@@ -49,7 +42,7 @@ const rateLimiter = (windowSeconds, maxRequests, prefix = "rate") => {
       next();
     } catch (err) {
       console.error("Rate limiter error:", err);
-      next(); // fail open
+      next();
     }
   };
 };
