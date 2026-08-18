@@ -13,10 +13,6 @@ const {
 const { ROLES } = require("../constant/role");
 const flushAuthCache = require("../utils/flushAuthCache");
 
-/* =========================
-   CONFIG
-========================= */
-
 const CONFIG = {
   ADMIN_EMAIL: "admin@gmail.com",
   ADMIN_NAME: "Admin",
@@ -29,10 +25,6 @@ const CONFIG = {
   PROFILE_IMAGES_TO_UPLOAD: 10,
   POST_IMAGES_TO_UPLOAD: 30,
 };
-
-/* =========================
-   HELPERS
-========================= */
 
 const randomInt = (min, max) =>
   Math.floor(Math.random() * (max - min + 1)) + min;
@@ -113,10 +105,6 @@ const getRandomDate = () => {
   return date;
 };
 
-/* =========================
-   FETCH PICSIM IMAGES
-========================= */
-
 async function fetchPicsumImages(limit) {
   console.log(`📸 Fetching ${limit} Picsum image URLs...`);
   const allUrls = [];
@@ -139,10 +127,6 @@ async function fetchPicsumImages(limit) {
   return result;
 }
 
-/* =========================
-   MAIN SEEDER
-========================= */
-
 const seed = async () => {
   let transaction;
 
@@ -150,7 +134,6 @@ const seed = async () => {
     await sequelize.authenticate();
     console.log("✅ Database connected");
 
-    // ----- CLEAN DATABASE -----
     console.log("\n🧹 Cleaning database...");
     await sequelize.query("SET FOREIGN_KEY_CHECKS = 0");
     await UserFollow.destroy({ where: {}, truncate: true, force: true });
@@ -161,10 +144,8 @@ const seed = async () => {
     await sequelize.query("SET FOREIGN_KEY_CHECKS = 1");
     console.log("✅ Database cleaned");
 
-    // 👇 CRITICAL: Invalidate all existing sessions
     await flushAuthCache();
 
-    // ----- FETCH PROFILE IMAGES -----
     const profileImageUrls = await fetchPicsumImages(
       CONFIG.PROFILE_IMAGES_TO_UPLOAD,
     );
@@ -173,18 +154,17 @@ const seed = async () => {
     const uploadedProfileUrls = profileImageUrls;
     console.log(`✅ Using ${uploadedProfileUrls.length} profile image URLs`);
 
-    // ----- FETCH POST IMAGES -----
-    const uploadedPostUrls = await fetchPicsumImages(CONFIG.POST_IMAGES_TO_UPLOAD);
+    const uploadedPostUrls = await fetchPicsumImages(
+      CONFIG.POST_IMAGES_TO_UPLOAD,
+    );
     if (!uploadedPostUrls.length) throw new Error("No post images fetched");
     console.log(`✅ Using ${uploadedPostUrls.length} post image URLs`);
 
-    // ----- TRANSACTION -----
     transaction = await sequelize.transaction();
 
     const hashedPassword = await bcrypt.hash("9898", 10);
     const userIds = [];
 
-    // ----- CREATE ADMIN -----
     console.log("\n👑 Creating admin user...");
     const adminProfilePic = uploadedProfileUrls[0];
     const admin = await User.create(
@@ -208,7 +188,6 @@ const seed = async () => {
     userIds.push(admin.id);
     console.log(`   Admin created: ${admin.name} (${admin.email})`);
 
-    // ----- CREATE REGULAR USERS -----
     console.log("\n👥 Creating regular users...");
     for (let i = 0; i < CONFIG.REGULAR_USERS; i++) {
       const name = generateRandomName();
@@ -237,7 +216,6 @@ const seed = async () => {
     }
     console.log(`✅ Total users: ${userIds.length}`);
 
-    // ----- POSTS -----
     console.log("\n📝 Creating posts (alternating image)...");
     const createdPosts = [];
     for (const userId of userIds) {
@@ -269,7 +247,6 @@ const seed = async () => {
     }
     console.log(`✅ Posts created: ${createdPosts.length}`);
 
-    // ----- COMMENTS -----
     console.log("\n💬 Creating comments...");
     let totalComments = 0;
     for (const post of createdPosts) {
@@ -293,7 +270,6 @@ const seed = async () => {
     }
     console.log(`✅ Comments created: ${totalComments}`);
 
-    // ----- LIKES -----
     console.log("\n❤️ Creating likes...");
     let totalLikes = 0;
     for (const post of createdPosts) {
@@ -313,7 +289,6 @@ const seed = async () => {
     }
     console.log(`✅ Likes created: ${totalLikes}`);
 
-    // ----- FOLLOWS -----
     console.log("\n🔗 Creating follows...");
     const followMap = new Set();
     for (const followerId of userIds) {
@@ -331,7 +306,6 @@ const seed = async () => {
     }
     console.log(`✅ Follows created: ${followMap.size}`);
 
-    // ----- UPDATE FOLLOW COUNTS -----
     console.log("\n📊 Updating follow counts...");
     for (const userId of userIds) {
       const followersCount = await UserFollow.count({
@@ -348,7 +322,6 @@ const seed = async () => {
       );
     }
 
-    // ----- COMMIT -----
     await transaction.commit();
 
     console.log("\n🎉 SEEDING COMPLETED 🎉");

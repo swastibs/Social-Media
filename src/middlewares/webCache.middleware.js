@@ -1,18 +1,10 @@
-/**
- * Web Cache Middleware
- *
- * Caches fully rendered HTML pages in Redis.
- * Uses a key based on URL + user ID to respect authentication state.
- */
-
 const { getCache, setCache, generateCacheKey } = require("../utils/cache");
 
 const WEB_PREFIX = "web:";
-const DEFAULT_TTL = 60 * 60; // 1 hour
+const DEFAULT_TTL = 60 * 60;
 
 module.exports = (ttl = DEFAULT_TTL) => {
   return async (req, res, next) => {
-    // Only cache GET requests
     if (req.method !== "GET") return next();
 
     const userId = req.user?.id || "guest";

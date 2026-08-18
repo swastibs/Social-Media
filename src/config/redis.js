@@ -7,8 +7,9 @@ const isRemoteRedis =
 const redisOptions = {
   host: process.env.REDIS_HOST || "127.0.0.1",
   port: parseInt(process.env.REDIS_PORT, 10) || 6379,
-  username: process.env.REDIS_USERNAME || (isRemoteRedis ? "default" : undefined),
-  password: process.env.REDIS_PASSWORD || undefined, // ← for ArcticKey
+  username:
+    process.env.REDIS_USERNAME || (isRemoteRedis ? "default" : undefined),
+  password: process.env.REDIS_PASSWORD || undefined,
   retryStrategy: (times) => {
     const delay = Math.min(times * 100, 3000);
     if (times > 10) {

@@ -1,4 +1,3 @@
-/* ========== PROFILE ========== */
 .profile-container {
   padding: 0 4rem;
   margin: 2rem auto;
@@ -92,7 +91,6 @@
   cursor: pointer;
 }
 
-/* ========== PROFILE EDIT ========== */
 .profile-edit-container {
   max-width: 600px;
   margin: 2rem auto;
@@ -156,7 +154,6 @@
   margin-top: 2rem;
 }
 
-/* ========== FOLLOWERS / FOLLOWING ========== */
 .profile-list-container {
   max-width: 1200px;
   margin: 2rem auto;

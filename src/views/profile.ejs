@@ -150,7 +150,6 @@
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
     (function () {
-        // Follow button handler
         const followBtn = document.querySelector('.follow-profile-btn');
         if (followBtn && !followBtn.classList.contains('pending')) {
             followBtn.addEventListener('click', async () => {
@@ -186,7 +185,6 @@
             });
         }
 
-        // Privacy toggle button
         const privacyBtn = document.getElementById('privacyToggleBtn');
         if (privacyBtn) {
             privacyBtn.addEventListener('click', async () => {
@@ -208,7 +206,6 @@
             });
         }
 
-        // Profile stat navigation
         const statElements = document.querySelectorAll('.profile-stat[data-modal-list]');
         statElements.forEach(stat => {
             stat.addEventListener('click', () => {
@@ -218,7 +215,6 @@
             });
         });
 
-        // Like button handlers for profile posts
         const likeBtns = document.querySelectorAll('.like-action');
         likeBtns.forEach(btn => {
             btn.addEventListener('click', async (e) => {
@@ -239,7 +235,6 @@
             });
         });
 
-        // Razorpay payment handler
         const rzpButton = document.getElementById('rzp-button');
         if (rzpButton) {
             rzpButton.addEventListener('click', async function (e) {

@@ -1,6 +1,5 @@
 @import url("/css/base.css");
 
-/* ========== ADMIN THEME TOKENS ========== */
 :root {
   --admin-radius-lg: 28px;
   --admin-radius-md: 18px;
@@ -32,7 +31,6 @@
   --admin-focus-ring: 0 0 0 4px rgba(56, 189, 248, 0.24);
 }
 
-/* ========== BASE ADMIN SHELL ========== */
 .admin-container {
   width: min(100%, 1500px);
   margin: 0 auto;
@@ -87,7 +85,6 @@
   line-height: 1.25;
 }
 
-/* ========== DASHBOARD STATS ========== */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -208,7 +205,6 @@
   font-weight: 800;
 }
 
-/* ========== DASHBOARD CARDS ========== */
 .dashboard-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -459,7 +455,6 @@
   white-space: nowrap;
 }
 
-/* ========== FILTERS AND SEARCH ========== */
 .admin-filters {
   padding: 1rem;
   margin-bottom: 1.25rem;
@@ -598,7 +593,6 @@
   white-space: nowrap;
 }
 
-/* Specific for inline users filter form (no sidebar) */
 .users-filter-form {
   display: grid;
   grid-template-columns: 1fr;
@@ -656,7 +650,6 @@
   color: #e0f2fe;
 }
 
-/* ========== ADMIN CARD GRID ========== */
 .admin-grid,
 .users-grid,
 .comments-grid {
@@ -892,7 +885,6 @@
   border-color: rgba(239, 68, 68, 0.22);
 }
 
-/* ========== TABLES ========== */
 .admin-table-wrapper {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -988,7 +980,6 @@
   color: var(--error-color);
 }
 
-/* ========== BADGES ========== */
 .role-badge,
 .status-badge,
 .method-badge,
@@ -1058,7 +1049,6 @@
   background: #7c3aed;
 }
 
-/* ========== PAGINATION ========== */
 .pagination-container {
   display: flex;
   align-items: center;
@@ -1138,7 +1128,6 @@
   text-align: right;
 }
 
-/* ========== SEARCH PAGE ========== */
 .search-form {
   margin-bottom: 1rem;
   padding: 1rem;
@@ -1203,7 +1192,6 @@
   font-size: 0.84rem;
 }
 
-/* ========== ADMIN DETAIL PAGES ========== */
 .profile-header,
 .admin-container > .post-header {
   display: flex;
@@ -1279,7 +1267,6 @@
   gap: 1rem;
 }
 
-/* ========== EMPTY STATES ========== */
 .empty-state {
   display: grid;
   place-items: center;
@@ -1300,7 +1287,6 @@
   opacity: 0.58;
 }
 
-/* ========== SIDEBAR POLISH ========== */
 .admin-logout-form {
   display: inline-flex;
   width: 100%;
@@ -1323,7 +1309,6 @@ button:focus-visible {
   box-shadow: var(--admin-focus-ring);
 }
 
-/* ========== RESPONSIVE ========== */
 @media (max-width: 1024px) {
   .admin-container {
     padding: 1.25rem;
@@ -1451,7 +1436,6 @@ button:focus-visible {
   }
 }
 
-/* ========== FILTER DROPDOWN ========== */
 .search-filter-form {
   display: flex;
   gap: 1rem;
@@ -1549,7 +1533,6 @@ button:focus-visible {
   justify-content: center;
 }
 
-/* ========== FILTER DROPDOWN ========== */
 .search-filter-form {
   display: flex;
   gap: 1rem;
@@ -1653,7 +1636,6 @@ button:focus-visible {
   justify-content: center;
 }
 
-/* Make sure filter summary styles exist */
 .filter-summary {
   display: flex;
   align-items: center;

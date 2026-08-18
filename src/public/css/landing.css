@@ -1,4 +1,3 @@
-/* ========== LANDING PAGE ========== */
 .hero-section {
   min-height: 100vh;
   position: relative;
@@ -190,7 +189,6 @@
   font-size: 0.9rem;
 }
 
-/* Auth switcher (landing) */
 .auth-switcher {
   width: 100%;
   max-width: 720px;
@@ -417,7 +415,6 @@
   right: -100px;
 }
 
-/* GitHub OAuth Button */
 .github-login-btn {
   display: flex;
   align-items: center;

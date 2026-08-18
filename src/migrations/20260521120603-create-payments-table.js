@@ -64,7 +64,6 @@ module.exports = {
       },
     });
 
-    // Add indexes
     await queryInterface.addIndex("payments", ["userId"]);
     await queryInterface.addIndex("payments", ["razorpayOrderId"]);
     await queryInterface.addIndex("payments", ["status"]);

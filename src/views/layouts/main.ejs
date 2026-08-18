@@ -91,7 +91,6 @@
         }
     </script>
 
-    <!-- Mobile hamburger menu toggle -->
     <script>
         (function () {
             const hamburger = document.getElementById('hamburgerBtn');
@@ -107,7 +106,6 @@
                 hamburger.addEventListener('click', toggleSidebar);
                 overlay.addEventListener('click', toggleSidebar);
 
-                // Close sidebar when clicking a link inside (on mobile)
                 sidebar.querySelectorAll('a').forEach(link => {
                     link.addEventListener('click', () => {
                         if (window.innerWidth <= 900) {

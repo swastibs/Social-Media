@@ -9,8 +9,6 @@ const seedAdmin = async () => {
     await sequelize.authenticate();
     console.log("Connected to DB");
 
-    // Check existing admin
-
     const adminExists = await User.findOne({
       where: {
         role: ROLES.ADMIN,
@@ -22,8 +20,6 @@ const seedAdmin = async () => {
       console.log("Admin already exists");
       process.exit(0);
     }
-
-    // Create admin
 
     const hashedPassword = await hash("9898", 10);
 

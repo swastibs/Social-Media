@@ -1,9 +1,3 @@
-/**
- * Authentication Validations (Web)
- *
- * Joi schemas for signup, login, and password change forms.
- */
-
 const { Joi } = require("express-validation");
 
 const email = Joi.string().email().lowercase().trim().messages({

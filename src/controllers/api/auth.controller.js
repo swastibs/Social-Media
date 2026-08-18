@@ -15,7 +15,6 @@ const {
 const { uploadToCloudinary } = require("../../utils/cloudinaryUpload");
 const { invalidateUserCache } = require("../../utils/cache");
 
-// SIGN UP
 exports.signUp = async (req, res, next) => {
   try {
     const { name, email, password, bio } = req.body;
@@ -35,7 +34,6 @@ exports.signUp = async (req, res, next) => {
         { thumbnailSize: 80 },
       );
       profilePictureUrl = url;
-      // thumbnailUrl is returned but not stored in your model – you may add a column later
     }
 
     const user = await User.create({
@@ -68,7 +66,6 @@ exports.signUp = async (req, res, next) => {
   }
 };
 
-// LOGIN (MULTI-DEVICE SAFE)
 exports.logIn = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -108,7 +105,6 @@ exports.logIn = async (req, res, next) => {
   }
 };
 
-// CHANGE PASSWORD
 exports.changePassword = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -126,7 +122,6 @@ exports.changePassword = async (req, res, next) => {
 
     await deleteAllUserTokens(userId);
 
-    // Invalidate user cache
     await invalidateUserCache(userId);
 
     return successResponse(res, {
@@ -137,7 +132,6 @@ exports.changePassword = async (req, res, next) => {
   }
 };
 
-// LOGOUT
 exports.logOut = async (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];

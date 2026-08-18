@@ -1,10 +1,3 @@
-/**
- * Web Routes (User‑facing)
- *
- * All routes except /admin. Handles authentication, profile, feed,
- * posts, comments, search, follow requests, password reset, GitHub OAuth.
- */
-
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const router = express.Router();
@@ -20,7 +13,6 @@ const upload = require("../../middlewares/multer");
 const webCacheMiddleware = require("../../middlewares/webCache.middleware");
 const { invalidateCache } = require("../../middlewares/invalidate.middleware");
 
-// Controllers
 const {
   landing,
   loginForm,
@@ -99,7 +91,6 @@ const { searchPage } = require("../../controllers/web/search.web");
 
 const forgotController = require("../../controllers/web/forgotPassword.controller");
 
-// Payment controllers (web)
 const {
   createOrder,
   verifyPayment,
@@ -108,10 +99,8 @@ const {
 
 const { storeToken } = require("../../utils/authCache");
 
-// Invalidate cache helper for web mutations
 const invalidateWebCache = invalidateCache(["web:*"]);
 
-// Block admin from accessing user routes
 const blockAdminFromUserRoutes = (req, res, next) => {
   if (req.user && req.user.role === "admin") {
     req.flash("error_msg", "Admins cannot access user pages.");
@@ -121,25 +110,23 @@ const blockAdminFromUserRoutes = (req, res, next) => {
 };
 
 const adminRouter = require("./admin.route");
-// ...
+
 router.use("/admin", adminRouter);
 
-// ========== Public Routes (no auth) ==========
 router.get("/", redirectIfLoggedIn, landing);
 router.get("/login", redirectIfLoggedIn, loginForm);
 router.get("/signup", redirectIfLoggedIn, signupForm);
 
-// ========== Auth Routes ==========
 router.post(
   "/login",
-  // rateLimiter(300, 5, "web-login"),
+
   validate(webLoginSchema),
   invalidateWebCache,
   login,
 );
 router.post(
   "/signup",
-  // rateLimiter(3600, 3, "web-signup"),
+
   upload.single("profilePicture"),
   validate(webSignUpSchema),
   invalidateWebCache,
@@ -148,12 +135,11 @@ router.post(
 router.post(
   "/logout",
   isAuthenticated,
-  // rateLimiter(60, 20, "web-logout"),
+
   invalidateWebCache,
   logout,
 );
 
-// ========== Password Change ==========
 router.get(
   "/change-password",
   isAuthenticated,
@@ -164,29 +150,27 @@ router.post(
   "/change-password",
   isAuthenticated,
   blockAdminFromUserRoutes,
-  // rateLimiter(300, 5, "web-change-password"),
+
   validate(changePasswordSchema),
   invalidateWebCache,
   changePassword,
 );
 
-// ========== Forgot / Reset Password ==========
 router.get("/forgot-password", forgotController.showForgotForm);
 router.post(
   "/forgot-password",
-  // rateLimiter(60, 3, "forgot-pw"),
+
   validate(forgotPasswordSchema),
   forgotController.requestReset,
 );
 router.get("/reset-password", forgotController.showResetForm);
 router.post(
   "/reset-password",
-  // rateLimiter(60, 5, "reset-pw"),
+
   validate(resetPasswordSchema),
   forgotController.resetPassword,
 );
 
-// ========== Feed ==========
 router.get(
   "/feed",
   isAuthenticated,
@@ -195,7 +179,6 @@ router.get(
   renderFeed,
 );
 
-// ========== Follow Requests ==========
 router.get(
   "/follow-requests",
   isAuthenticated,
@@ -207,7 +190,7 @@ router.post(
   "/follow-requests/:userId/accept",
   isAuthenticated,
   blockAdminFromUserRoutes,
-  // rateLimiter(60, 20, "accept-follow"),
+
   validate(userIdParamSchema),
   invalidateWebCache,
   acceptFollowRequest,
@@ -216,13 +199,12 @@ router.post(
   "/follow-requests/:userId/reject",
   isAuthenticated,
   blockAdminFromUserRoutes,
-  // rateLimiter(60, 20, "reject-follow"),
+
   validate(userIdParamSchema),
   invalidateWebCache,
   rejectFollowRequest,
 );
 
-// ========== Profile ==========
 router.get(
   "/profile/edit",
   isAuthenticated,
@@ -233,7 +215,7 @@ router.post(
   "/profile/edit",
   isAuthenticated,
   blockAdminFromUserRoutes,
-  // rateLimiter(60, 10, "web-edit-profile"),
+
   upload.single("profilePicture"),
   validate(updateProfileSchema),
   invalidateWebCache,
@@ -267,7 +249,7 @@ router.post(
   "/follow/:userId",
   isAuthenticated,
   blockAdminFromUserRoutes,
-  // rateLimiter(60, 30, "web-follow"),
+
   validate(userIdParamSchema),
   invalidateWebCache,
   toggleFollow,
@@ -276,11 +258,10 @@ router.post(
   "/profile/:userId/followers/remove/:followerId",
   isAuthenticated,
   blockAdminFromUserRoutes,
-  // rateLimiter(60, 20, "remove-follower"),
+
   removeFollower,
 );
 
-// ========== Posts ==========
 router.get(
   "/post/create",
   isAuthenticated,
@@ -291,7 +272,7 @@ router.post(
   "/post/create",
   isAuthenticated,
   blockAdminFromUserRoutes,
-  // rateLimiter(60, 20, "web-create-post"),
+
   upload.single("image"),
   validate(createPostSchema),
   invalidateWebCache,
@@ -302,7 +283,7 @@ router.get(
   isAuthenticated,
   blockAdminFromUserRoutes,
   validate(postIdParamSchema),
-  // webCacheMiddleware(60 * 60 * 6),
+
   postDetail,
 );
 router.get(
@@ -316,7 +297,7 @@ router.post(
   "/post/edit/:postId",
   isAuthenticated,
   blockAdminFromUserRoutes,
-  // rateLimiter(60, 20, "web-edit-post"),
+
   upload.single("image"),
   validate(updatePostSchema),
   invalidateWebCache,
@@ -326,7 +307,7 @@ router.post(
   "/post/delete/:postId",
   isAuthenticated,
   blockAdminFromUserRoutes,
-  // rateLimiter(60, 20, "web-delete-post"),
+
   validate(postIdParamSchema),
   invalidateWebCache,
   deletePost,
@@ -335,18 +316,17 @@ router.post(
   "/post/:postId/like",
   isAuthenticated,
   blockAdminFromUserRoutes,
-  // rateLimiter(60, 30, "web-like-post"),
+
   validate(postIdParamSchema),
   invalidateWebCache,
   toggleLike,
 );
 
-// ========== Comments ==========
 router.post(
   "/comment/create",
   isAuthenticated,
   blockAdminFromUserRoutes,
-  // rateLimiter(60, 30, "web-create-comment"),
+
   validate(createCommentSchema),
   invalidateWebCache,
   createComment,
@@ -355,7 +335,7 @@ router.put(
   "/comment/:commentId",
   isAuthenticated,
   blockAdminFromUserRoutes,
-  // rateLimiter(60, 30, "web-update-comment"),
+
   validate(updateCommentSchema),
   invalidateWebCache,
   updateComment,
@@ -364,13 +344,12 @@ router.delete(
   "/comment/:commentId",
   isAuthenticated,
   blockAdminFromUserRoutes,
-  // rateLimiter(60, 30, "web-delete-comment"),
+
   validate(commentIdParamSchema),
   invalidateWebCache,
   deleteComment,
 );
 
-// ========== Search ==========
 router.get(
   "/search",
   isAuthenticated,
@@ -379,37 +358,34 @@ router.get(
   searchPage,
 );
 
-// ========== Payments (AJAX & Webhook) ==========
 router.post(
   "/payment/create-order",
   isAuthenticated,
-  // rateLimiter(60, 10, "create-order"),
+
   createOrder,
 );
 router.post(
   "/payment/verify-payment",
   isAuthenticated,
-  // rateLimiter(60, 10, "verify-payment"),
+
   verifyPayment,
 );
-// Webhook (no auth, raw body) – must come before express.json()
+
 router.post(
   "/payment/webhook",
   express.raw({ type: "application/json" }),
   razorpayWebhook,
 );
 
-// ========== Privacy Toggle (AJAX) ==========
 router.post(
   "/profile/privacy",
   isAuthenticated,
   blockAdminFromUserRoutes,
-  // rateLimiter(60, 20, "toggle-privacy"),
+
   invalidateWebCache,
   togglePrivacy,
 );
 
-// ========== GitHub OAuth ==========
 router.get("/auth/github", passport.authenticate("github"));
 router.get(
   "/auth/github/callback",

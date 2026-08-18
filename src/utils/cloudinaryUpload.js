@@ -1,8 +1,5 @@
 const cloudinary = require("../config/cloudinary");
 
-/**
- * Upload a file buffer to Cloudinary
- */
 const uploadToCloudinary = (buffer, folder, options = {}) => {
   return new Promise((resolve, reject) => {
     const uploadOptions = {
@@ -45,9 +42,6 @@ const uploadToCloudinary = (buffer, folder, options = {}) => {
   });
 };
 
-/**
- * Delete a file from Cloudinary by public ID
- */
 const deleteFromCloudinary = async (publicId) => {
   try {
     const result = await cloudinary.uploader.destroy(publicId);
@@ -57,9 +51,6 @@ const deleteFromCloudinary = async (publicId) => {
   }
 };
 
-/**
- * Extract public ID from a Cloudinary URL
- */
 const getPublicIdFromUrl = (url) => {
   if (!url) return null;
   const parts = url.split("/");

@@ -1,9 +1,3 @@
-/**
- * Comment Validations (Web)
- *
- * Joi schemas for creating, updating, and deleting comments.
- */
-
 const { Joi } = require("express-validation");
 
 const id = Joi.number().integer().positive().required().messages({
